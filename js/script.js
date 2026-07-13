@@ -137,22 +137,52 @@ function normalize(s) {
     return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
-function searchCatalog(query) {
+let aiDetectedCategory = null;
+
+function searchCatalog(query, category) {
     const products = getCatalogProducts();
     const q = normalize(query);
     const words = q.split(/\s+/).filter(w => w.length >= 2);
     if (words.length === 0) return [];
 
-    return products.filter(p => {
+    let pool = products;
+
+    if (category && category.startsWith('_')) category = category.slice(1);
+    if (category) {
+        const catNorm = normalize(category);
+        const catProducts = pool.filter(p => {
+            const cat = normalize(p.categoria || '');
+            const nome = normalize(p.nome || '');
+            const desc = normalize(p.descricao || '');
+            const kw = (p.palavraschave || p.palavrasChave || []).map(k => normalize(k)).join(' ');
+            return cat.includes(catNorm) || nome.includes(catNorm) || desc.includes(catNorm) || kw.includes(catNorm);
+        });
+        if (catProducts.length > 0) pool = catProducts;
+    }
+
+    const scored = pool.map(p => {
         const kw = p.palavraschave || p.palavrasChave || [];
         const keywords = kw.join(' ');
         const nome = p.nome || '';
         const desc = p.descricao || '';
         const searchStr = normalize(`${nome} ${desc} ${keywords}`);
-        if (words.some(w => searchStr.includes(w))) return true;
-        const kwNorm = kw.map(k => normalize(k));
-        return kwNorm.some(k => words.some(w => k.includes(w)));
-    });
+        let score = 0;
+        let matchedWords = 0;
+        for (const w of words) {
+            const nomeNorm = normalize(nome);
+            if (nomeNorm.includes(w)) { score += 3; matchedWords++; continue; }
+            if (searchStr.includes(w)) { score += 1; matchedWords++; }
+        }
+        if (matchedWords === 0) return null;
+        if (matchedWords < words.length * 0.3) return null;
+        const matchRatio = matchedWords / words.length;
+        if (matchRatio < 0.3 && words.length >= 2) return null;
+        return { product: p, score, matchRatio };
+    }).filter(Boolean);
+
+    scored.sort((a, b) => b.score - a.score || b.matchRatio - a.matchRatio);
+
+    return scored.map(s => s.product);
 }
 
 function extractKeywords(text) {
@@ -221,6 +251,7 @@ function handleAiInput() {
         // Already gathering — accumulate info
         if (aiState === 'gathering') {
             if (detected.keywords.length > 0) aiSearchTerms.push(...detected.keywords);
+            if (detected.category) aiDetectedCategory = detected.category;
             const uniqueTerms = [...new Set(aiSearchTerms)];
             if (uniqueTerms.length >= 2) { performAiSearch(uniqueTerms); return; }
             const cat = detected.category || detectCategory(aiSearchTerms.join(' '));
@@ -236,6 +267,7 @@ function handleAiInput() {
         if (detected.keywords.length >= 2) {
             aiState = 'gathering';
             aiSearchTerms = [...detected.keywords];
+            aiDetectedCategory = detected.category;
             if (detected.category && followUpQuestions[detected.category]) {
                 addAiMsg(`Entendi! Você procura algo na área de <strong>${detected.category}</strong>.<br><br>${followUpQuestions[detected.category]}`);
             } else {
@@ -268,9 +300,11 @@ function handleAiInput() {
 function performAiSearch(terms) {
     const query = terms.join(' ');
     aiState = 'idle';
+    const cat = aiDetectedCategory;
+    aiDetectedCategory = null;
     addAiMsg('Efetuando busca em nosso catálogo...');
     setTimeout(() => {
-        const results = searchCatalog(query);
+        const results = searchCatalog(query, cat);
         if (results.length > 0) {
             addAiMsg(`Encontramos <strong>${results.length}</strong> produto(s) relacionado(s) a sua busca. Redirecionando para o catálogo...`);
             setTimeout(() => { renderSearchResults(results); aiSearchTerms = []; }, 1500);
