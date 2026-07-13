@@ -939,6 +939,13 @@ body.light-mode .product-count-badge {
     box-shadow: 0 5px 20px var(--accent-glow);
 }
 
+.btn-primary-sm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .btn-secondary-sm {
     background: rgba(0, 212, 255, 0.1);
     border: 1px solid rgba(0, 212, 255, 0.2);

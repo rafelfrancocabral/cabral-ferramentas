@@ -1165,12 +1165,36 @@ function closeProductModal() {
 // Image Upload System
 // ===========================
 let pendingUploadedImages = [];
-const MAX_IMG_SIZE = 2 * 1024 * 1024; // 2MB
+const IMG_MAX_DIM = 800;
+const IMG_QUALITY = 0.7;
 
 const imgUploadZone = document.getElementById('imgUploadZone');
 const imgFileInput = document.getElementById('imgFileInput');
 const imgPreviewList = document.getElementById('imgPreviewList');
 const imgUploadPlaceholder = document.getElementById('imgUploadPlaceholder');
+
+function compressImage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                if (w > IMG_MAX_DIM || h > IMG_MAX_DIM) {
+                    if (w > h) { h = Math.round(h * IMG_MAX_DIM / w); w = IMG_MAX_DIM; }
+                    else { w = Math.round(w * IMG_MAX_DIM / h); h = IMG_MAX_DIM; }
+                }
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', IMG_QUALITY));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
 
 function renderImagePreviews() {
     imgPreviewList.innerHTML = '';
@@ -1191,22 +1215,15 @@ function renderImagePreviews() {
 }
 
 function handleImageFiles(files) {
-    Array.from(files).forEach(file => {
+    Array.from(files).forEach(async (file) => {
         if (!file.type.startsWith('image/')) return;
-        if (file.size > MAX_IMG_SIZE) {
-            showToast(`${file.name} excede 2MB — ignorada.`);
-            return;
-        }
         if (pendingUploadedImages.length >= 5) {
-            showToast('Máximo de 5 imagens.');
+            showToast('Maximo de 5 imagens.');
             return;
         }
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            pendingUploadedImages.push(ev.target.result);
-            renderImagePreviews();
-        };
-        reader.readAsDataURL(file);
+        const base64 = await compressImage(file);
+        pendingUploadedImages.push(base64);
+        renderImagePreviews();
     });
 }
 
@@ -1483,8 +1500,11 @@ productForm.addEventListener('submit', async (e) => {
     };
 
     const existingId = productIdInput.value;
+    const submitBtn = document.getElementById('productSubmit');
 
     try {
+        submitBtn.disabled = true;
+        productSubmitText.textContent = 'Salvando...';
         if (existingId) {
             const existing = getProducts().find(p => p.id === parseInt(existingId));
             productData.visivel = existing ? existing.visivel : true;
@@ -1501,6 +1521,9 @@ productForm.addEventListener('submit', async (e) => {
         closeProductModal();
     } catch(e) {
         showToast('Erro ao salvar: ' + e.message);
+    } finally {
+        submitBtn.disabled = false;
+        productSubmitText.textContent = existingId ? 'Atualizar' : 'Salvar';
     }
 });
 
