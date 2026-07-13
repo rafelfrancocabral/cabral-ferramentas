@@ -1136,6 +1136,10 @@ document.getElementById('btnNewProduct').addEventListener('click', () => {
     renderImagePreviews();
     pendingTags = [];
     renderTags();
+    urlInputs.forEach(({ input, preview }) => {
+        document.getElementById(input).value = '';
+        showUrlPreview(input, preview);
+    });
     productModal.classList.add('active');
     document.body.style.overflow = 'hidden';
 });
@@ -1151,6 +1155,10 @@ function closeProductModal() {
     document.body.style.overflow = '';
     pendingUploadedImages = [];
     renderImagePreviews();
+    urlInputs.forEach(({ input, preview }) => {
+        document.getElementById(input).value = '';
+        showUrlPreview(input, preview);
+    });
 }
 
 // ===========================
@@ -1218,6 +1226,74 @@ imgUploadZone.addEventListener('dragleave', () => {
 imgUploadZone.addEventListener('drop', (e) => {
     e.preventDefault();
     imgUploadZone.classList.remove('dragover');
+    handleImageFiles(e.dataTransfer.files);
+});
+
+// ===========================
+// URL Image Preview + Drag Link
+// ===========================
+const urlInputs = [
+    { input: 'prodImg1', preview: 'imgPreview1' },
+    { input: 'prodImg2', preview: 'imgPreview2' },
+    { input: 'prodImg3', preview: 'imgPreview3' },
+    { input: 'prodImg4', preview: 'imgPreview4' },
+    { input: 'prodImg5', preview: 'imgPreview5' }
+];
+
+function showUrlPreview(inputId, previewId) {
+    const url = document.getElementById(inputId)?.value.trim();
+    const previewEl = document.getElementById(previewId);
+    if (!previewEl) return;
+
+    if (!url) {
+        previewEl.className = 'img-url-preview';
+        previewEl.innerHTML = '';
+        return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+        previewEl.className = 'img-url-preview active';
+        previewEl.innerHTML = `<img src="${url}">`;
+    };
+    img.onerror = () => {
+        previewEl.className = 'img-url-preview img-url-error';
+        previewEl.innerHTML = '';
+    };
+    img.src = url;
+}
+
+urlInputs.forEach(({ input, preview }) => {
+    const el = document.getElementById(input);
+    if (!el) return;
+
+    el.addEventListener('input', () => showUrlPreview(input, preview));
+    el.addEventListener('paste', () => setTimeout(() => showUrlPreview(input, preview), 100));
+});
+
+// Drag link from other site onto upload zone
+imgUploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    imgUploadZone.classList.add('dragover');
+});
+
+imgUploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    imgUploadZone.classList.remove('dragover');
+
+    const text = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+    if (text && /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif|bmp|svg)(\?.*)?$/i.test(text.trim())) {
+        const emptySlot = urlInputs.find(({ input }) => !document.getElementById(input)?.value.trim());
+        if (emptySlot) {
+            document.getElementById(emptySlot.input).value = text.trim();
+            showUrlPreview(emptySlot.input, emptySlot.preview);
+            showToast('Imagem adicionada via link!');
+        } else {
+            showToast('Todos os 5 campos de imagem estao preenchidos.');
+        }
+        return;
+    }
+
     handleImageFiles(e.dataTransfer.files);
 });
 
@@ -1305,6 +1381,7 @@ window.editProduct = function(id) {
     document.getElementById('prodImg3').value = urlImgs[2] || '';
     document.getElementById('prodImg4').value = urlImgs[3] || '';
     document.getElementById('prodImg5').value = urlImgs[4] || '';
+    urlInputs.forEach(({ input, preview }) => showUrlPreview(input, preview));
     document.getElementById('prodVideo').value = product.video || '';
     document.getElementById('prodDestaque').checked = product.isdestaque || product.isDestaque || false;
     document.getElementById('prodPromocao').checked = product.ispromocao || product.isPromocao || false;

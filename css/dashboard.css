@@ -2648,6 +2648,72 @@ body.light-mode .product-count-badge {
     margin-bottom: 8px;
 }
 
+.img-drop-link-hint {
+    display: block;
+    margin-top: 2px;
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.img-url-group {
+    position: relative;
+}
+
+.img-url-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.img-url-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.img-url-input {
+    width: 100%;
+    padding-left: 28px !important;
+    font-size: 0.78rem !important;
+}
+
+.img-url-preview {
+    margin-top: 4px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    border-radius: 6px;
+}
+
+.img-url-preview.active {
+    max-height: 120px;
+    opacity: 1;
+}
+
+.img-url-preview img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+}
+
+.img-url-preview.img-url-error {
+    max-height: 30px;
+    opacity: 1;
+}
+
+.img-url-preview.img-url-error::after {
+    content: 'Link invalido';
+    font-size: 0.7rem;
+    color: #ff4757;
+}
+
 .toggle-label {
     display: flex !important;
     flex-direction: row !important;
@@ -3844,6 +3910,14 @@ body.light-mode .modal-content {
 
 body.light-mode .img-upload-zone {
     border-color: var(--border);
+}
+
+body.light-mode .img-url-icon {
+    color: #999;
+}
+
+body.light-mode .img-url-preview img {
+    border-color: rgba(0, 0, 0, 0.1);
 }
 
 body.light-mode .product-thumb-empty {
