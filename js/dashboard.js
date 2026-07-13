@@ -1216,21 +1216,8 @@ imgFileInput.addEventListener('change', (e) => {
     imgFileInput.value = '';
 });
 
-imgUploadZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    imgUploadZone.classList.add('dragover');
-});
-imgUploadZone.addEventListener('dragleave', () => {
-    imgUploadZone.classList.remove('dragover');
-});
-imgUploadZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    imgUploadZone.classList.remove('dragover');
-    handleImageFiles(e.dataTransfer.files);
-});
-
 // ===========================
-// URL Image Preview + Drag Link
+// Image Drop Handler (files, links, browser drag)
 // ===========================
 const urlInputs = [
     { input: 'prodImg1', preview: 'imgPreview1' },
@@ -1240,6 +1227,66 @@ const urlInputs = [
     { input: 'prodImg5', preview: 'imgPreview5' }
 ];
 
+function addUrlToFirstEmpty(url) {
+    const emptySlot = urlInputs.find(({ input }) => !document.getElementById(input)?.value.trim());
+    if (emptySlot) {
+        document.getElementById(emptySlot.input).value = url;
+        showUrlPreview(emptySlot.input, emptySlot.preview);
+        showToast('Imagem adicionada!');
+        return true;
+    }
+    showToast('Todos os 5 campos de imagem estao preenchidos.');
+    return false;
+}
+
+function extractImageUrl(e) {
+    const html = e.dataTransfer.getData('text/html');
+    if (html) {
+        const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+        if (match && match[1]) return match[1].trim();
+    }
+
+    const uriList = e.dataTransfer.getData('text/uri-list');
+    if (uriList) {
+        const lines = uriList.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+        for (const line of lines) {
+            if (/^https?:\/\//i.test(line)) return line;
+        }
+    }
+
+    const plain = e.dataTransfer.getData('text/plain');
+    if (plain && /^https?:\/\//i.test(plain.trim())) return plain.trim();
+
+    return null;
+}
+
+imgUploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    imgUploadZone.classList.add('dragover');
+});
+
+imgUploadZone.addEventListener('dragleave', () => {
+    imgUploadZone.classList.remove('dragover');
+});
+
+imgUploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    imgUploadZone.classList.remove('dragover');
+
+    const imgUrl = extractImageUrl(e);
+    if (imgUrl) {
+        addUrlToFirstEmpty(imgUrl);
+        return;
+    }
+
+    if (e.dataTransfer.files.length > 0) {
+        handleImageFiles(e.dataTransfer.files);
+    }
+});
+
+// ===========================
+// URL Image Preview (paste/type)
+// ===========================
 function showUrlPreview(inputId, previewId) {
     const url = document.getElementById(inputId)?.value.trim();
     const previewEl = document.getElementById(previewId);
@@ -1266,35 +1313,8 @@ function showUrlPreview(inputId, previewId) {
 urlInputs.forEach(({ input, preview }) => {
     const el = document.getElementById(input);
     if (!el) return;
-
     el.addEventListener('input', () => showUrlPreview(input, preview));
     el.addEventListener('paste', () => setTimeout(() => showUrlPreview(input, preview), 100));
-});
-
-// Drag link from other site onto upload zone
-imgUploadZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    imgUploadZone.classList.add('dragover');
-});
-
-imgUploadZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    imgUploadZone.classList.remove('dragover');
-
-    const text = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
-    if (text && /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif|bmp|svg)(\?.*)?$/i.test(text.trim())) {
-        const emptySlot = urlInputs.find(({ input }) => !document.getElementById(input)?.value.trim());
-        if (emptySlot) {
-            document.getElementById(emptySlot.input).value = text.trim();
-            showUrlPreview(emptySlot.input, emptySlot.preview);
-            showToast('Imagem adicionada via link!');
-        } else {
-            showToast('Todos os 5 campos de imagem estao preenchidos.');
-        }
-        return;
-    }
-
-    handleImageFiles(e.dataTransfer.files);
 });
 
 // Promo toggle
