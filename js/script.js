@@ -979,13 +979,18 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
 
     let couponMsg = '';
     if (checkoutDiscount > 0 && checkoutCouponCode) {
-        couponMsg = `*Cupom (${checkoutCouponCode}):* -${formatPrice(checkoutDiscount)}\n`;
+        couponMsg =
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `*Cupom aplicado:*\n` +
+            `  Codigo: ${checkoutCouponCode}\n` +
+            `  Subtotal: ${formatPrice(checkoutSubtotal)}\n` +
+            `  Desconto: -${formatPrice(checkoutDiscount)}\n\n`;
     }
 
-    const msg = `*ORÇAMENTO — CABRAL FERRAMENTAS*\n\n` +
+    const msg = `*ORCAMENTO — CABRAL FERRAMENTAS*\n\n` +
         `*Cliente:* ${name}\n` +
         `*Telefone:* ${phone}\n` +
-        `*Data:* ${dateStr} às ${timeStr}\n\n` +
+        `*Data:* ${dateStr} as ${timeStr}\n\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `*Produtos:*\n\n` +
         itemsMsg + `\n` +
