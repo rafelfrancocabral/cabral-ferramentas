@@ -1598,7 +1598,7 @@ function parseAndValidateCSV(text, fileName) {
     csvParsedData = [];
     let errorCount = 0;
 
-    const dataLines = lines.slice(1, 101);
+    const dataLines = lines.slice(1, 501);
     const kwColIndex = headerMap['Palavras Chaves - (separar com virgula)'];
 
     for (let i = 0; i < dataLines.length; i++) {
