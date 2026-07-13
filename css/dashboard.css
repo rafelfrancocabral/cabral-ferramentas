@@ -2,28 +2,28 @@
    CSS Variables & Reset
    =========================== */
 :root {
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #0d0d14;
-    --bg-card: #111118;
-    --bg-card-hover: #16161f;
-    --accent: #00d4ff;
-    --accent-dark: #0099cc;
-    --accent-glow: rgba(0, 212, 255, 0.3);
-    --accent-glow-strong: rgba(0, 212, 255, 0.6);
-    --text-primary: #f0f0f5;
-    --text-secondary: #8888aa;
-    --text-muted: #555570;
-    --border: #1a1a2e;
-    --border-light: #252540;
-    --gradient-accent: linear-gradient(135deg, #00d4ff, #0066cc);
-    --gradient-dark: linear-gradient(180deg, #0a0a0f, #0d0d1a);
-    --shadow-accent: 0 0 30px rgba(0, 212, 255, 0.15);
+    --bg-primary: #f4f5f7;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f0f1f3;
+    --accent: #0099cc;
+    --accent-dark: #0077aa;
+    --accent-glow: rgba(0, 153, 204, 0.25);
+    --accent-glow-strong: rgba(0, 153, 204, 0.5);
+    --text-primary: #1a1a2e;
+    --text-secondary: #555570;
+    --text-muted: #8888aa;
+    --border: #d8d8e0;
+    --border-light: #e8e8ef;
+    --gradient-accent: linear-gradient(135deg, #00b4d8, #0077aa);
+    --gradient-dark: linear-gradient(180deg, #f4f5f7, #ffffff);
+    --shadow-accent: 0 4px 20px rgba(0, 153, 204, 0.12);
     --radius: 12px;
     --radius-lg: 20px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --sidebar-width: 260px;
     --topbar-height: 70px;
-    --topbar-bg: rgba(10, 10, 15, 0.85);
+    --topbar-bg: rgba(255, 255, 255, 0.92);
 }
 
 *, *::before, *::after {
@@ -83,8 +83,8 @@ button { cursor: pointer; }
     z-index: 0;
     pointer-events: none;
     background-image:
-        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(0, 153, 204, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 153, 204, 0.03) 1px, transparent 1px);
     background-size: 60px 60px;
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
     -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
@@ -178,14 +178,14 @@ button { cursor: pointer; }
 }
 
 .sidebar-link:hover {
-    background: rgba(0, 212, 255, 0.05);
+    background: rgba(0, 153, 204, 0.05);
     color: var(--text-primary);
 }
 
 .sidebar-link.active {
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 153, 204, 0.1);
     color: var(--accent);
-    border: 1px solid rgba(0, 212, 255, 0.15);
+    border: 1px solid rgba(0, 153, 204, 0.15);
 }
 
 .sidebar-link.active::before {
@@ -359,7 +359,7 @@ button { cursor: pointer; }
 
 .filter-btn:hover {
     color: var(--text-primary);
-    background: rgba(0, 212, 255, 0.05);
+    background: rgba(0, 153, 204, 0.05);
 }
 
 .filter-btn.active {
@@ -509,7 +509,7 @@ button { cursor: pointer; }
 }
 
 .kpi-icon.orcamento {
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 153, 204, 0.1);
     color: var(--accent);
 }
 
@@ -620,7 +620,7 @@ button { cursor: pointer; }
 }
 
 .chart-card:hover {
-    border-color: rgba(0, 212, 255, 0.2);
+    border-color: rgba(0, 153, 204, 0.2);
 }
 
 .chart-header {
@@ -826,7 +826,7 @@ button { cursor: pointer; }
 }
 
 .client-status.new {
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 153, 204, 0.1);
     color: var(--accent);
 }
 
@@ -863,9 +863,9 @@ button { cursor: pointer; }
     font-weight: 600;
     padding: 4px 12px;
     border-radius: 20px;
-    background: rgba(0, 212, 255, 0.15);
+    background: rgba(0, 153, 204, 0.15);
     color: var(--accent);
-    border: 1px solid rgba(0, 212, 255, 0.3);
+    border: 1px solid rgba(0, 153, 204, 0.3);
 }
 
 .page-actions {
@@ -921,8 +921,8 @@ button { cursor: pointer; }
 }
 
 .btn-secondary-sm {
-    background: rgba(0, 212, 255, 0.1);
-    border: 1px solid rgba(0, 212, 255, 0.2);
+    background: rgba(0, 153, 204, 0.1);
+    border: 1px solid rgba(0, 153, 204, 0.2);
     color: var(--accent);
 }
 
@@ -971,7 +971,7 @@ button { cursor: pointer; }
 }
 
 .data-table tbody tr:hover {
-    background: rgba(0, 212, 255, 0.03);
+    background: rgba(0, 153, 204, 0.03);
 }
 
 .data-table tbody tr:last-child td {
@@ -993,7 +993,7 @@ button { cursor: pointer; }
 }
 
 .status-badge.sent {
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 153, 204, 0.1);
     color: var(--accent);
 }
 
@@ -1079,7 +1079,7 @@ button { cursor: pointer; }
 
 .cat-icon {
     width: 56px; height: 56px;
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 153, 204, 0.1);
     border-radius: 14px;
     display: flex;
     align-items: center;
@@ -1139,7 +1139,7 @@ button { cursor: pointer; }
 .settings-section-icon {
     width: 48px;
     height: 48px;
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 153, 204, 0.1);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -1205,7 +1205,7 @@ button { cursor: pointer; }
 .settings-form-grid input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
 }
 
 /* Hours */
@@ -1384,7 +1384,7 @@ button { cursor: pointer; }
 .ai-response-card textarea:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
 }
 
 .ai-response-hint {
@@ -1492,7 +1492,7 @@ button { cursor: pointer; }
 
 .theme-preview-body {
     padding: 12px;
-    background: #1a1a2e;
+    background: #e8e8ef;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1526,7 +1526,7 @@ button { cursor: pointer; }
 
 .theme-preview-msg.ai .theme-preview-avatar {
     background: rgba(0,212,255,0.15);
-    color: #00d4ff;
+    color: #0099cc;
 }
 
 .theme-preview-msg.user .theme-preview-avatar {
@@ -1563,7 +1563,7 @@ button { cursor: pointer; }
 }
 
 .theme-preview-send {
-    color: #00d4ff;
+    color: #0099cc;
     font-size: 0.85rem;
 }
 
@@ -1853,9 +1853,9 @@ button { cursor: pointer; }
 }
 
 .client-avatar-sm.new {
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 153, 204, 0.1);
     color: var(--accent);
-    border: 1px solid rgba(0, 212, 255, 0.2);
+    border: 1px solid rgba(0, 153, 204, 0.2);
 }
 
 .quote-client .client-name {
@@ -2277,13 +2277,13 @@ button { cursor: pointer; }
 }
 
 .product-row:hover {
-    border-color: rgba(0, 212, 255, 0.2);
+    border-color: rgba(0, 153, 204, 0.2);
 }
 
 .product-icon-sm {
     width: 40px;
     height: 40px;
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 153, 204, 0.1);
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -2418,7 +2418,7 @@ button { cursor: pointer; }
 .form-group textarea:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
 }
 
 .form-group textarea::placeholder {
@@ -2442,7 +2442,7 @@ button { cursor: pointer; }
 
 .tag-input-container:focus-within {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
 }
 
 .tag-input-container input {
@@ -2465,8 +2465,8 @@ button { cursor: pointer; }
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(0, 212, 255, 0.1);
-    border: 1px solid rgba(0, 212, 255, 0.25);
+    background: rgba(0, 153, 204, 0.1);
+    border: 1px solid rgba(0, 153, 204, 0.25);
     color: var(--accent);
     padding: 4px 10px;
     border-radius: 50px;
@@ -2531,11 +2531,11 @@ button { cursor: pointer; }
 .img-upload-zone:hover,
 .img-upload-zone.dragover {
     border-color: var(--accent);
-    background: rgba(0, 212, 255, 0.03);
+    background: rgba(0, 153, 204, 0.03);
 }
 
 .img-upload-zone.dragover {
-    background: rgba(0, 212, 255, 0.06);
+    background: rgba(0, 153, 204, 0.06);
 }
 
 .img-upload-placeholder {
@@ -2734,7 +2734,7 @@ button { cursor: pointer; }
 }
 
 .toggle-label input:checked + .toggle-slider {
-    background: rgba(0, 212, 255, 0.2);
+    background: rgba(0, 153, 204, 0.2);
     border-color: var(--accent);
 }
 
@@ -2767,7 +2767,7 @@ button { cursor: pointer; }
 .form-group select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
 }
 
 .form-group input::placeholder {
@@ -2837,12 +2837,12 @@ button { cursor: pointer; }
 .csv-upload-zone:hover,
 .csv-upload-zone.dragover {
     border-color: var(--accent);
-    background: rgba(0, 212, 255, 0.03);
+    background: rgba(0, 153, 204, 0.03);
 }
 
 .csv-upload-zone.dragover {
     border-color: var(--accent);
-    background: rgba(0, 212, 255, 0.08);
+    background: rgba(0, 153, 204, 0.08);
 }
 
 .csv-upload-icon {
@@ -3051,7 +3051,7 @@ button { cursor: pointer; }
 }
 
 .row-status.update {
-    color: #00d4ff;
+    color: #0099cc;
 }
 
 .row-status.unchanged {
@@ -3059,7 +3059,7 @@ button { cursor: pointer; }
 }
 
 .csv-preview-table .row-update {
-    background: rgba(0, 212, 255, 0.05);
+    background: rgba(0, 153, 204, 0.05);
 }
 
 .csv-preview-table .row-unchanged {
@@ -3072,8 +3072,8 @@ button { cursor: pointer; }
     border-radius: 10px;
     font-size: 0.7rem;
     font-weight: 700;
-    background: rgba(0, 212, 255, 0.15);
-    color: #00d4ff;
+    background: rgba(0, 153, 204, 0.15);
+    color: #0099cc;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -3112,7 +3112,7 @@ button { cursor: pointer; }
 /* Product action buttons */
 .action-btn.edit-btn {
     color: var(--accent);
-    border-color: rgba(0, 212, 255, 0.3);
+    border-color: rgba(0, 153, 204, 0.3);
 }
 
 .action-btn.edit-btn:hover {
@@ -3208,7 +3208,7 @@ button { cursor: pointer; }
 
 .search-box:focus-within {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
 }
 
 .search-box i {
@@ -3282,7 +3282,7 @@ button { cursor: pointer; }
 .category-form-row input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
 }
 
 .category-form-row input::placeholder {
@@ -3427,7 +3427,7 @@ button { cursor: pointer; }
 .delivery-field select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
 }
 
 .input-prefix {
@@ -3495,7 +3495,7 @@ button { cursor: pointer; }
 }
 
 .toggle-switch input:checked + .toggle-slider {
-    background: rgba(0, 212, 255, 0.2);
+    background: rgba(0, 153, 204, 0.2);
     border-color: var(--accent);
 }
 
@@ -3665,7 +3665,7 @@ button { cursor: pointer; }
 .coupon-form-grid select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
 }
 
 .coupon-toggle-group {

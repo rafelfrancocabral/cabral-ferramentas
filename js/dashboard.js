@@ -177,7 +177,7 @@ filterBtns.forEach(btn => {
 // Charts - Chart.js
 // ===========================
 const chartDefaults = {
-    color: '#8888aa',
+    color: '#555570',
     borderColor: '#1a1a2e',
     font: { family: "'Inter', sans-serif" }
 };
@@ -204,29 +204,29 @@ function createSalesChart() {
                 {
                     label: 'Vendas (mil)',
                     data: salesData,
-                    borderColor: '#00d4ff',
-                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    borderColor: '#0099cc',
+                    backgroundColor: 'rgba(0, 153, 204, 0.1)',
                     fill: true,
                     tension: 0.4,
                     borderWidth: 2,
                     pointRadius: 4,
-                    pointBackgroundColor: '#00d4ff',
-                    pointBorderColor: '#0a0a0f',
+                    pointBackgroundColor: '#0099cc',
+                    pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
                     pointHoverRadius: 6
                 },
                 {
                     label: 'Orçamentos',
                     data: quoteData,
-                    borderColor: '#8a2be2',
-                    backgroundColor: 'rgba(138, 43, 226, 0.05)',
+                    borderColor: '#7b3fbf',
+                    backgroundColor: 'rgba(123, 63, 191, 0.05)',
                     fill: true,
                     tension: 0.4,
                     borderWidth: 2,
                     borderDash: [5, 5],
                     pointRadius: 3,
-                    pointBackgroundColor: '#8a2be2',
-                    pointBorderColor: '#0a0a0f',
+                    pointBackgroundColor: '#7b3fbf',
+                    pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
                     pointHoverRadius: 5
                 }
@@ -238,10 +238,10 @@ function createSalesChart() {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#111118',
-                    titleColor: '#f0f0f5',
-                    bodyColor: '#8888aa',
-                    borderColor: '#252540',
+                    backgroundColor: '#ffffff',
+                    titleColor: '#1a1a2e',
+                    bodyColor: '#555570',
+                    borderColor: '#e8e8ef',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 10,
@@ -285,10 +285,10 @@ function createCategoryChart() {
             labels: ['Elétricas', 'Manuais', 'Hidráulica', 'Elétrica', 'EPI', 'Construção'],
             datasets: [{
                 data: [35, 25, 15, 12, 8, 5],
-                backgroundColor: ['#00d4ff', '#8a2be2', '#2ed573', '#ffa502', '#ff4757', '#a4b0be'],
-                borderColor: '#111118',
+                backgroundColor: ['#0099cc', '#7b3fbf', '#2ed573', '#ffa502', '#ff4757', '#a4b0be'],
+                borderColor: '#ffffff',
                 borderWidth: 3,
-                hoverBorderColor: '#111118',
+                hoverBorderColor: '#ffffff',
                 hoverOffset: 8
             }]
         },
@@ -307,10 +307,10 @@ function createCategoryChart() {
                     }
                 },
                 tooltip: {
-                    backgroundColor: '#111118',
-                    titleColor: '#f0f0f5',
-                    bodyColor: '#8888aa',
-                    borderColor: '#252540',
+                    backgroundColor: '#ffffff',
+                    titleColor: '#1a1a2e',
+                    bodyColor: '#555570',
+                    borderColor: '#e8e8ef',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 10,
@@ -900,7 +900,7 @@ function showToast(message, duration = 2500) {
         align-items: center;
         gap: 10px;
         z-index: 3000;
-        box-shadow: 0 8px 30px rgba(0, 212, 255, 0.2);
+        box-shadow: 0 8px 30px rgba(0, 153, 204, 0.2);
         animation: slideUp 0.3s ease-out;
         max-width: 90vw;
         text-align: left;
@@ -1050,7 +1050,7 @@ async function filterProducts(query) {
         return `
         <tr data-id="${p.id}" ${!isVisivel ? 'style="opacity:0.45;"' : ''}>
             <td>${thumb}</td>
-            <td><span class="stock-badge" style="background:rgba(0,212,255,0.1);color:var(--accent);">${p.codigo}</span></td>
+            <td><span class="stock-badge" style="background:rgba(0,153,204,0.1);color:var(--accent);">${p.codigo}</span></td>
             <td>${p.nome}</td>
             <td>${p.unidade}</td>
             <td>${p.marca}</td>
@@ -1839,7 +1839,7 @@ function showCSVPreview(fileName, errorCount) {
         statusHTML += `<span class="csv-status-badge error"><i class="fas fa-exclamation-circle"></i> ${errorCount} erro(s)</span>`;
     }
     if (updateCount > 0) {
-        statusHTML += `<span class="csv-status-badge" style="background:rgba(0,212,255,0.1);color:#00d4ff;"><i class="fas fa-sync-alt"></i> ${updateCount} atualizar</span>`;
+        statusHTML += `<span class="csv-status-badge" style="background:rgba(0,153,204,0.1);color:#0099cc;"><i class="fas fa-sync-alt"></i> ${updateCount} atualizar</span>`;
     }
     if (unchangedCount > 0) {
         statusHTML += `<span class="csv-status-badge" style="background:rgba(160,160,180,0.1);color:#a0a0b4;"><i class="fas fa-minus-circle"></i> ${unchangedCount} existente(s)</span>`;
@@ -2658,12 +2658,12 @@ function getSettings() {
                 msgAIBg: '#16213e',
                 msgUserBg: '#0f3460',
                 fontColor: '#e0e0e0',
-                accent: '#00d4ff',
+                accent: '#0099cc',
                 headerBg: '#0f3460'
             }
         },
         siteTheme: {
-            accent: '#00d4ff',
+            accent: '#0099cc',
             bg: '#0a0a0a',
             fontColor: '#ffffff'
         }
@@ -2875,7 +2875,7 @@ document.getElementById('btnSaveAI').addEventListener('click', () => {
 document.getElementById('btnResetTheme').addEventListener('click', () => {
     const defaults = {
         chatBg: '#1a1a2e', msgAIBg: '#16213e', msgUserBg: '#0f3460',
-        fontColor: '#e0e0e0', accent: '#00d4ff', headerBg: '#0f3460'
+        fontColor: '#e0e0e0', accent: '#0099cc', headerBg: '#0f3460'
     };
     setThemeInput('cfgChatBg', 'cfgChatBgHex', defaults.chatBg);
     setThemeInput('cfgMsgAIBg', 'cfgMsgAIBgHex', defaults.msgAIBg);
@@ -2903,8 +2903,8 @@ function classifyClient(quotes) {
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
 
-    if (thisMonth.length > 10) return { label: 'VIP', color: '#8a2be2', bg: 'rgba(138,43,226,0.15)' };
-    if (totalQuotes <= 1) return { label: 'Novo', color: '#00d4ff', bg: 'rgba(0,212,255,0.1)' };
+    if (thisMonth.length > 10) return { label: 'VIP', color: '#7b3fbf', bg: 'rgba(138,43,226,0.15)' };
+    if (totalQuotes <= 1) return { label: 'Novo', color: '#0099cc', bg: 'rgba(0,153,204,0.1)' };
     if (daysSinceLast > 90) return { label: 'Inativo', color: '#ff4757', bg: 'rgba(255,71,87,0.1)' };
     if (daysSinceLast > 30) return { label: 'Atenção', color: '#ffa502', bg: 'rgba(255,165,2,0.1)' };
     return { label: 'Ativo', color: '#2ed573', bg: 'rgba(46,213,115,0.1)' };
@@ -2994,7 +2994,7 @@ window.openClientQuotes = function(nome, telefone) {
         const date = new Date(q.created_at).toLocaleDateString('pt-BR');
         const items = Array.isArray(q.itens) ? q.itens : [];
         const statusColors = {
-            recebido: '#00d4ff', analise: '#ffa502', aprovado: '#2ed573', entregue: '#2ed573', cancelado: '#ff4757'
+            recebido: '#0099cc', analise: '#ffa502', aprovado: '#2ed573', entregue: '#2ed573', cancelado: '#ff4757'
         };
         const color = statusColors[q.status] || '#888';
 
