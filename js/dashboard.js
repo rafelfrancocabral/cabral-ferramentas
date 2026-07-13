@@ -1948,7 +1948,7 @@ document.getElementById('csvDownloadTemplate').addEventListener('click', () => {
         ['P001', 'Furadeira Bosch GSB 20-2RE', 'UN', 'Bosch', 'Elétricas', '489,90', '48', 'furadeira, bosch, elétrica, parafusar']
     ];
 
-    for (let i = 0; i < 49; i++) {
+    for (let i = 0; i < 499; i++) {
         sheetData.push(['', '', '', '', '', '', '', '']);
     }
 
