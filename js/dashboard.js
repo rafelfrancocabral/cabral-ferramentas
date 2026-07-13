@@ -1914,7 +1914,16 @@ document.getElementById('csvConfirmImport').addEventListener('click', async () =
     });
 
     if (rowsToInsert.length > 0) {
-        await db.from(SUPABASE_PRODUCTS_TABLE).insert(rowsToInsert);
+        const BATCH_SIZE = 50;
+        for (let i = 0; i < rowsToInsert.length; i += BATCH_SIZE) {
+            const batch = rowsToInsert.slice(i, i + BATCH_SIZE);
+            const { error } = await db.from(SUPABASE_PRODUCTS_TABLE).insert(batch);
+            if (error) {
+                console.error('Erro ao importar lote:', error);
+                showToast(`Erro no lote ${Math.floor(i / BATCH_SIZE) + 1}: ${error.message}`);
+                break;
+            }
+        }
     }
     for (const row of rowsToUpdate) {
         await db.from(SUPABASE_PRODUCTS_TABLE).update(row.data).eq('id', row.id);
