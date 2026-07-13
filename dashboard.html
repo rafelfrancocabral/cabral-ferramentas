@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabral Ferramentas - Painel do Lojista</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/dashboard.css?v=29">
+</head>
+<body>
+    <script>
+        if (localStorage.getItem('cabral_auth') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <!-- Particles Background -->
+    <div class="particles" id="particles"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="sidebar-logo">
+                <div class="logo-icon" style="padding:0;overflow:hidden;"><img src="img/logo-cabral.png" alt="Cabral Ferramentas" style="width:100%;height:100%;object-fit:cover;"></div>
+                <span class="logo-text">CABRAL <span class="accent">FERRAMENTAS</span></span>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="sidebar-link active" data-page="dashboard">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="sidebar-link" data-page="orcamentos">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Orçamentos</span>
+                <span class="badge sidebar-quote-badge" id="sidebarQuoteBadge" style="display:none;">0</span>
+            </a>
+            <a href="#" class="sidebar-link" data-page="produtos">
+                <i class="fas fa-boxes-stacked"></i>
+                <span>Produtos</span>
+            </a>
+            <a href="#" class="sidebar-link" data-page="categorias">
+                <i class="fas fa-tags"></i>
+                <span>Categorias</span>
+            </a>
+            <a href="#" class="sidebar-link" data-page="entregas">
+                <i class="fas fa-truck-fast"></i>
+                <span>Entregas</span>
+            </a>
+            <a href="#" class="sidebar-link" data-page="clientes">
+                <i class="fas fa-users"></i>
+                <span>Clientes</span>
+            </a>
+            <a href="#" class="sidebar-link" data-page="cupons">
+                <i class="fas fa-ticket"></i>
+                <span>Cupons</span>
+            </a>
+            <a href="#" class="sidebar-link" data-page="config">
+                <i class="fas fa-gear"></i>
+                <span>Configurações</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="index.html" class="sidebar-link">
+                <i class="fas fa-arrow-left"></i>
+                <span>Voltar ao Site</span>
+            </a>
+            <a href="#" class="sidebar-link" id="btnLogout">
+                <i class="fas fa-right-from-bracket"></i>
+                <span>Sair</span>
+            </a>
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <span class="user-name">Admin</span>
+                    <span class="user-role">Lojista</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <h1 class="page-title">Dashboard</h1>
+                <span class="page-subtitle">Visão geral do negócio</span>
+            </div>
+            <div class="topbar-right">
+                <div class="period-filter">
+                    <button class="filter-btn" data-period="7d">7 dias</button>
+                    <button class="filter-btn active" data-period="30d">30 dias</button>
+                    <button class="filter-btn" data-period="90d">90 dias</button>
+                    <button class="filter-btn" data-period="12m">12 meses</button>
+                </div>
+                <div class="topbar-actions">
+                    <button class="icon-btn" id="themeToggle" title="Modo Dia / Noite">
+                        <i class="fas fa-circle-half-stroke"></i>
+                    </button>
+                    <button class="icon-btn" id="notifBtn" title="Ver orçamentos">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                    </button>
+                    <div class="user-avatar-sm"><i class="fas fa-user"></i></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-content" id="dashboardContent">
+            <!-- KPI Cards Row -->
+            <div class="kpi-row">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon orcamento"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <div class="kpi-trend up"><i class="fas fa-arrow-up"></i> 0%</div>
+                    </div>
+                    <div class="kpi-value">0</div>
+                    <div class="kpi-label">Orçamentos</div>
+                    <div class="kpi-footer">
+                        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:0%"></div></div>
+                        <span>0% convertidos</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon acessos"><i class="fas fa-eye"></i></div>
+                        <div class="kpi-trend up"><i class="fas fa-arrow-up"></i> 0%</div>
+                    </div>
+                    <div class="kpi-value">0</div>
+                    <div class="kpi-label">Acessos ao Site</div>
+                    <div class="kpi-footer">
+                        <div class="kpi-bar"><div class="kpi-bar-fill accent" style="width:0%"></div></div>
+                        <span>0% novos visitantes</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon entregas"><i class="fas fa-truck-fast"></i></div>
+                        <div class="kpi-trend down"><i class="fas fa-arrow-down"></i> 0%</div>
+                    </div>
+                    <div class="kpi-value">0</div>
+                    <div class="kpi-label">Entregas Realizadas</div>
+                    <div class="kpi-footer">
+                        <div class="kpi-bar"><div class="kpi-bar-fill green" style="width:0%"></div></div>
+                        <span>0% no prazo</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon faturamento"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="kpi-trend up"><i class="fas fa-arrow-up"></i> 0%</div>
+                    </div>
+                    <div class="kpi-value">R$ 0,00</div>
+                    <div class="kpi-label">Faturamento</div>
+                    <div class="kpi-footer">
+                        <div class="kpi-bar"><div class="kpi-bar-fill gold" style="width:0%"></div></div>
+                        <span>0% da meta</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <div class="chart-card large">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-line"></i> Vendas por Período</h3>
+                        <div class="chart-legend">
+                            <span><span class="dot accent"></span> Vendas</span>
+                            <span><span class="dot purple"></span> Orçamentos</span>
+                        </div>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-pie"></i> Vendas por Categoria</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metrics Row -->
+            <div class="metrics-row">
+                <!-- Most Sold Products -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-fire"></i> Produtos Mais Vendidos</h3>
+                    </div>
+                    <div class="chart-body list-body" id="mostSoldList">
+                        <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:0.85rem;">Carregando...</div>
+                    </div>
+                </div>
+
+                <!-- Most Accessed Products -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-eye"></i> Produtos Mais Acessados</h3>
+                    </div>
+                    <div class="chart-body list-body" id="mostAccessedList">
+                        <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:0.85rem;">Carregando...</div>
+                    </div>
+                </div>
+
+                <!-- Recent Clients -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-users"></i> Clientes Recentes</h3>
+                    </div>
+                    <div class="chart-body list-body" id="recentClientsList">
+                        <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:0.85rem;">Carregando...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orçamentos Page -->
+        <div class="page-content hidden" id="orcamentosPage">
+            <div class="page-header-row">
+                <h2>Orçamentos Recebidos</h2>
+                <div class="page-actions">
+                    <select class="filter-select" id="statusFilter">
+                        <option value="all">Todos os status</option>
+                        <option value="recebido">Recebido</option>
+                        <option value="analise">Em Análise</option>
+                        <option value="aprovado">Aprovado</option>
+                        <option value="entregue">Entregue</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="quotes-list" id="quotesList">
+                <div class="empty-state" id="quotesEmpty" style="display:none;">
+                    <i class="fas fa-file-invoice-dollar" style="font-size:3rem;opacity:0.2;display:block;margin-bottom:12px;"></i>
+                    <p>Nenhum orçamento recebido ainda.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quote Detail Modal -->
+        <div class="modal-overlay" id="quoteModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title-row">
+                        <h3><i class="fas fa-file-lines"></i> Orçamento <span id="modalQuoteId">#2471</span></h3>
+                        <button class="modal-close" id="modalClose"><i class="fas fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-client" id="modalClient">
+                        <div class="client-avatar-sm"><i class="fas fa-user"></i></div>
+                        <div>
+                            <span class="client-name">João Silva</span>
+                            <span class="client-contact"><i class="fab fa-whatsapp"></i> (11) 99876-5432</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="products-list" id="modalProducts">
+                        <!-- Products will be injected by JS -->
+                    </div>
+                    <div class="modal-footer">
+                        <div class="modal-total">
+                            <span>Total:</span>
+                            <span id="modalTotal">R$ 1.849,70</span>
+                        </div>
+                        <div class="modal-footer-actions">
+                            <a href="#" target="_blank" class="btn-whatsapp-modal" id="modalWhatsApp">
+                                <i class="fab fa-whatsapp"></i> Enviar via WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Produtos Page (hidden by default) -->
+        <div class="page-content hidden" id="produtosPage">
+            <div class="page-header-row">
+                <h2>Catálogo de Produtos <span class="product-count-badge" id="productCountBadge"></span></h2>
+                <div class="page-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="productSearch" placeholder="Pesquisar produto...">
+                    </div>
+                    <button class="btn-secondary-sm" id="btnImportCSV"><i class="fas fa-file-csv"></i> Importar Produtos</button>
+                    <button class="btn-secondary-sm" id="btnExportXLSX"><i class="fas fa-file-excel"></i> Exportar Produtos</button>
+                    <button class="btn-secondary-sm" id="btnSyncSite"><i class="fas fa-rotate"></i> Sincronizar Site</button>
+                    <button class="btn-primary-sm" id="btnNewProduct"><i class="fas fa-plus"></i> Novo Produto</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>Imagem</th>
+                            <th>Código</th>
+                            <th>Descrição</th>
+                            <th>Unidade</th>
+                            <th>Marca</th>
+                            <th>Categoria</th>
+                            <th>Preço</th>
+                            <th>Estoque</th>
+                            <th>Palavras Chave</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+                <div class="table-empty" id="productsEmpty" style="display:none;">
+                    <i class="fas fa-box-open"></i>
+                    <p>Nenhum produto cadastrado</p>
+                    <span>Adicione produtos manualmente ou importe um CSV</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Modal (Add/Edit) -->
+        <div class="modal-overlay" id="productModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title-row">
+                        <h3><i class="fas fa-box"></i> <span id="productModalTitle">Novo Produto</span></h3>
+                        <button class="modal-close" id="productModalClose"><i class="fas fa-xmark"></i></button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form id="productForm">
+                        <input type="hidden" id="productId">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Código</label>
+                                <input type="text" id="prodCodigo" placeholder="Ex: P001" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Descrição</label>
+                                <input type="text" id="prodNome" placeholder="Descrição do produto" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Unidade</label>
+                                <select id="prodUnidade" required>
+                                    <option value="">Selecione</option>
+                                    <option value="UN">UN (Unidade)</option>
+                                    <option value="KG">KG (Quilograma)</option>
+                                    <option value="MT">MT (Metro)</option>
+                                    <option value="M2">M² (Metro Quadrado)</option>
+                                    <option value="M3">M³ (Metro Cúbico)</option>
+                                    <option value="LT">LT (Litro)</option>
+                                    <option value="PAR">PAR</option>
+                                    <option value="KIT">KIT</option>
+                                    <option value="CX">CX (Caixa)</option>
+                                    <option value="PC">PC (Peça)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Marca</label>
+                                <input type="text" id="prodMarca" placeholder="Ex: Bosch, Makita" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Categoria</label>
+                                <select id="prodCategoria" required>
+                                    <option value="">Selecione</option>
+                                </select>
+                                <div class="category-warning" id="categoryWarning" style="display:none;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Categoria não existe.</span>
+                                    <button type="button" class="btn-link-sm" id="btnCreateCategoryInline">Criar agora</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Preço (R$)</label>
+                                <input type="text" id="prodPreco" placeholder="0,00" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Estoque</label>
+                                <input type="number" id="prodEstoque" placeholder="0" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Descrição Completa</label>
+                                <textarea id="prodDescricao" rows="1" placeholder="Detalhes do produto"></textarea>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Palavras-chave</label>
+                                <div class="tag-input-container" id="tagInputContainer">
+                                    <div class="tag-list" id="tagList"></div>
+                                    <input type="text" id="prodKeywords" placeholder="Digite e pressione Enter para adicionar tag">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-section-divider">
+                            <i class="fas fa-images"></i> Imagens do Produto (até 5)
+                        </div>
+                        <div class="img-upload-zone" id="imgUploadZone">
+                            <input type="file" id="imgFileInput" accept="image/*" multiple hidden>
+                            <div class="img-upload-placeholder" id="imgUploadPlaceholder">
+                                <i class="fas fa-cloud-arrow-up"></i>
+                                <p>Arraste imagens aqui ou <span class="img-browse-link">clique para selecionar</span></p>
+                                <small>JPG, PNG, WebP — máx. 2MB cada</small>
+                            </div>
+                            <div class="img-preview-list" id="imgPreviewList"></div>
+                        </div>
+                        <div class="img-url-alt">
+                            <small>Ou insira URLs:</small>
+                            <div class="form-grid cols-3">
+                                <div class="form-group">
+                                    <input type="url" id="prodImg1" placeholder="URL imagem 1">
+                                </div>
+                                <div class="form-group">
+                                    <input type="url" id="prodImg2" placeholder="URL imagem 2">
+                                </div>
+                                <div class="form-group">
+                                    <input type="url" id="prodImg3" placeholder="URL imagem 3">
+                                </div>
+                                <div class="form-group">
+                                    <input type="url" id="prodImg4" placeholder="URL imagem 4">
+                                </div>
+                                <div class="form-group">
+                                    <input type="url" id="prodImg5" placeholder="URL imagem 5">
+                                </div>
+                                <div class="form-group">
+                                    <label>Vídeo YouTube (URL)</label>
+                                    <input type="url" id="prodVideo" placeholder="https://youtube.com/watch?v=...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-section-divider">
+                            <i class="fas fa-tags"></i> Promoções e Destaques
+                        </div>
+                        <div class="form-grid cols-3">
+                            <div class="form-group">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="prodDestaque">
+                                    <span class="toggle-slider"></span>
+                                    Produto em Destaque
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="prodPromocao">
+                                    <span class="toggle-slider"></span>
+                                    Produto em Promoção
+                                </label>
+                            </div>
+                            <div class="form-group" id="promoPriceGroup" style="display:none;">
+                                <label>Preço Promocional (R$)</label>
+                                <input type="text" id="prodPrecoPromo" placeholder="0,00">
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary-sm" id="productCancel">Cancelar</button>
+                            <button type="submit" class="btn-primary-sm"><i class="fas fa-check"></i> <span id="productSubmitText">Salvar</span></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- CSV Import Modal -->
+        <div class="modal-overlay" id="csvModal">
+            <div class="modal modal-lg">
+                <div class="modal-header">
+                    <div class="modal-title-row">
+                        <h3><i class="fas fa-file-import"></i> Importar Produtos</h3>
+                        <button class="modal-close" id="csvModalClose"><i class="fas fa-xmark"></i></button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <!-- Step 1: Upload -->
+                        <div id="csvStep1" class="csv-step">
+                        <div class="csv-upload-zone" id="csvDropZone">
+                            <div class="csv-upload-icon">
+                                <i class="fas fa-cloud-arrow-up"></i>
+                            </div>
+                            <h4>Arraste o ficheiro aqui</h4>
+                            <p>ou clique para selecionar (CSV ou XLSX)</p>
+                            <input type="file" id="csvFileInput" accept=".csv,.xlsx" hidden>
+                            <button class="btn-secondary-sm" id="csvSelectFile"><i class="fas fa-folder-open"></i> Selecionar Ficheiro</button>
+                        </div>
+                    <div class="csv-info">
+                        <h5><i class="fas fa-info-circle"></i> Formato do Ficheiro</h5>
+                        <p>O ficheiro deve ter os seguintes cabeçalhos, nesta ordem:</p>
+                        <code>Código, Descrição, Unidade, Marca, Categoria, Preço, Estoque, Palavras Chaves - (separar com virgula)</code>
+                        <div class="csv-info-rules">
+                            <p><i class="fas fa-database"></i> Tipos de dados:</p>
+                            <ul>
+                                <li><strong>Código</strong> → texto</li>
+                                <li><strong>Descrição</strong> → texto</li>
+                                <li><strong>Unidade</strong> → texto</li>
+                                <li><strong>Marca</strong> → texto</li>
+                                <li><strong>Categoria</strong> → texto</li>
+                                <li><strong>Preço</strong> → número decimal (ex: 49,90)</li>
+                                <li><strong>Estoque</strong> → número inteiro</li>
+                                <li><strong>Palavras Chaves</strong> → separadas por vírgula</li>
+                            </ul>
+                        </div>
+                        <div class="csv-info-rules">
+                            <p><i class="fas fa-list-check"></i> Regras:</p>
+                            <ul>
+                                <li>Máximo 50 produtos por importação</li>
+                                <li>Primeira linha deve conter apenas os cabeçalhos</li>
+                                <li>Código não pode estar duplicado</li>
+                                <li>Formatos suportados: CSV e XLSX</li>
+                            </ul>
+                        </div>
+                        <div class="csv-download-template">
+                            <button class="btn-link" id="csvDownloadTemplate"><i class="fas fa-download"></i> Descarregar Template XLSX (50 linhas vazias)</button>
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- Step 2: Preview -->
+                    <div id="csvStep2" class="csv-step" style="display:none;">
+                        <div class="csv-preview-header">
+                            <div class="csv-preview-info">
+                                <span class="csv-file-name" id="csvFileName"></span>
+                                <span class="csv-row-count" id="csvRowCount"></span>
+                            </div>
+                            <div class="csv-preview-status" id="csvPreviewStatus">
+                                <!-- Validation status injected here -->
+                            </div>
+                        </div>
+                        <div class="csv-preview-table-wrapper">
+                            <table class="data-table csv-preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>Linha</th>
+                                        <th>Código</th>
+                                        <th>Descrição</th>
+                                        <th>Unidade</th>
+                                        <th>Marca</th>
+                                        <th>Categoria</th>
+                                        <th>Preço</th>
+                                        <th>Estoque</th>
+                                        <th>Palavras Chave</th>
+                                        <th>Tipo</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="csvPreviewBody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="csv-preview-actions">
+                            <button class="btn-secondary-sm" id="csvBack"><i class="fas fa-arrow-left"></i> Voltar</button>
+                            <button class="btn-primary-sm" id="csvConfirmImport" disabled><i class="fas fa-file-import"></i> Confirmar Importação</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categorias Page (hidden by default) -->
+        <div class="page-content hidden" id="categoriasPage">
+            <div class="page-header-row">
+                <h2>Categorias</h2>
+                <div class="page-header-actions">
+                    <button class="btn-secondary-sm" id="btnSyncCat"><i class="fas fa-rotate"></i> Sincronizar Site</button>
+                </div>
+            </div>
+            <div class="categories-layout">
+                <div class="category-form-card">
+                    <h3><i class="fas fa-plus-circle"></i> <span id="catFormTitle">Nova Categoria</span></h3>
+                    <form id="categoryForm">
+                        <input type="hidden" id="catId">
+                        <div class="category-form-row">
+                            <input type="text" id="catName" placeholder="Nome da categoria" required>
+                            <button type="submit" class="btn-primary-sm" id="catSubmitBtn"><i class="fas fa-check"></i> <span>Salvar</span></button>
+                            <button type="button" class="btn-secondary-sm" id="catCancelBtn" style="display:none;"><i class="fas fa-xmark"></i> Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width:50px;">#</th>
+                                <th>Nome</th>
+                                <th>Produtos</th>
+                                <th style="width:120px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoryTableBody">
+                        </tbody>
+                    </table>
+                    <div class="table-empty" id="categoryListEmpty" style="display:none;">
+                        <i class="fas fa-folder-open"></i>
+                        <p>Nenhuma categoria cadastrada</p>
+                        <span>Crie uma categoria acima para começar</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entregas Page (hidden by default) -->
+        <div class="page-content hidden" id="entregasPage">
+            <div class="page-header-row">
+                <h2>Configuração de Entregas</h2>
+                <button class="btn-primary-sm" id="btnSaveDelivery"><i class="fas fa-check"></i> Salvar</button>
+            </div>
+
+            <div class="delivery-config-grid">
+                <!-- Taxa por km -->
+                <div class="delivery-card">
+                    <div class="delivery-card-header">
+                        <div class="delivery-card-icon km"><i class="fas fa-road"></i></div>
+                        <h3>Taxa por Quilometragem</h3>
+                    </div>
+                    <p class="delivery-card-desc">Defina o valor cobrado por km de distância até o cliente.</p>
+                    <div class="delivery-field">
+                        <label>Valor por km (R$)</label>
+                        <div class="input-prefix">
+                            <span>R$</span>
+                            <input type="number" id="deliveryPricePerKm" step="0.10" min="0" placeholder="0,00">
+                        </div>
+                    </div>
+                    <div class="delivery-field">
+                        <label>Distância mínima (km)</label>
+                        <input type="number" id="deliveryMinKm" step="1" min="0" placeholder="0">
+                    </div>
+                    <div class="delivery-field">
+                        <label>Distância máxima (km)</label>
+                        <input type="number" id="deliveryMaxKm" step="1" min="1" placeholder="50">
+                    </div>
+                </div>
+
+                <!-- Faixas de entrega -->
+                <div class="delivery-card">
+                    <div class="delivery-card-header">
+                        <div class="delivery-card-icon tiers"><i class="fas fa-layer-group"></i></div>
+                        <h3>Faixas de Preço</h3>
+                    </div>
+                    <p class="delivery-card-desc">Crie faixas de distância com valores fixos.</p>
+                    <div class="delivery-tiers" id="deliveryTiers">
+                        <!-- Populated by JS -->
+                    </div>
+                    <button class="btn-add-tier" id="btnAddTier"><i class="fas fa-plus"></i> Adicionar faixa</button>
+                </div>
+
+                <!-- Entrega grátis -->
+                <div class="delivery-card">
+                    <div class="delivery-card-header">
+                        <div class="delivery-card-icon free"><i class="fas fa-gift"></i></div>
+                        <h3>Entrega Grátis</h3>
+                    </div>
+                    <p class="delivery-card-desc">Defina o valor mínimo de compra para entrega gratuita.</p>
+                    <div class="delivery-field">
+                        <label>Pedido mínimo para entrega grátis (R$)</label>
+                        <div class="input-prefix">
+                            <span>R$</span>
+                            <input type="number" id="deliveryFreeThreshold" step="0.01" min="0" placeholder="0,00">
+                        </div>
+                    </div>
+                    <div class="delivery-field">
+                        <label>Distância máxima grátis (km)</label>
+                        <input type="number" id="deliveryFreeMaxKm" step="1" min="1" placeholder="10">
+                    </div>
+                    <div class="delivery-toggle-row">
+                        <span>Ativar entrega grátis</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="deliveryFreeEnabled">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Simulador -->
+                <div class="delivery-card">
+                    <div class="delivery-card-header">
+                        <div class="delivery-card-icon sim"><i class="fas fa-calculator"></i></div>
+                        <h3>Simulador de Frete</h3>
+                    </div>
+                    <p class="delivery-card-desc">Teste os valores de entrega com base na configuração.</p>
+                    <div class="delivery-field">
+                        <label>Distância (km)</label>
+                        <input type="number" id="simKm" step="1" min="0" placeholder="Ex: 15">
+                    </div>
+                    <div class="delivery-field">
+                        <label>Valor do pedido (R$)</label>
+                        <div class="input-prefix">
+                            <span>R$</span>
+                            <input type="number" id="simValue" step="0.01" min="0" placeholder="0,00">
+                        </div>
+                    </div>
+                    <button class="btn-secondary-sm" id="btnSimulate" style="width:100%;margin-top:8px;"><i class="fas fa-play"></i> Calcular</button>
+                    <div class="sim-result" id="simResult" style="display:none;">
+                        <div class="sim-result-label">Valor do frete</div>
+                        <div class="sim-result-value" id="simResultValue">R$ 0,00</div>
+                        <div class="sim-result-detail" id="simResultDetail"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cupons Page (hidden by default) -->
+        <div class="page-content hidden" id="cuponsPage">
+            <div class="page-header-row">
+                <h2>Cupons de Desconto</h2>
+                <button class="btn-primary-sm" id="btnNewCoupon"><i class="fas fa-plus"></i> Novo Cupom</button>
+            </div>
+
+            <!-- Coupon Form (hidden by default) -->
+            <div class="coupon-form-card hidden" id="couponFormCard">
+                <h3><i class="fas fa-ticket"></i> <span id="couponFormTitle">Novo Cupom</span></h3>
+                <form id="couponForm">
+                    <input type="hidden" id="couponId">
+                    <div class="coupon-form-grid">
+                        <div class="form-group">
+                            <label>Código do Cupom</label>
+                            <input type="text" id="couponCode" placeholder="Ex: VERAO20" required style="text-transform:uppercase;">
+                        </div>
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <input type="text" id="couponDesc" placeholder="Ex: Desconto de verão">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Desconto</label>
+                            <select id="couponType" required>
+                                <option value="percent">Porcentagem (%)</option>
+                                <option value="fixed">Valor Fixo (R$)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor do Desconto</label>
+                            <div class="input-prefix">
+                                <span id="couponValuePrefix">%</span>
+                                <input type="number" id="couponValue" step="0.01" min="0.01" required placeholder="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Compra Mínima (R$)</label>
+                            <div class="input-prefix">
+                                <span>R$</span>
+                                <input type="number" id="couponMinPurchase" step="0.01" min="0" placeholder="0,00">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Validade</label>
+                            <input type="date" id="couponExpiry">
+                        </div>
+                        <div class="form-group">
+                            <label>Uso Máximo</label>
+                            <input type="number" id="couponMaxUses" min="0" placeholder="0 = ilimitado">
+                        </div>
+                        <div class="form-group coupon-toggle-group">
+                            <label>Ativo</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="couponActive" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="coupon-form-actions">
+                        <button type="button" class="btn-secondary-sm" id="btnCancelCoupon"><i class="fas fa-xmark"></i> Cancelar</button>
+                        <button type="submit" class="btn-primary-sm"><i class="fas fa-check"></i> <span id="couponSubmitLabel">Salvar</span></button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">#</th>
+                            <th>Código</th>
+                            <th>Descrição</th>
+                            <th>Desconto</th>
+                            <th>Compra Mín.</th>
+                            <th>Validade</th>
+                            <th>Usos</th>
+                            <th>Status</th>
+                            <th style="width:120px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="couponTableBody">
+                    </tbody>
+                </table>
+                <div class="table-empty" id="couponListEmpty" style="display:none;">
+                    <i class="fas fa-ticket"></i>
+                    <p>Nenhum cupom cadastrado</p>
+                    <span>Crie um cupom clicando no botão acima</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clientes Page (hidden by default) -->
+        <div class="page-content hidden" id="clientesPage">
+            <div class="page-header-row">
+                <h2>Clientes</h2>
+                <div class="page-actions">
+                    <input type="text" class="search-input" id="clientSearch" placeholder="Buscar por nome..." style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:0.85rem;width:220px;">
+                    <select class="filter-select" id="clientFilter">
+                        <option value="all">Todos</option>
+                        <option value="vip">VIP</option>
+                        <option value="ativo">Ativos</option>
+                        <option value="novo">Novos</option>
+                        <option value="inativo">Inativos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Telefone</th>
+                            <th>Última Compra</th>
+                            <th>Total Comprado</th>
+                            <th>Orçamentos</th>
+                            <th>Classificação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientTableBody">
+                    </tbody>
+                </table>
+                <div class="table-empty" id="clientListEmpty" style="display:none;">
+                    <i class="fas fa-users"></i>
+                    <p>Nenhum cliente registrado</p>
+                    <span>Clientes aparecem aqui quando enviam orçamentos</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configurações Page (hidden by default) -->
+        <div class="page-content hidden" id="configPage">
+            <div class="page-header-row">
+                <h2>Configurações</h2>
+            </div>
+
+            <!-- Dados da Loja -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <div class="settings-section-icon"><i class="fas fa-store"></i></div>
+                    <div>
+                        <h3>Dados da Loja</h3>
+                        <p>Informações gerais, horários e contato.</p>
+                    </div>
+                    <button class="btn-primary-sm" id="btnSaveStore"><i class="fas fa-check"></i> Salvar</button>
+                </div>
+                <div class="settings-form-grid">
+                    <div class="form-group">
+                        <label>Nome da Loja</label>
+                        <input type="text" id="cfgStoreName" placeholder="Ex: Cabral Ferramentas">
+                    </div>
+                    <div class="form-group">
+                        <label>Endereço</label>
+                        <input type="text" id="cfgStoreAddress" placeholder="Rua, número - Bairro - Cidade/UF">
+                    </div>
+                    <div class="form-group">
+                        <label>CNPJ</label>
+                        <input type="text" id="cfgStoreCNPJ" placeholder="00.000.000/0001-00">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefone</label>
+                        <input type="text" id="cfgStorePhone" placeholder="(00) 0000-0000">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="cfgStoreEmail" placeholder="contato@loja.com.br">
+                    </div>
+                    <div class="form-group">
+                        <label>Instagram</label>
+                        <div class="input-prefix"><span>@</span><input type="text" id="cfgStoreInstagram" placeholder="cabralferramentas"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Usuário Admin</label>
+                        <input type="text" id="cfgStoreUser" placeholder="Nome de usuário">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha Admin</label>
+                        <input type="password" id="cfgStorePass" placeholder="••••••••">
+                    </div>
+                </div>
+                <div class="settings-hours">
+                    <h4><i class="fas fa-clock"></i> Horários de Funcionamento</h4>
+                    <div class="hours-grid">
+                        <div class="hours-row">
+                            <span class="hours-day">Segunda</span>
+                            <input type="time" id="cfgHoraSegIni" value="08:00">
+                            <span class="hours-sep">até</span>
+                            <input type="time" id="cfgHoraSegFim" value="18:00">
+                            <label class="toggle-switch small"><input type="checkbox" checked data-day="seg"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="hours-row">
+                            <span class="hours-day">Terça</span>
+                            <input type="time" id="cfgHoraTerIni" value="08:00">
+                            <span class="hours-sep">até</span>
+                            <input type="time" id="cfgHoraTerFim" value="18:00">
+                            <label class="toggle-switch small"><input type="checkbox" checked data-day="ter"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="hours-row">
+                            <span class="hours-day">Quarta</span>
+                            <input type="time" id="cfgHoraQuaIni" value="08:00">
+                            <span class="hours-sep">até</span>
+                            <input type="time" id="cfgHoraQuaFim" value="18:00">
+                            <label class="toggle-switch small"><input type="checkbox" checked data-day="qua"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="hours-row">
+                            <span class="hours-day">Quinta</span>
+                            <input type="time" id="cfgHoraQuiIni" value="08:00">
+                            <span class="hours-sep">até</span>
+                            <input type="time" id="cfgHoraQuiFim" value="18:00">
+                            <label class="toggle-switch small"><input type="checkbox" checked data-day="qui"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="hours-row">
+                            <span class="hours-day">Sexta</span>
+                            <input type="time" id="cfgHoraSexIni" value="08:00">
+                            <span class="hours-sep">até</span>
+                            <input type="time" id="cfgHoraSexFim" value="18:00">
+                            <label class="toggle-switch small"><input type="checkbox" checked data-day="sex"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="hours-row">
+                            <span class="hours-day">Sábado</span>
+                            <input type="time" id="cfgHoraSabIni" value="08:00">
+                            <span class="hours-sep">até</span>
+                            <input type="time" id="cfgHoraSabFim" value="13:00">
+                            <label class="toggle-switch small"><input type="checkbox" checked data-day="sab"><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="hours-row">
+                            <span class="hours-day">Domingo</span>
+                            <input type="time" id="cfgHoraDomIni" disabled>
+                            <span class="hours-sep">até</span>
+                            <input type="time" id="cfgHoraDomFim" disabled>
+                            <label class="toggle-switch small"><input type="checkbox" data-day="dom"><span class="toggle-slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WhatsApp -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <div class="settings-section-icon whatsapp"><i class="fab fa-whatsapp"></i></div>
+                    <div>
+                        <h3>WhatsApp</h3>
+                        <p>Número para recebimento de orçamentos.</p>
+                    </div>
+                    <button class="btn-primary-sm" id="btnSaveWhatsApp"><i class="fas fa-check"></i> Salvar</button>
+                </div>
+                <div class="settings-form-grid cols-2">
+                    <div class="form-group">
+                        <label>Código do País</label>
+                        <input type="text" id="cfgWppCode" value="55" placeholder="55">
+                    </div>
+                    <div class="form-group">
+                        <label>Número com DDD</label>
+                        <div class="input-prefix"><span>+55</span><input type="text" id="cfgWppNumber" placeholder="00000000000"></div>
+                    </div>
+                </div>
+                <div class="whatsapp-preview" id="whatsappPreview">
+                    <span>Link gerado:</span>
+                    <code id="whatsappLinkPreview">https://wa.me/5500000000000</code>
+                </div>
+            </div>
+
+            <!-- Assistente IA -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <div class="settings-section-icon ia"><i class="fas fa-robot"></i></div>
+                    <div>
+                        <h3>Assistente de IA</h3>
+                        <p>Configure as respostas e aparência do chatbot.</p>
+                    </div>
+                    <button class="btn-primary-sm" id="btnSaveAI"><i class="fas fa-check"></i> Salvar</button>
+                </div>
+
+                <div class="ai-settings-tabs">
+                    <button class="ai-tab active" data-tab="ai-bot"><i class="fas fa-comment-dots"></i> Respostas do Bot</button>
+                    <button class="ai-tab" data-tab="ai-theme"><i class="fas fa-palette"></i> Aparência</button>
+                </div>
+
+                <!-- Bot Responses Tab -->
+                <div class="ai-tab-panel" id="ai-bot">
+                    <div class="ai-response-grid">
+                        <div class="ai-response-card">
+                            <label>Mensagem de Boas-Vindas</label>
+                            <textarea id="cfgAIGreeting" rows="3" placeholder="Olá! Sou o assistente virtual da..."></textarea>
+                            <span class="ai-response-hint">Primeira mensagem que o cliente vê ao abrir o chat.</span>
+                        </div>
+                        <div class="ai-response-card">
+                            <label>Mensagem de Ajuda Rápida</label>
+                            <textarea id="cfgAIQuickHelp" rows="3" placeholder="Posso te ajudar com..."></textarea>
+                            <span class="ai-response-hint">Texto exibido abaixo da saudação com opções.</span>
+                        </div>
+                        <div class="ai-response-card">
+                            <label>Resposta Padrão (Sem Matching)</label>
+                            <textarea id="cfgAIDefault" rows="3" placeholder="Obrigado pela sua pergunta! Vou te conectar..."></textarea>
+                            <span class="ai-response-hint">Quando a IA não identifica a categoria do produto.</span>
+                        </div>
+                        <div class="ai-response-card">
+                            <label>Mensagem de Despedida</label>
+                            <textarea id="cfgAIBye" rows="2" placeholder="Obrigado por visitar a Cabral Ferramentas!"></textarea>
+                            <span class="ai-response-hint">Mensagem exibida ao fechar o chat.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Theme Tab -->
+                <div class="ai-tab-panel hidden" id="ai-theme">
+                    <div class="theme-customize-grid">
+                        <div class="theme-color-card">
+                            <h4><i class="fas fa-font"></i> Cores do Chat</h4>
+                            <div class="theme-color-row">
+                                <label>Cor de Fundo do Chat</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="cfgChatBg" value="#1a1a2e">
+                                    <input type="text" id="cfgChatBgHex" value="#1a1a2e" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="theme-color-row">
+                                <label>Fundo das Mensagens da IA</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="cfgMsgAIBg" value="#16213e">
+                                    <input type="text" id="cfgMsgAIBgHex" value="#16213e" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="theme-color-row">
+                                <label>Fundo das Mensagens do Usuário</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="cfgMsgUserBg" value="#0f3460">
+                                    <input type="text" id="cfgMsgUserBgHex" value="#0f3460" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="theme-color-row">
+                                <label>Cor da Fonte (Mensagens)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="cfgChatFontColor" value="#e0e0e0">
+                                    <input type="text" id="cfgChatFontColorHex" value="#e0e0e0" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="theme-color-row">
+                                <label>Cor de Destaque (Links/Botões)</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="cfgChatAccent" value="#00d4ff">
+                                    <input type="text" id="cfgChatAccentHex" value="#00d4ff" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="theme-color-row">
+                                <label>Cor do Header do Chat</label>
+                                <div class="color-input-group">
+                                    <input type="color" id="cfgChatHeader" value="#0f3460">
+                                    <input type="text" id="cfgChatHeaderHex" value="#0f3460" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="theme-color-card">
+                            <h4><i class="fas fa-eye"></i> Pré-visualização</h4>
+                            <div class="theme-preview">
+                                <div class="theme-preview-header" id="previewHeader">
+                                    <i class="fas fa-tools"></i> Assistente IA
+                                </div>
+                                <div class="theme-preview-body" id="previewBody">
+                                    <div class="theme-preview-msg ai" id="previewAI">
+                                        <div class="theme-preview-avatar"><i class="fas fa-tools"></i></div>
+                                        <div class="theme-preview-text">Olá! Como posso te ajudar?</div>
+                                    </div>
+                                    <div class="theme-preview-msg user" id="previewUser">
+                                        <div class="theme-preview-text">Preciso de uma furadeira</div>
+                                        <div class="theme-preview-avatar"><i class="fas fa-user"></i></div>
+                                    </div>
+                                </div>
+                                <div class="theme-preview-input" id="previewInput">
+                                    <span>Digite sua mensagem...</span>
+                                    <span class="theme-preview-send" id="previewSend"><i class="fas fa-paper-plane"></i></span>
+                                </div>
+                            </div>
+                            <button class="btn-secondary-sm" id="btnResetTheme" style="margin-top:12px;width:100%;"><i class="fas fa-rotate-left"></i> Restaurar Padrão</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aparência do Site -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <div class="settings-section-icon palette"><i class="fas fa-palette"></i></div>
+                    <div>
+                        <h3>Aparência do Site</h3>
+                        <p>Cores gerais da landing page.</p>
+                    </div>
+                    <button class="btn-primary-sm" id="btnSaveSiteTheme"><i class="fas fa-check"></i> Salvar</button>
+                </div>
+                <div class="theme-color-grid-inline">
+                    <div class="theme-color-row">
+                        <label>Cor Principal (Accent)</label>
+                        <div class="color-input-group">
+                            <input type="color" id="cfgSiteAccent" value="#00d4ff">
+                            <input type="text" id="cfgSiteAccentHex" value="#00d4ff" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-color-row">
+                        <label>Cor de Fundo</label>
+                        <div class="color-input-group">
+                            <input type="color" id="cfgSiteBg" value="#0a0a0a">
+                            <input type="text" id="cfgSiteBgHex" value="#0a0a0a" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="theme-color-row">
+                        <label>Cor do Texto</label>
+                        <div class="color-input-group">
+                            <input type="color" id="cfgSiteFontColor" value="#ffffff">
+                            <input type="text" id="cfgSiteFontColorHex" value="#ffffff" maxlength="7">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Client Quotes Modal -->
+    <div id="clientQuotesModal" class="modal">
+        <div class="modal-overlay" onclick="closeModal('clientQuotesModal')"></div>
+        <div class="modal-content" style="max-width:620px;">
+            <div class="modal-header">
+                <h3 id="clientQuotesTitle">Cliente — Orçamentos</h3>
+                <button class="modal-close" onclick="closeModal('clientQuotesModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="clientQuotesBody" style="max-height:65vh;overflow-y:auto;"></div>
+        </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- SheetJS for XLSX generation -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/dashboard.js?v=29"></script>
+</body>
+</html>

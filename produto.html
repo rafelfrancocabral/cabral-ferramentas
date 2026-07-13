@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produto — Cabral Ferramentas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Montserrat:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css?v=5">
+    <style>
+        .product-page { padding-top: 90px; min-height: 100vh; }
+
+        .product-page-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: start;
+        }
+
+        .pp-gallery { position: sticky; top: 90px; }
+
+        .pp-main-img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: contain;
+            border-radius: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            cursor: zoom-in;
+            transition: transform 0.3s;
+        }
+
+        .pp-main-img:hover { transform: scale(1.01); }
+
+        .pp-thumbs {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .pp-thumb {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-secondary);
+        }
+
+        .pp-thumb.active, .pp-thumb:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(0,212,255,0.25);
+        }
+
+        .pp-video-wrap {
+            margin-top: 16px;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+        }
+
+        .pp-video-wrap iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .pp-info { padding-top: 8px; }
+
+        .pp-category {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            background: rgba(0,212,255,0.1);
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+
+        .pp-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .pp-brand {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .pp-code {
+            font-size: 0.82rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .pp-desc {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pp-pricing {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .pp-price-old {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .pp-price {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .pp-price.no-promo { color: var(--text-primary); }
+
+        .pp-qty-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .pp-qty-row label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .pp-qty-control {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .pp-qty-btn {
+            width: 42px;
+            height: 42px;
+            background: var(--bg-secondary);
+            border: none;
+            color: var(--text-primary);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .pp-qty-btn:hover { background: var(--accent); color: #000; }
+
+        .pp-qty-input {
+            width: 60px;
+            height: 42px;
+            text-align: center;
+            border: none;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .pp-add-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.05rem;
+            border-radius: 12px;
+            border: none;
+            background: var(--gradient-accent);
+            color: #000;
+            font-weight: 700;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pp-add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,212,255,0.3);
+        }
+
+        .pp-add-btn.added {
+            background: #2ed573;
+            pointer-events: none;
+        }
+
+        .pp-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+
+        .pp-back:hover { color: var(--accent); }
+
+        /* Related Section */
+        .pp-related {
+            max-width: 1200px;
+            margin: 48px auto 0;
+            padding: 0 24px 60px;
+        }
+
+        .pp-related h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pp-related h2 i { color: var(--accent); }
+
+        .pp-related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .pp-related-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+
+        .pp-related-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,212,255,0.1);
+        }
+
+        .pp-related-card img {
+            width: 100%;
+            height: 140px;
+            object-fit: contain;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            background: var(--bg-primary);
+        }
+
+        .pp-related-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .pp-related-price {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .pp-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            gap: 16px;
+            color: var(--text-muted);
+        }
+
+        .pp-loading i {
+            font-size: 2.5rem;
+            color: var(--accent);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .pp-not-found {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            gap: 16px;
+            color: var(--text-muted);
+        }
+
+        .pp-not-found i { font-size: 3rem; opacity: 0.3; }
+
+        @media (max-width: 768px) {
+            .product-page-inner {
+                grid-template-columns: 1fr;
+                gap: 24px;
+                padding: 16px;
+            }
+
+            .pp-gallery { position: static; }
+
+            .pp-title { font-size: 1.3rem; }
+
+            .pp-price { font-size: 1.6rem; }
+
+            .pp-related-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .pp-related-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .pp-related-card { padding: 10px; }
+            .pp-related-card img { height: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    <div class="grid-overlay"></div>
+
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="logo-icon" style="padding:0;overflow:hidden;"><img src="img/logo-cabral.png" alt="Cabral Ferramentas" style="width:100%;height:100%;object-fit:cover;"></div>
+                <span class="logo-text">CABRAL <span class="accent">FERRAMENTAS</span></span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html#home">Início</a>
+                <a href="index.html#sobre">Sobre</a>
+                <a href="index.html#marcas">Marcas</a>
+                <a href="index.html#produtos">Produtos</a>
+                <a href="index.html#ai-assistant">Assistente IA</a>
+                <a href="index.html#contato">Contato</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" title="Modo Dia / Noite">
+                    <i class="fas fa-sun"></i>
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="nav-cart-btn" id="navCartBtn" title="Carrinho">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-badge" id="cartBadge">0</span>
+                </button>
+                <a href="https://wa.me/5512997144504" target="_blank" class="btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </a>
+                <a href="login.html" class="btn-login-nav" title="Área do Lojista">
+                    <i class="fas fa-lock"></i>
+                </a>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="product-page">
+        <div id="ppContent">
+            <div class="pp-loading">
+                <i class="fas fa-spinner"></i>
+                <span>Carregando produto...</span>
+            </div>
+        </div>
+    </main>
+
+    <a href="https://wa.me/5512997144504" target="_blank" class="whatsapp-float" title="Fale conosco no WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/produto.js"></script>
+</body>
+</html>

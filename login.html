@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Cabral Ferramentas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #0d0d14;
+            --bg-card: #111118;
+            --accent: #00d4ff;
+            --accent-dark: #0099cc;
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888aa;
+            --text-muted: #555570;
+            --border: #1a1a2e;
+            --border-light: #252540;
+            --gradient-accent: linear-gradient(135deg, #00d4ff, #0066cc);
+            --radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.light-mode {
+            --bg-primary: #f4f5f7;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --accent: #0099cc;
+            --accent-dark: #0077aa;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555570;
+            --text-muted: #8888aa;
+            --border: #d8d8e0;
+            --border-light: #e8e8ef;
+            --gradient-accent: linear-gradient(135deg, #00b4d8, #0077aa);
+        }
+
+        body.light-mode .login-particles { opacity: 0.03; }
+        body.light-mode .login-grid-overlay { opacity: 0.02; }
+
+        .login-theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .login-theme-toggle:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        body.light-mode .login-theme-toggle {
+            background: var(--bg-card);
+            border-color: var(--border);
+        }
+
+        body.light-mode .login-theme-toggle i.fa-moon { display: inline; }
+        body.light-mode .login-theme-toggle i.fa-sun { display: none; }
+        .login-theme-toggle i.fa-sun { display: inline; }
+        .login-theme-toggle i.fa-moon { display: none; }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Particles */
+        .login-particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .login-particle {
+            position: absolute;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        /* Grid overlay */
+        .login-grid-overlay {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Card */
+        .login-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            padding: 0 20px;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px 32px 36px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-accent);
+        }
+
+        .login-logo {
+            width: 64px;
+            height: 64px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+
+        .login-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+
+        .login-title .accent { color: var(--accent); }
+
+        .login-subtitle {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+        }
+
+        .login-field {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .login-field label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .login-field .input-wrapper {
+            position: relative;
+        }
+
+        .login-field .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .login-field input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .login-field input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .login-field input:focus + i,
+        .login-field input:focus ~ i {
+            color: var(--accent);
+        }
+
+        .login-field input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 13px;
+            background: var(--gradient-accent);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-error {
+            display: none;
+            padding: 10px 14px;
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.2);
+            border-radius: 8px;
+            color: #ff4757;
+            font-size: 0.82rem;
+            margin-bottom: 16px;
+            text-align: left;
+            animation: shake 0.4s ease-out;
+        }
+
+        .login-error i {
+            margin-right: 6px;
+        }
+
+        .login-lockout {
+            display: none;
+            padding: 10px 14px;
+            background: rgba(255, 165, 2, 0.1);
+            border: 1px solid rgba(255, 165, 2, 0.2);
+            border-radius: 8px;
+            color: #ffa502;
+            font-size: 0.82rem;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .login-lockout i {
+            margin-right: 6px;
+        }
+
+        .login-captcha {
+            margin-bottom: 8px;
+        }
+
+        .login-captcha label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: block;
+            font-weight: 500;
+        }
+
+        .login-captcha label span {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        .login-back {
+            display: block;
+            margin-top: 20px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            transition: var(--transition);
+        }
+
+        .login-back:hover {
+            color: var(--accent);
+        }
+
+        /* Loading spinner */
+        .login-btn.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .login-btn .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        .login-btn.loading .spinner { display: block; }
+        .login-btn.loading .btn-text { display: none; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-particles" id="particles"></div>
+    <div class="login-grid-overlay"></div>
+
+    <button class="login-theme-toggle" id="themeToggle" title="Modo Dia / Noite">
+        <i class="fas fa-sun"></i>
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <img src="img/logo-cabral.png" alt="Cabral Ferramentas" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">
+            </div>
+            <h1 class="login-title">CABRAL <span class="accent">FERRAMENTAS</span></h1>
+            <p class="login-subtitle">Painel do Lojista</p>
+
+            <div class="login-error" id="loginError">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="loginErrorText">Usuário ou senha inválidos</span>
+            </div>
+
+            <div class="login-lockout" id="loginLockout" style="display:none;">
+                <i class="fas fa-clock"></i>
+                <span id="lockoutText">Muitas tentativas. Aguarde 30 segundos.</span>
+            </div>
+
+            <form id="loginForm" autocomplete="off">
+                <div class="login-field">
+                    <label>Usuário</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="loginUser" placeholder="Digite seu usuário" required autocomplete="username">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+                <div class="login-field">
+                    <label>Senha</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="loginPass" placeholder="Digite sua senha" required autocomplete="current-password">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                </div>
+                <div class="login-captcha" id="loginCaptcha">
+                    <label>Quanto é <span id="captchaA"></span> + <span id="captchaB"></span>?</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="captchaInput" placeholder="Resultado" required inputmode="numeric">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                </div>
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span class="btn-text"><i class="fas fa-right-to-bracket"></i> Entrar</span>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+
+            <a href="index.html" class="login-back"><i class="fas fa-arrow-left"></i> Voltar ao site</a>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle
+        (function() {
+            const saved = localStorage.getItem('cabral_site_theme');
+            if (saved === 'light') document.body.classList.add('light-mode');
+
+            document.getElementById('themeToggle').addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                localStorage.setItem('cabral_site_theme', isLight ? 'light' : 'dark');
+            });
+        })();
+
+        // Particles
+        (function() {
+            const container = document.getElementById('particles');
+            const count = window.innerWidth < 768 ? 15 : 30;
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'login-particle';
+                p.style.left = Math.random() * 100 + '%';
+                const size = Math.random() * 3 + 1;
+                p.style.width = p.style.height = size + 'px';
+                p.style.animationDuration = (Math.random() * 12 + 8) + 's';
+                p.style.animationDelay = (Math.random() * 12) + 's';
+                p.style.opacity = Math.random() * 0.4 + 0.1;
+                container.appendChild(p);
+            }
+        })();
+
+        // Auth
+        const AUTH_KEY = 'cabral_auth';
+        const USERS = [
+            { user: 'admin@admin', pass: 'admincabral123' },
+            { user: 'cabraladmin', pass: 'cabral@sabauna66' }
+        ];
+
+        function checkCredentials(user, pass) {
+            return USERS.some(u => u.user === user && u.pass === pass);
+        }
+
+        // CAPTCHA
+        let captchaA, captchaB, captchaResult;
+        function generateCaptcha() {
+            captchaA = Math.floor(Math.random() * 20) + 1;
+            captchaB = Math.floor(Math.random() * 20) + 1;
+            captchaResult = captchaA + captchaB;
+            document.getElementById('captchaA').textContent = captchaA;
+            document.getElementById('captchaB').textContent = captchaB;
+            document.getElementById('captchaInput').value = '';
+        }
+        generateCaptcha();
+
+        // Lockout
+        let failedAttempts = 0;
+        let lockoutUntil = 0;
+
+        function isLockedOut() {
+            return Date.now() < lockoutUntil;
+        }
+
+        function getRemainingLockout() {
+            return Math.ceil((lockoutUntil - Date.now()) / 1000);
+        }
+
+        function activateLockout() {
+            lockoutUntil = Date.now() + 30000;
+            document.getElementById('loginLockout').style.display = '';
+            document.getElementById('loginBtn').disabled = true;
+            document.getElementById('loginBtn').style.opacity = '0.5';
+            document.getElementById('loginBtn').style.pointerEvents = 'none';
+            startLockoutTimer();
+        }
+
+        function startLockoutTimer() {
+            const timer = setInterval(() => {
+                const remaining = getRemainingLockout();
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('loginLockout').style.display = 'none';
+                    document.getElementById('loginBtn').disabled = false;
+                    document.getElementById('loginBtn').style.opacity = '';
+                    document.getElementById('loginBtn').style.pointerEvents = '';
+                    failedAttempts = 0;
+                    generateCaptcha();
+                } else {
+                    document.getElementById('lockoutText').textContent = 'Muitas tentativas. Aguarde ' + remaining + ' segundos.';
+                }
+            }, 1000);
+        }
+
+        const form = document.getElementById('loginForm');
+        const errorEl = document.getElementById('loginError');
+        const errorText = document.getElementById('loginErrorText');
+        const btn = document.getElementById('loginBtn');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            if (isLockedOut()) {
+                errorText.textContent = 'Muitas tentativas. Aguarde ' + getRemainingLockout() + ' segundos.';
+                errorEl.style.display = '';
+                return;
+            }
+
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            const captchaVal = parseInt(document.getElementById('captchaInput').value);
+
+            btn.classList.add('loading');
+            errorEl.style.display = 'none';
+
+            setTimeout(() => {
+                if (captchaVal !== captchaResult) {
+                    btn.classList.remove('loading');
+                    errorText.textContent = 'Resultado do captcha incorreto.';
+                    errorEl.style.display = '';
+                    generateCaptcha();
+                    failedAttempts++;
+                    if (failedAttempts >= 3) activateLockout();
+                    return;
+                }
+
+                if (checkCredentials(user, pass)) {
+                    localStorage.setItem(AUTH_KEY, 'true');
+                    localStorage.setItem('cabral_last_activity', Date.now().toString());
+                    window.location.href = 'dashboard.html';
+                } else {
+                    btn.classList.remove('loading');
+                    errorText.textContent = 'Usuário ou senha inválidos.';
+                    errorEl.style.display = '';
+                    document.getElementById('loginPass').value = '';
+                    document.getElementById('loginPass').focus();
+                    generateCaptcha();
+                    failedAttempts++;
+                    if (failedAttempts >= 3) activateLockout();
+                }
+            }, 800);
+        });
+
+        // Eye toggle
+        const passInput = document.getElementById('loginPass');
+        const lockIcon = passInput.parentElement.querySelector('i');
+        lockIcon.style.cursor = 'pointer';
+        lockIcon.addEventListener('click', () => {
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                lockIcon.className = 'fas fa-eye';
+            } else {
+                passInput.type = 'password';
+                lockIcon.className = 'fas fa-lock';
+            }
+        });
+    </script>
+</body>
+</html>
