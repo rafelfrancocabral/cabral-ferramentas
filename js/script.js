@@ -105,6 +105,38 @@ const aiInput = document.getElementById('aiInput');
 const aiSendBtn = document.getElementById('aiSendBtn');
 const aiMessages = document.getElementById('aiMessages');
 
+const AI_SYSTEM_PROMPT = `Função principal:
+Você é o assistente de IA do catálogo online da Cabral Ferramentas. Sua função é interpretar a intenção de compra do cliente e sugerir produtos adequados usando nome, descrição, marca e palavras-chave como mecanismo de busca.
+
+Como interpretar pedidos:
+- Sempre transforme a pergunta do cliente em uma busca interna.
+- Analise: nome do produto, descrição, marca, palavras-chave, contexto de uso (pintura, construção, elétrica, jardinagem, etc.)
+- Priorize entender o que o cliente quer fazer, não apenas o item que mencionou.
+
+Regras de resposta:
+- Você não deve inventar produtos.
+- Você não deve sugerir itens fora do catálogo.
+- Você não deve responder automaticamente com produtos.
+- Você só retorna produtos quando o cliente clicar em "Enviar".
+- Antes disso, você confirma a busca e pergunta se o cliente quer prosseguir ou refinar.
+
+Produtos relacionados (lógica avançada):
+Sempre que um produto for aberto, você deve sugerir itens complementares, não apenas similares.
+A relação deve ser baseada em: uso prático, categoria, função, itens frequentemente comprados juntos.`;
+
+const RELATED_PRODUCTS_MAP = {
+    'tinta': ['pincel', 'rolo', 'bandeja', 'fita', 'lixa'],
+    'furadeira': ['broca', 'oculos', 'bucha', 'parafuso', 'extensao'],
+    'chave de fenda': ['jogo de chaves', 'alicate', 'maleta'],
+    'martelo': ['cravo', 'prego', 'chave de fenda'],
+    'serra': ['lamina', 'oculos', 'luva', 'régua'],
+    'alicate': ['chave de fenda', 'jogo de chaves', 'fita isolante'],
+    'lixadeira': ['lixa', 'oculos', 'mascara', 'luva'],
+    'soldador': ['eletrodo', 'mascara', 'luva', 'massa'],
+    'nivel': ['trena', 'prumo', 'régua'],
+    'compressora': ['pistola', 'mangueira', 'acessorios']
+};
+
 let aiState = 'idle';
 let aiSearchTerms = [];
 
@@ -286,14 +318,14 @@ function handleAiInput() {
 
         // Greeting only — welcome
         if (hasGreet) {
-            addAiMsg('Olá! Seja bem-vindo à <strong>Cabral Ferramentas</strong>. 😊<br><br>Como posso te ajudar hoje? Descreva o que precisa que eu encontro no nosso catálogo.');
+            addAiMsg('Olá! Seja bem-vindo à <strong>Cabral Ferramentas</strong>. 😊<br><br>Sou o assistente virtual do nosso catálogo. Posso te ajudar a encontrar ferramentas, materiais e produtos para sua obra ou projeto.<br><br>Descreva o que precisa que eu busco no nosso catálogo.');
             return;
         }
 
         // No keywords — ask what they need
         aiState = 'gathering';
         aiSearchTerms = [...detected.keywords];
-        addAiMsg('Para te ajudar melhor, pode me dizer <strong>qual produto</strong> precisa? Pode ser o nome, o uso ou até uma descrição do que procura.');
+        addAiMsg('Para te ajudar melhor, pode me dizer <strong>qual produto</strong> precisa? Pode ser o nome, o uso ou até uma descrição do que procura.<br><br><em>Exemplo: "furadeira Bosch", "tinta para parede", "kit de chaves"</em>');
     }, 900);
 }
 

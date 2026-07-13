@@ -89,15 +89,48 @@
         window._ppPrice = price;
         window._ppImages = images;
 
-        loadRelated(product.categoria, product.id);
+        loadRelated(product.categoria, product.id, product.nome);
     }
 
-    async function loadRelated(category, currentId) {
+    const RELATED_PRODUCTS_MAP = {
+        'tinta': ['pincel', 'rolo', 'bandeja', 'fita', 'lixa'],
+        'furadeira': ['broca', 'oculos', 'bucha', 'parafuso', 'extensao'],
+        'chave de fenda': ['jogo de chaves', 'alicate', 'maleta'],
+        'martelo': ['cravo', 'prego', 'chave de fenda'],
+        'serra': ['lamina', 'oculos', 'luva', 'régua'],
+        'alicate': ['chave de fenda', 'jogo de chaves', 'fita isolante'],
+        'lixadeira': ['lixa', 'oculos', 'mascara', 'luva'],
+        'soldador': ['eletrodo', 'mascara', 'luva', 'massa'],
+        'nivel': ['trena', 'prumo', 'régua'],
+        'compressora': ['pistola', 'mangueira', 'acessorios']
+    };
+
+    async function loadRelated(category, currentId, productName) {
         if (!category) return;
-        const { data } = await db.from('produtos').select('*').eq('visivel', true).eq('categoria', category);
+        const catNorm = normalize(category);
+        const { data } = await db.from('produtos').select('*').eq('visivel', true);
         if (!data || data.length <= 1) return;
 
-        const related = data.filter(p => p.id !== currentId && (p.estoque || 0) > 0).slice(0, 6);
+        let related = data.filter(p => p.id !== currentId && (p.estoque || 0) > 0);
+
+        const complementTerms = [];
+        for (const [key, comps] of Object.entries(RELATED_PRODUCTS_MAP)) {
+            if (normalize(category).includes(normalize(key)) || (productName && normalize(productName).includes(normalize(key)))) {
+                complementTerms.push(...comps);
+            }
+        }
+
+        if (complementTerms.length > 0) {
+            const complements = related.filter(p => {
+                const searchStr = normalize(`${p.nome || ''} ${p.descricao || ''} ${p.categoria || ''} ${(p.palavraschave || p.palavrasChave || []).join(' ')}`);
+                return complementTerms.some(term => searchStr.includes(normalize(term)));
+            });
+            const sameCategory = related.filter(p => normalize(p.categoria || '') === catNorm && !complements.includes(p));
+            related = [...complements.slice(0, 4), ...sameCategory].slice(0, 6);
+        } else {
+            related = related.filter(p => normalize(p.categoria || '') === catNorm).slice(0, 6);
+        }
+
         if (related.length === 0) return;
 
         const section = document.getElementById('ppRelated');
