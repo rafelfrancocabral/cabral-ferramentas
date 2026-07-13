@@ -831,6 +831,10 @@ if (cartCloseBtn) cartCloseBtn.addEventListener('click', closeCart);
 if (cartOverlay) cartOverlay.addEventListener('click', closeCart);
 
 // WhatsApp checkout
+let checkoutSubtotal = 0;
+let checkoutDiscount = 0;
+let checkoutCouponCode = '';
+
 const cartCheckout = document.getElementById('cartCheckout');
 if (cartCheckout) {
     cartCheckout.addEventListener('click', () => {
@@ -840,8 +844,9 @@ if (cartCheckout) {
         closeCart();
 
         const checkoutItems = document.getElementById('checkoutItems');
-        const checkoutTotal = document.getElementById('checkoutTotal');
-        let total = 0;
+        checkoutSubtotal = 0;
+        checkoutDiscount = 0;
+        checkoutCouponCode = '';
 
         checkoutItems.innerHTML = `
             <div class="checkout-items-header">
@@ -853,7 +858,7 @@ if (cartCheckout) {
             </div>
             ${cart.map((item, i) => {
                 const subtotal = item.preco * item.qty;
-                total += subtotal;
+                checkoutSubtotal += subtotal;
                 return `
                 <div class="checkout-item">
                     <span class="checkout-item-num">${i + 1}</span>
@@ -865,7 +870,11 @@ if (cartCheckout) {
             }).join('')}
         `;
 
-        checkoutTotal.textContent = formatPrice(total);
+        document.getElementById('checkoutSubtotal').textContent = formatPrice(checkoutSubtotal);
+        document.getElementById('checkoutTotal').textContent = formatPrice(checkoutSubtotal);
+        document.getElementById('checkoutTotalRow').style.display = 'none';
+        document.getElementById('checkoutCouponMsg').textContent = '';
+        document.getElementById('checkoutCoupon').value = '';
 
         const checkoutOverlay = document.getElementById('checkoutOverlay');
         checkoutOverlay.classList.add('active');
@@ -895,6 +904,43 @@ document.getElementById('checkoutPhone')?.addEventListener('input', (e) => {
     e.target.value = v;
 });
 
+document.getElementById('checkoutCouponApply')?.addEventListener('click', () => {
+    const code = document.getElementById('checkoutCoupon').value.trim().toUpperCase();
+    const msgEl = document.getElementById('checkoutCouponMsg');
+    if (!code) { msgEl.textContent = 'Digite o código do cupom'; msgEl.className = 'checkout-coupon-msg error'; return; }
+
+    const coupons = JSON.parse(localStorage.getItem('cabral_coupons') || '[]');
+    const coupon = coupons.find(c => c.code === code && c.active);
+    if (!coupon) { msgEl.textContent = 'Cupom não encontrado ou inativo'; msgEl.className = 'checkout-coupon-msg error'; return; }
+
+    if (coupon.expiry) {
+        const expDate = new Date(coupon.expiry);
+        if (new Date() > expDate) { msgEl.textContent = 'Este cupom expirou'; msgEl.className = 'checkout-coupon-msg error'; return; }
+    }
+
+    if (coupon.maxUses > 0 && coupon.currentUses >= coupon.maxUses) {
+        msgEl.textContent = 'Este cupom atingiu o limite de uso'; msgEl.className = 'checkout-coupon-msg error'; return;
+    }
+
+    if (coupon.minPurchase > 0 && checkoutSubtotal < coupon.minPurchase) {
+        msgEl.textContent = `Compra mínima: ${formatPrice(coupon.minPurchase)}`; msgEl.className = 'checkout-coupon-msg error'; return;
+    }
+
+    if (coupon.type === 'percent') {
+        checkoutDiscount = checkoutSubtotal * (coupon.value / 100);
+    } else {
+        checkoutDiscount = Math.min(coupon.value, checkoutSubtotal);
+    }
+
+    checkoutCouponCode = code;
+    const finalTotal = checkoutSubtotal - checkoutDiscount;
+
+    document.getElementById('checkoutTotalRow').style.display = '';
+    document.getElementById('checkoutTotal').textContent = formatPrice(finalTotal);
+    msgEl.innerHTML = `<i class="fas fa-check-circle"></i> Cupom "${code}" aplicado! Desconto: -${formatPrice(checkoutDiscount)}`;
+    msgEl.className = 'checkout-coupon-msg success';
+});
+
 document.getElementById('checkoutForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -922,12 +968,19 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
         };
     });
 
+    const finalTotal = total - checkoutDiscount;
+
     let itemsMsg = '';
     cart.forEach((item, i) => {
         const subtotal = item.preco * item.qty;
         const code = item.codigo ? `CÓD ${item.codigo}` : '';
         itemsMsg += `${i + 1}. ${code ? code + ' | ' : ''}${item.nome}\n    Qtd: ${item.qty}x ${formatPrice(item.preco)} = ${formatPrice(subtotal)}\n`;
     });
+
+    let couponMsg = '';
+    if (checkoutDiscount > 0 && checkoutCouponCode) {
+        couponMsg = `*Cupom (${checkoutCouponCode}):* -${formatPrice(checkoutDiscount)}\n`;
+    }
 
     const msg = `*ORÇAMENTO — CABRAL FERRAMENTAS*\n\n` +
         `*Cliente:* ${name}\n` +
@@ -937,7 +990,8 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
         `*Produtos:*\n\n` +
         itemsMsg + `\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `*TOTAL: ${formatPrice(total)}*\n\n` +
+        couponMsg +
+        `*TOTAL: ${formatPrice(finalTotal)}*\n\n` +
         `Favor confirmar disponibilidade e enviar forma de pagamento. Obrigado!`;
 
     const wppNum = '5512997144504';
@@ -949,13 +1003,29 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
             nome_cliente: name,
             telefone: phone,
             itens: itens,
-            total: total,
+            total: finalTotal,
+            cupom: checkoutCouponCode || null,
+            desconto: checkoutDiscount || 0,
             status: 'recebido',
             status_entrega: 'pendente'
         });
+
+        // Update coupon usage count
+        if (checkoutCouponCode && checkoutDiscount > 0) {
+            const coupons = JSON.parse(localStorage.getItem('cabral_coupons') || '[]');
+            const idx = coupons.findIndex(c => c.code === checkoutCouponCode);
+            if (idx !== -1) {
+                coupons[idx].currentUses = (coupons[idx].currentUses || 0) + 1;
+                localStorage.setItem('cabral_coupons', JSON.stringify(coupons));
+            }
+        }
     } catch (err) {
         console.error('Erro ao salvar orçamento:', err);
     }
+
+    checkoutDiscount = 0;
+    checkoutCouponCode = '';
+    checkoutSubtotal = 0;
 
     document.getElementById('checkoutOverlay').classList.remove('active');
     document.body.style.overflow = '';

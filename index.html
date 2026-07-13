@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=10">
+    <link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body>
     <!-- Particles Background -->
@@ -416,7 +416,18 @@
             <div class="checkout-body">
                 <div class="checkout-items" id="checkoutItems"></div>
                 <div class="checkout-total">
-                    <span>Total</span>
+                    <span>Subtotal</span>
+                    <span class="checkout-total-value" id="checkoutSubtotal">R$ 0,00</span>
+                </div>
+                <div class="checkout-coupon">
+                    <div class="checkout-coupon-row">
+                        <input type="text" id="checkoutCoupon" placeholder="Código do cupom" maxlength="20" autocomplete="off">
+                        <button type="button" id="checkoutCouponApply" class="checkout-coupon-btn"><i class="fas fa-tag"></i> Aplicar</button>
+                    </div>
+                    <div class="checkout-coupon-msg" id="checkoutCouponMsg"></div>
+                </div>
+                <div class="checkout-total checkout-total-final" id="checkoutTotalRow" style="display:none;">
+                    <span>Total com desconto</span>
                     <span class="checkout-total-value" id="checkoutTotal">R$ 0,00</span>
                 </div>
                 <form class="checkout-form" id="checkoutForm">
@@ -444,6 +455,6 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/script.js?v=8"></script>
+    <script src="js/script.js?v=9"></script>
 </body>
 </html>
