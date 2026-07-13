@@ -93,16 +93,22 @@
     }
 
     const RELATED_PRODUCTS_MAP = {
-        'tinta': ['pincel', 'rolo', 'bandeja', 'fita', 'lixa'],
+        'tinta': ['pincel', 'rolo', 'bandeja', 'fita crepe', 'lixa', 'seladora', 'massa corrida', 'primer'],
         'furadeira': ['broca', 'oculos', 'bucha', 'parafuso', 'extensao'],
         'chave de fenda': ['jogo de chaves', 'alicate', 'maleta'],
         'martelo': ['cravo', 'prego', 'chave de fenda'],
-        'serra': ['lamina', 'oculos', 'luva', 'régua'],
+        'serra': ['lamina', 'oculos', 'luva', 'regua'],
         'alicate': ['chave de fenda', 'jogo de chaves', 'fita isolante'],
         'lixadeira': ['lixa', 'oculos', 'mascara', 'luva'],
         'soldador': ['eletrodo', 'mascara', 'luva', 'massa'],
-        'nivel': ['trena', 'prumo', 'régua'],
-        'compressora': ['pistola', 'mangueira', 'acessorios']
+        'nivel': ['trena', 'prumo', 'regua'],
+        'compressora': ['pistola', 'mangueira', 'acessorios'],
+        'torneira': ['chave inglesa', 'veda rosca', 'fita teflon', 'chave grifo'],
+        'vazamento': ['chave grifo', 'selante', 'veda rosca', 'conexao', 'tubo'],
+        'pintura': ['pincel', 'rolo', 'bandeja', 'fita crepe', 'lixa'],
+        'jardinagem': ['tesoura', 'enxada', 'regador', 'mangueira', 'aspersor'],
+        'marcenaria': ['serra', 'formao', 'esquadro', 'lixa', 'sargento'],
+        'mecanico': ['chave catraca', 'soquete', 'desengripante', 'jogo de chaves']
     };
 
     async function loadRelated(category, currentId, productName) {
