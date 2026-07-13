@@ -3159,7 +3159,11 @@ body.light-mode .checkout-field input:focus {
     }
 
     .catalog-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .brands-track {
+        animation-duration: 20s;
     }
 }
 
