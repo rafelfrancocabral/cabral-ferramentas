@@ -23,16 +23,33 @@ createParticles();
 // ===========================
 const sidebarToggle = document.getElementById('sidebarToggle');
 const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+function openSidebar() {
+    sidebar.classList.add('active');
+    sidebarOverlay.classList.add('active');
+}
+
+function closeSidebar() {
+    sidebar.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+}
 
 sidebarToggle.addEventListener('click', () => {
-    sidebar.classList.toggle('active');
+    if (sidebar.classList.contains('active')) {
+        closeSidebar();
+    } else {
+        openSidebar();
+    }
 });
+
+sidebarOverlay.addEventListener('click', closeSidebar);
 
 // Close sidebar on click outside (mobile)
 document.addEventListener('click', (e) => {
     if (window.innerWidth <= 768 && sidebar.classList.contains('active')) {
-        if (!sidebar.contains(e.target) && e.target !== sidebarToggle) {
-            sidebar.classList.remove('active');
+        if (!sidebar.contains(e.target) && e.target !== sidebarToggle && !sidebarToggle.contains(e.target)) {
+            closeSidebar();
         }
     }
 });
@@ -145,7 +162,7 @@ sidebarLinks.forEach(link => {
 
         // Close mobile sidebar
         if (window.innerWidth <= 768) {
-            sidebar.classList.remove('active');
+            closeSidebar();
         }
     });
 });

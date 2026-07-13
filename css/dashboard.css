@@ -1637,6 +1637,18 @@ body.light-mode .product-count-badge {
         display: flex;
     }
 
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+
     .main-content {
         margin-left: 0;
     }
@@ -1652,6 +1664,7 @@ body.light-mode .product-count-badge {
     .dashboard-content,
     .page-content {
         padding: 16px;
+        padding-bottom: 70px;
     }
 
     .kpi-row {
@@ -1726,6 +1739,55 @@ body.light-mode .product-count-badge {
         flex: 1;
         padding: 8px 4px;
         font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-content,
+    .page-content {
+        padding: 12px;
+        padding-bottom: 70px;
+    }
+
+    .topbar {
+        padding: 0 12px 0 56px;
+    }
+
+    .page-title {
+        font-size: 1rem;
+    }
+
+    .kpi-card {
+        padding: 12px;
+    }
+
+    .kpi-value {
+        font-size: 1.2rem;
+    }
+
+    .kpi-label {
+        font-size: 0.7rem;
+    }
+
+    .chart-card {
+        padding: 10px;
+    }
+
+    .chart-card h3 {
+        font-size: 0.8rem;
+    }
+
+    .period-filter {
+        padding: 8px 10px;
+    }
+
+    .period-filter .filter-btn {
+        padding: 6px 2px;
+        font-size: 0.65rem;
+    }
+
+    .quote-card {
+        padding: 12px;
     }
 }
 
