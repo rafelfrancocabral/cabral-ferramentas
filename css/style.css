@@ -1557,6 +1557,7 @@ body.light-mode .btn-login-nav:hover {
     position: relative;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .catalog-card:hover {
@@ -2976,6 +2977,7 @@ body.light-mode .checkout-field input:focus {
 
     .catalog-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
 
     .catalog-tabs {
@@ -3160,6 +3162,7 @@ body.light-mode .checkout-field input:focus {
 
     .catalog-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
 
     .brands-track {
