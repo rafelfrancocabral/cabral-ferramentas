@@ -1,18 +1,4 @@
 // ===========================
-// Theme Toggle (Day / Night)
-// ===========================
-(function() {
-    const saved = localStorage.getItem('cabral_site_theme');
-    if (saved === 'light') document.body.classList.add('light-mode');
-
-    document.getElementById('themeToggle')?.addEventListener('click', () => {
-        document.body.classList.toggle('light-mode');
-        const isLight = document.body.classList.contains('light-mode');
-        localStorage.setItem('cabral_site_theme', isLight ? 'light' : 'dark');
-    });
-})();
-
-// ===========================
 // Particles Background
 // ===========================
 function createParticles() {
@@ -31,22 +17,6 @@ function createParticles() {
     }
 }
 createParticles();
-
-// ===========================
-// Load Site Theme from Dashboard
-// ===========================
-function loadSiteTheme() {
-    try {
-        const theme = JSON.parse(localStorage.getItem('cabral_site_theme'));
-        if (theme) {
-            const root = document.documentElement;
-            if (theme.accent) root.style.setProperty('--accent', theme.accent);
-            if (theme.bg) root.style.setProperty('--bg-primary', theme.bg);
-            if (theme.fontColor) root.style.setProperty('--text-primary', theme.fontColor);
-        }
-    } catch (e) {}
-}
-loadSiteTheme();
 
 // ===========================
 // Navbar Scroll Effect

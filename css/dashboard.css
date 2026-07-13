@@ -26,26 +26,6 @@
     --topbar-bg: rgba(10, 10, 15, 0.85);
 }
 
-body.light-mode {
-    --bg-primary: #f4f5f7;
-    --bg-secondary: #ffffff;
-    --bg-card: #ffffff;
-    --bg-card-hover: #f0f1f3;
-    --accent: #0099cc;
-    --accent-dark: #0077aa;
-    --accent-glow: rgba(0, 153, 204, 0.2);
-    --accent-glow-strong: rgba(0, 153, 204, 0.4);
-    --text-primary: #1a1a2e;
-    --text-secondary: #555570;
-    --text-muted: #8888aa;
-    --border: #d8d8e0;
-    --border-light: #e8e8ef;
-    --gradient-accent: linear-gradient(135deg, #00b4d8, #0077aa);
-    --gradient-dark: linear-gradient(180deg, #f4f5f7, #e8e8ef);
-    --shadow-accent: 0 0 30px rgba(0, 153, 204, 0.1);
-    --topbar-bg: rgba(244, 245, 247, 0.92);
-}
-
 *, *::before, *::after {
     margin: 0;
     padding: 0;
@@ -886,12 +866,6 @@ button { cursor: pointer; }
     background: rgba(0, 212, 255, 0.15);
     color: var(--accent);
     border: 1px solid rgba(0, 212, 255, 0.3);
-}
-
-body.light-mode .product-count-badge {
-    background: rgba(0, 150, 200, 0.1);
-    color: #0096c8;
-    border-color: rgba(0, 150, 200, 0.3);
 }
 
 .page-actions {
@@ -3897,44 +3871,3 @@ body.light-mode .product-count-badge {
 }
 
 /* Light mode overrides for hardcoded dark elements */
-body.light-mode .chart-container canvas,
-body.light-mode .modal-content,
-body.light-mode .csv-drop-zone {
-    background: var(--bg-card);
-    color: var(--text-primary);
-}
-
-body.light-mode .kpi-card,
-body.light-mode .stat-card,
-body.light-mode .product-card {
-    background: var(--bg-card);
-    border-color: var(--border);
-}
-
-body.light-mode .modal-content {
-    border: 1px solid var(--border);
-}
-
-body.light-mode .img-upload-zone {
-    border-color: var(--border);
-}
-
-body.light-mode .img-url-icon {
-    color: #999;
-}
-
-body.light-mode .img-url-preview img {
-    border-color: rgba(0, 0, 0, 0.1);
-}
-
-body.light-mode .product-thumb-empty {
-    background: var(--bg-secondary);
-}
-
-body.light-mode .sidebar-logo-bg {
-    background: var(--bg-primary);
-}
-
-body.light-mode .table-responsive table {
-    background: var(--bg-card);
-}

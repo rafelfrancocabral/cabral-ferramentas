@@ -23,25 +23,6 @@
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body.light-mode {
-    --bg-primary: #f4f5f7;
-    --bg-secondary: #ffffff;
-    --bg-card: #ffffff;
-    --bg-card-hover: #f0f1f3;
-    --accent: #0099cc;
-    --accent-dark: #0077aa;
-    --accent-glow: rgba(0, 153, 204, 0.2);
-    --accent-glow-strong: rgba(0, 153, 204, 0.4);
-    --text-primary: #1a1a2e;
-    --text-secondary: #555570;
-    --text-muted: #8888aa;
-    --border: #d8d8e0;
-    --border-light: #e8e8ef;
-    --gradient-accent: linear-gradient(135deg, #00b4d8, #0077aa);
-    --gradient-dark: linear-gradient(180deg, #f4f5f7, #e8e8ef);
-    --shadow-accent: 0 0 30px rgba(0, 153, 204, 0.1);
-}
-
 *, *::before, *::after {
     margin: 0;
     padding: 0;
@@ -293,18 +274,6 @@ ul { list-style: none; }
     border-color: rgba(0, 212, 255, 0.3);
     color: var(--accent);
     transform: translateY(-2px);
-}
-
-body.light-mode .btn-login-nav {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.08);
-    color: #888;
-}
-
-body.light-mode .btn-login-nav:hover {
-    background: rgba(0, 150, 200, 0.08);
-    border-color: rgba(0, 150, 200, 0.2);
-    color: #0096c8;
 }
 
 .mobile-menu-btn {
@@ -2761,16 +2730,6 @@ body.light-mode .btn-login-nav:hover {
     margin-bottom: 4px;
 }
 
-body.light-mode .checkout-coupon-row input {
-    background: rgba(0, 0, 0, 0.04);
-    color: #333;
-}
-
-body.light-mode .checkout-coupon-row input:focus {
-    border-color: #0088cc;
-    background: rgba(0, 136, 204, 0.05);
-}
-
 .checkout-form {
     display: flex;
     flex-direction: column;
@@ -2865,99 +2824,6 @@ body.light-mode .checkout-coupon-row input:focus {
 
 .checkout-send-btn:active {
     transform: translateY(0);
-}
-
-body.light-mode .checkout-modal {
-    background: linear-gradient(145deg, #ffffff 0%, #f8f9fb 100%);
-    border-color: rgba(0, 150, 200, 0.15);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.1);
-}
-
-body.light-mode .checkout-header {
-    background: rgba(0, 150, 200, 0.03);
-    border-bottom-color: rgba(0, 0, 0, 0.06);
-}
-
-body.light-mode .checkout-header h3 {
-    color: #0096c8;
-}
-
-body.light-mode .checkout-close {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.08);
-}
-
-body.light-mode .checkout-items {
-    border-color: rgba(0, 0, 0, 0.06);
-    background: rgba(0, 0, 0, 0.02);
-}
-
-body.light-mode .checkout-items-header {
-    background: rgba(0, 150, 200, 0.05);
-    border-bottom-color: rgba(0, 150, 200, 0.15);
-    color: #666;
-}
-
-body.light-mode .checkout-item {
-    border-bottom-color: rgba(0, 0, 0, 0.04);
-}
-
-body.light-mode .checkout-item:hover {
-    background: rgba(0, 150, 200, 0.04);
-}
-
-body.light-mode .checkout-item {
-    border-bottom-color: rgba(0, 0, 0, 0.04);
-}
-
-body.light-mode .checkout-item:hover {
-    background: rgba(0, 150, 200, 0.04);
-}
-
-body.light-mode .checkout-item-num {
-    background: rgba(0, 150, 200, 0.1);
-    color: #0096c8;
-}
-
-body.light-mode .checkout-item-qty {
-    color: #0096c8;
-    background: rgba(0, 150, 200, 0.08);
-}
-
-body.light-mode .checkout-total-value {
-    color: #0096c8;
-    text-shadow: none;
-    font-weight: 800;
-}
-
-body.light-mode .checkout-coupon-btn {
-    border-color: rgba(0, 150, 200, 0.3);
-    background: rgba(0, 150, 200, 0.08);
-    color: #0096c8;
-}
-
-body.light-mode .checkout-coupon-btn:hover {
-    background: rgba(0, 150, 200, 0.15);
-    border-color: #0096c8;
-}
-
-body.light-mode .checkout-field label i {
-    color: #0096c8;
-}
-
-body.light-mode .checkout-field input {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.1);
-}
-
-body.light-mode .checkout-field input::placeholder {
-    color: rgba(0, 0, 0, 0.25);
-}
-
-body.light-mode .checkout-field input:focus {
-    border-color: #0096c8;
-    background: rgba(0, 150, 200, 0.03);
-    box-shadow: 0 0 0 3px rgba(0, 150, 200, 0.08);
 }
 
 /* ===========================
@@ -3322,139 +3188,4 @@ body.light-mode .checkout-field input:focus {
 /* ===========================
    Light Mode Overrides
    =========================== */
-body.light-mode .navbar.scrolled {
-    background: rgba(244, 245, 247, 0.92);
-}
-
-body.light-mode .hero {
-    background: var(--bg-primary);
-}
-
-body.light-mode .particles {
-    opacity: 0.03;
-}
-
-body.light-mode .grid-overlay {
-    opacity: 0.02;
-}
-
-body.light-mode .section-dark {
-    background: var(--bg-secondary);
-}
-
-body.light-mode .ai-chat-box {
-    background: var(--bg-card);
-    border-color: var(--border);
-}
-
-body.light-mode .ai-msg-bubble {
-    background: var(--bg-card-hover);
-}
-
-body.light-mode .ai-msg-user .ai-msg-bubble {
-    background: var(--accent);
-}
-
-body.light-mode .catalog-card {
-    background: var(--bg-card);
-    border-color: var(--border);
-}
-
-body.light-mode .modal-overlay {
-    background: rgba(0, 0, 0, 0.4);
-}
-
-body.light-mode .modal-content {
-    background: var(--bg-card);
-}
-
-body.light-mode .modal-related {
-    background: var(--bg-card);
-    border-color: var(--border);
-}
-
-body.light-mode .modal-related-card {
-    background: var(--bg-card-hover);
-    border-color: var(--border);
-}
-
-body.light-mode .modal-related-card img {
-    background: var(--bg-card);
-}
-
-body.light-mode .cart-sidebar {
-    background: var(--bg-card);
-    border-color: var(--border);
-}
-
-body.light-mode .cart-item {
-    background: #ffffff;
-}
-
-body.light-mode .brand-card {
-    background: var(--bg-card);
-    border-color: var(--border);
-}
-
-body.light-mode .footer {
-    background: var(--bg-secondary);
-}
-
-body.light-mode .ai-chat-box input,
-body.light-mode .ai-chat-box textarea {
-    background: var(--bg-card-hover);
-    border-color: var(--border);
-    color: var(--text-primary);
-}
-
-body.light-mode .nav-links.active {
-    background: rgba(244, 245, 247, 0.98);
-}
-
-body.light-mode .btn-whatsapp {
-    background: #25d366;
-}
-
-body.light-mode .theme-toggle {
-    background: var(--bg-card);
-    border-color: var(--border);
-    color: var(--text-primary);
-}
-
-/* Theme Toggle Button */
-.theme-toggle {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    transition: var(--transition);
-}
-
-.theme-toggle:hover {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-}
-
-body.light-mode .theme-toggle i.fa-moon {
-    display: inline;
-}
-
-body.light-mode .theme-toggle i.fa-sun {
-    display: none;
-}
-
-.theme-toggle i.fa-sun {
-    display: inline;
-}
-
-.theme-toggle i.fa-moon {
-    display: none;
 }

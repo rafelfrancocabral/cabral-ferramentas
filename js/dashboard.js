@@ -97,21 +97,6 @@ setInterval(checkInactivity, 30000);
 resetActivity();
 
 // ===========================
-// Theme Toggle (Day / Night)
-// ===========================
-(function() {
-    const saved = localStorage.getItem('cabral_dashboard_theme');
-    if (saved === 'light') document.body.classList.add('light-mode');
-
-    document.getElementById('themeToggle').addEventListener('click', (e) => {
-        e.preventDefault();
-        document.body.classList.toggle('light-mode');
-        const isLight = document.body.classList.contains('light-mode');
-        localStorage.setItem('cabral_dashboard_theme', isLight ? 'light' : 'dark');
-        applyChartTheme();
-    });
-})();
-
 // ===========================
 // Page Navigation
 // ===========================
@@ -197,14 +182,6 @@ const chartDefaults = {
     font: { family: "'Inter', sans-serif" }
 };
 
-function applyChartTheme() {
-    const isLight = document.body.classList.contains('light-mode');
-    Chart.defaults.color = isLight ? '#555570' : '#8888aa';
-    Chart.defaults.borderColor = isLight ? '#d8d8e0' : '#1a1a2e';
-    if (salesChart) { salesChart.destroy(); createSalesChart(); }
-    if (categoryChart) { categoryChart.destroy(); createCategoryChart(); }
-}
-
 Chart.defaults.color = chartDefaults.color;
 Chart.defaults.borderColor = chartDefaults.borderColor;
 
@@ -215,12 +192,6 @@ let salesChart;
 function createSalesChart() {
     if (salesChart) salesChart.destroy();
 
-    const isLight = document.body.classList.contains('light-mode');
-    const accent = isLight ? '#0099cc' : '#00d4ff';
-    const accentFill = isLight ? 'rgba(0, 153, 204, 0.12)' : 'rgba(0, 212, 255, 0.1)';
-    const purple = isLight ? '#7b3fbf' : '#8a2be2';
-    const purpleFill = isLight ? 'rgba(123, 63, 191, 0.08)' : 'rgba(138, 43, 226, 0.05)';
-    const pointBg = isLight ? '#ffffff' : '#0a0a0f';
     const labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const salesData = [42, 55, 48, 61, 58, 72, 85, 78, 92, 88, 95, 102];
     const quoteData = [38, 48, 42, 55, 52, 65, 78, 70, 85, 80, 88, 95];
@@ -233,28 +204,28 @@ function createSalesChart() {
                 {
                     label: 'Vendas (mil)',
                     data: salesData,
-                    borderColor: accent,
-                    backgroundColor: accentFill,
+                    borderColor: '#00d4ff',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
                     fill: true,
                     tension: 0.4,
                     borderWidth: 2,
                     pointRadius: 4,
-                    pointBackgroundColor: accent,
-                    pointBorderColor: pointBg,
+                    pointBackgroundColor: '#00d4ff',
+                    pointBorderColor: '#0a0a0f',
                     pointBorderWidth: 2,
                     pointHoverRadius: 6
                 },
                 {
                     label: 'Orçamentos',
                     data: quoteData,
-                    borderColor: purple,
-                    backgroundColor: purpleFill,
+                    borderColor: '#8a2be2',
+                    backgroundColor: 'rgba(138, 43, 226, 0.05)',
                     fill: true,
                     tension: 0.4,
                     borderWidth: 2,
                     borderDash: [5, 5],
                     pointRadius: 3,
-                    pointBackgroundColor: purple,
+                    pointBackgroundColor: '#8a2be2',
                     pointBorderColor: '#0a0a0f',
                     pointBorderWidth: 2,
                     pointHoverRadius: 5
@@ -308,26 +279,16 @@ let categoryChart;
 function createCategoryChart() {
     if (categoryChart) categoryChart.destroy();
 
-    const isLight = document.body.classList.contains('light-mode');
-    const sliceBg = isLight ? '#ffffff' : '#111118';
-
     categoryChart = new Chart(categoryCtx, {
         type: 'doughnut',
         data: {
             labels: ['Elétricas', 'Manuais', 'Hidráulica', 'Elétrica', 'EPI', 'Construção'],
             datasets: [{
                 data: [35, 25, 15, 12, 8, 5],
-                backgroundColor: [
-                    isLight ? '#0099cc' : '#00d4ff',
-                    isLight ? '#7b3fbf' : '#8a2be2',
-                    isLight ? '#27ae60' : '#2ed573',
-                    isLight ? '#e09000' : '#ffa502',
-                    isLight ? '#e03040' : '#ff4757',
-                    isLight ? '#8899aa' : '#a4b0be'
-                ],
-                borderColor: sliceBg,
+                backgroundColor: ['#00d4ff', '#8a2be2', '#2ed573', '#ffa502', '#ff4757', '#a4b0be'],
+                borderColor: '#111118',
                 borderWidth: 3,
-                hoverBorderColor: sliceBg,
+                hoverBorderColor: '#111118',
                 hoverOffset: 8
             }]
         },
@@ -2756,11 +2717,6 @@ function loadSettings() {
     setThemeInput('cfgChatAccent', 'cfgChatAccentHex', t.accent);
     setThemeInput('cfgChatHeader', 'cfgChatHeaderHex', t.headerBg);
     updatePreview();
-
-    const st = cfg.siteTheme;
-    setThemeInput('cfgSiteAccent', 'cfgSiteAccentHex', st.accent);
-    setThemeInput('cfgSiteBg', 'cfgSiteBgHex', st.bg);
-    setThemeInput('cfgSiteFontColor', 'cfgSiteFontColorHex', st.fontColor);
 }
 
 function setThemeInput(colorId, hexId, val) {
@@ -2887,10 +2843,6 @@ function syncColorInputs(colorId, hexId) {
     syncColorInputs(id, id + 'Hex');
 });
 
-['cfgSiteAccent','cfgSiteBg','cfgSiteFontColor'].forEach(id => {
-    syncColorInputs(id, id + 'Hex');
-});
-
 // Save AI Settings
 document.getElementById('btnSaveAI').addEventListener('click', () => {
     const cfg = getSettings();
@@ -2932,22 +2884,7 @@ document.getElementById('btnResetTheme').addEventListener('click', () => {
     setThemeInput('cfgChatAccent', 'cfgChatAccentHex', defaults.accent);
     setThemeInput('cfgChatHeader', 'cfgChatHeaderHex', defaults.headerBg);
     updatePreview();
-    showToast('Cores restauradas ao padrão');
-});
-
-// Save Site Theme
-document.getElementById('btnSaveSiteTheme').addEventListener('click', () => {
-    const cfg = getSettings();
-    cfg.siteTheme = {
-        accent: document.getElementById('cfgSiteAccent').value,
-        bg: document.getElementById('cfgSiteBg').value,
-        fontColor: document.getElementById('cfgSiteFontColor').value
-    };
-    saveSettings(cfg);
-
-    localStorage.setItem('cabral_site_theme', JSON.stringify(cfg.siteTheme));
-
-    showToast('Aparência do site salva!');
+    showToast('Cores restauradas ao padrao');
 });
 
 loadSettings();

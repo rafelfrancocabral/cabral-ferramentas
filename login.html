@@ -24,58 +24,6 @@
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body.light-mode {
-            --bg-primary: #f4f5f7;
-            --bg-secondary: #ffffff;
-            --bg-card: #ffffff;
-            --accent: #0099cc;
-            --accent-dark: #0077aa;
-            --text-primary: #1a1a2e;
-            --text-secondary: #555570;
-            --text-muted: #8888aa;
-            --border: #d8d8e0;
-            --border-light: #e8e8ef;
-            --gradient-accent: linear-gradient(135deg, #00b4d8, #0077aa);
-        }
-
-        body.light-mode .login-particles { opacity: 0.03; }
-        body.light-mode .login-grid-overlay { opacity: 0.02; }
-
-        .login-theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-
-        .login-theme-toggle:hover {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
-
-        body.light-mode .login-theme-toggle {
-            background: var(--bg-card);
-            border-color: var(--border);
-        }
-
-        body.light-mode .login-theme-toggle i.fa-moon { display: inline; }
-        body.light-mode .login-theme-toggle i.fa-sun { display: none; }
-        .login-theme-toggle i.fa-sun { display: inline; }
-        .login-theme-toggle i.fa-moon { display: none; }
-
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -370,11 +318,6 @@
     <div class="login-particles" id="particles"></div>
     <div class="login-grid-overlay"></div>
 
-    <button class="login-theme-toggle" id="themeToggle" title="Modo Dia / Noite">
-        <i class="fas fa-sun"></i>
-        <i class="fas fa-moon"></i>
-    </button>
-
     <div class="login-container">
         <div class="login-card">
             <div class="login-logo">
@@ -426,18 +369,6 @@
     </div>
 
     <script>
-        // Theme Toggle
-        (function() {
-            const saved = localStorage.getItem('cabral_site_theme');
-            if (saved === 'light') document.body.classList.add('light-mode');
-
-            document.getElementById('themeToggle').addEventListener('click', () => {
-                document.body.classList.toggle('light-mode');
-                const isLight = document.body.classList.contains('light-mode');
-                localStorage.setItem('cabral_site_theme', isLight ? 'light' : 'dark');
-            });
-        })();
-
         // Particles
         (function() {
             const container = document.getElementById('particles');

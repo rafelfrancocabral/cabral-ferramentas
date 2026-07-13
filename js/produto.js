@@ -213,16 +213,6 @@
         }
     };
 
-    // Theme toggle
-    const savedTheme = localStorage.getItem('cabral_site_theme');
-    if (savedTheme === 'light') document.body.classList.add('light-mode');
-    else if (!savedTheme) document.body.classList.remove('light-mode');
-
-    document.getElementById('themeToggle')?.addEventListener('click', () => {
-        document.body.classList.toggle('light-mode');
-        localStorage.setItem('cabral_site_theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-    });
-
     // Mobile menu
     document.getElementById('mobileMenuBtn')?.addEventListener('click', () => {
         document.getElementById('navLinks')?.classList.toggle('active');
