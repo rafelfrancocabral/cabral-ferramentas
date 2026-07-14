@@ -845,6 +845,8 @@ if (cartCheckout) {
         document.getElementById('checkoutTotalRow').style.display = 'none';
         document.getElementById('checkoutCouponMsg').textContent = '';
         document.getElementById('checkoutCoupon').value = '';
+        document.getElementById('checkoutPhoneMsg').textContent = '';
+        checkoutKnownName = null;
 
         const checkoutOverlay = document.getElementById('checkoutOverlay');
         checkoutOverlay.classList.add('active');
@@ -911,12 +913,75 @@ document.getElementById('checkoutCouponApply')?.addEventListener('click', () => 
     msgEl.className = 'checkout-coupon-msg success';
 });
 
+let checkoutKnownName = null;
+
+async function checkPhoneRegistered(phone) {
+    const phoneMsg = document.getElementById('checkoutPhoneMsg');
+    const nameInput = document.getElementById('checkoutName');
+    const raw = phone.replace(/\D/g, '');
+    if (raw.length < 10) { phoneMsg.textContent = ''; checkoutKnownName = null; return; }
+
+    try {
+        const { data } = await db
+            .from(SUPABASE_QUOTES_TABLE)
+            .select('nome_cliente')
+            .eq('telefone', raw)
+            .order('id', { ascending: false })
+            .limit(1);
+
+        if (data && data.length > 0) {
+            const registeredName = data[0].nome_cliente;
+            checkoutKnownName = registeredName;
+            const typedName = nameInput.value.trim();
+            if (typedName && normalize(typedName) !== normalize(registeredName)) {
+                phoneMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> Este telefone esta cadastrado para <strong>${registeredName}</strong>. Utilize o nome correto.`;
+            } else {
+                phoneMsg.innerHTML = `<i class="fas fa-info-circle"></i> Cliente encontrado: <strong>${registeredName}</strong>`;
+                phoneMsg.style.color = 'var(--accent)';
+            }
+        } else {
+            checkoutKnownName = null;
+            phoneMsg.textContent = '';
+        }
+    } catch (err) {
+        checkoutKnownName = null;
+        phoneMsg.textContent = '';
+    }
+}
+
+document.getElementById('checkoutPhone')?.addEventListener('blur', (e) => {
+    checkPhoneRegistered(e.target.value);
+});
+
+document.getElementById('checkoutName')?.addEventListener('input', () => {
+    const phoneMsg = document.getElementById('checkoutPhoneMsg');
+    const phone = document.getElementById('checkoutPhone').value.replace(/\D/g, '');
+    if (phone.length >= 10 && checkoutKnownName) {
+        const typedName = document.getElementById('checkoutName').value.trim();
+        if (typedName && normalize(typedName) !== normalize(checkoutKnownName)) {
+            phoneMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> Este telefone esta cadastrado para <strong>${checkoutKnownName}</strong>. Utilize o nome correto.`;
+            phoneMsg.style.color = '#ff6b6b';
+        } else if (typedName && normalize(typedName) === normalize(checkoutKnownName)) {
+            phoneMsg.innerHTML = `<i class="fas fa-check-circle"></i> Nome confirmado!`;
+            phoneMsg.style.color = '#51cf66';
+        }
+    }
+});
+
 document.getElementById('checkoutForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name = document.getElementById('checkoutName').value.trim();
     const phone = document.getElementById('checkoutPhone').value.trim().replace(/\D/g, '');
     if (!name || !phone || phone.length < 10) return;
+
+    if (checkoutKnownName && normalize(name) !== normalize(checkoutKnownName)) {
+        const phoneMsg = document.getElementById('checkoutPhoneMsg');
+        phoneMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> O nome informado nao corresponde ao cadastrado para este telefone. Utilize <strong>${checkoutKnownName}</strong>.`;
+        phoneMsg.style.color = '#ff6b6b';
+        document.getElementById('checkoutName').focus();
+        return;
+    }
 
     const cart = getCart();
     if (cart.length === 0) return;
@@ -1002,6 +1067,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
     checkoutDiscount = 0;
     checkoutCouponCode = '';
     checkoutSubtotal = 0;
+    checkoutKnownName = null;
 
     document.getElementById('checkoutOverlay').classList.remove('active');
     document.body.style.overflow = '';

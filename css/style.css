@@ -2725,6 +2725,15 @@ ul { list-style: none; }
     margin-right: 4px;
 }
 
+.checkout-phone-msg {
+    font-size: 0.8rem;
+    font-family: 'Inter', sans-serif;
+    color: #ff6b6b;
+    min-height: 0;
+    margin-top: -4px;
+    margin-bottom: 4px;
+}
+
 .checkout-total-final {
     padding-bottom: 0;
     margin-bottom: 4px;
