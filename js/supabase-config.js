@@ -16,7 +16,8 @@ let _visitorsCache = [];
 async function loadVisitors() {
     const { data, error } = await db.from(SUPABASE_VISITORS_TABLE)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(0, 9999);
     if (error) {
         console.error('Erro ao carregar visitantes:', error);
         return [];
@@ -35,7 +36,8 @@ let _viewsCache = [];
 async function loadViews() {
     const { data, error } = await db.from(SUPABASE_VIEWS_TABLE)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(0, 9999);
     if (error) {
         console.error('Erro ao carregar visualizações:', error);
         return [];

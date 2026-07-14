@@ -579,7 +579,8 @@ let _quotesCache = [];
 async function loadQuotes() {
     const { data, error } = await db.from(SUPABASE_QUOTES_TABLE)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(0, 9999);
     if (error) {
         console.error('Erro ao carregar orçamentos:', error);
         return [];
@@ -929,7 +930,8 @@ async function loadProducts() {
     const { data, error } = await db
         .from(SUPABASE_PRODUCTS_TABLE)
         .select('*')
-        .order('id', { ascending: true });
+        .order('id', { ascending: true })
+        .range(0, 9999);
     if (error) { console.error('Erro ao carregar produtos:', error); return []; }
     _productsCache = data || [];
     return _productsCache;
@@ -3207,7 +3209,7 @@ function updateQuoteBadges() {
 // Poll for new quotes every 30s
 setInterval(async () => {
     try {
-        const { data } = await db.from(SUPABASE_QUOTES_TABLE).select('*');
+        const { data } = await db.from(SUPABASE_QUOTES_TABLE).select('*').range(0, 9999);
         if (data) {
             _quotesCache = data;
             updateQuoteBadges();
