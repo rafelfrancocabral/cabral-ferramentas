@@ -1948,7 +1948,6 @@ button { cursor: pointer; }
     z-index: 1;
     background: transparent;
 }
-}
 
 /* Step States - Default (inactive) */
 .quote-timeline-inline .tl-step .tl-icon {
