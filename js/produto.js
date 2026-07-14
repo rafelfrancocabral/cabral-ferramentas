@@ -114,7 +114,7 @@
     async function loadRelated(category, currentId, productName) {
         if (!category) return;
         const catNorm = normalize(category);
-        const { data } = await db.from('produtos').select('*').eq('visivel', true);
+        const { data } = await db.from('produtos').select('*').eq('visivel', true).range(0, 9999);
         if (!data || data.length <= 1) return;
 
         let related = data.filter(p => p.id !== currentId && (p.estoque || 0) > 0);

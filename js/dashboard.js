@@ -926,14 +926,34 @@ function formatPrice(v) {
 // ===========================
 let _productsCache = [];
 
-async function loadProducts() {
-    const { data, error } = await db
+let _productsTotalCount = 0;
+
+async function loadProductCount() {
+    const { count, error } = await db
         .from(SUPABASE_PRODUCTS_TABLE)
-        .select('*')
-        .order('id', { ascending: true })
-        .range(0, 9999);
-    if (error) { console.error('Erro ao carregar produtos:', error); return []; }
-    _productsCache = data || [];
+        .select('*', { count: 'exact', head: true });
+    if (!error) _productsTotalCount = count || 0;
+    return _productsTotalCount;
+}
+
+function getProductCount() {
+    return _productsTotalCount;
+}
+
+async function loadProducts() {
+    const [data] = await Promise.all([
+        (async () => {
+            const { data, error } = await db
+                .from(SUPABASE_PRODUCTS_TABLE)
+                .select('*')
+                .order('id', { ascending: true })
+                .range(0, 9999);
+            if (error) { console.error('Erro ao carregar produtos:', error); return []; }
+            return data || [];
+        })(),
+        loadProductCount()
+    ]);
+    _productsCache = data;
     return _productsCache;
 }
 
@@ -1005,9 +1025,10 @@ async function filterProducts(query) {
     const table = document.getElementById('productsTable');
     const badge = document.getElementById('productCountBadge');
 
+    const totalCount = getProductCount() || products.length;
     if (!query) {
-        if (badge) badge.textContent = `${products.length} produto${products.length !== 1 ? 's' : ''}`;
-        if (products.length === 0) {
+        if (badge) badge.textContent = `${totalCount} produto${totalCount !== 1 ? 's' : ''}`;
+        if (totalCount === 0) {
             table.style.display = 'none';
             empty.style.display = 'block';
             return;
@@ -1026,7 +1047,7 @@ async function filterProducts(query) {
         (p.palavraschave || p.palavrasChave || []).some(k => k.toLowerCase().includes(query))
     ) : products;
 
-    if (query && badge) badge.textContent = `${filtered.length} de ${products.length} produto${products.length !== 1 ? 's' : ''}`;
+    if (query && badge) badge.textContent = `${filtered.length} de ${totalCount} produto${totalCount !== 1 ? 's' : ''}`;
 
     if (filtered.length === 0) {
         table.style.display = '';

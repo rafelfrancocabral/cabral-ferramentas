@@ -482,7 +482,8 @@ async function fetchCatalogProducts() {
     const { data, error } = await db
         .from(SUPABASE_PRODUCTS_TABLE)
         .select('*')
-        .order('id', { ascending: true });
+        .order('id', { ascending: true })
+        .range(0, 9999);
     if (error) { console.error('Erro ao carregar catálogo:', error); return []; }
     _catalogProducts = (data || []).filter(p => p.visivel !== false);
     return _catalogProducts;
@@ -492,7 +493,8 @@ async function fetchCatalogCategories() {
     const { data, error } = await db
         .from(SUPABASE_CATEGORIES_TABLE)
         .select('*')
-        .order('id', { ascending: true });
+        .order('id', { ascending: true })
+        .range(0, 9999);
     if (error) { console.error('Erro ao carregar categorias:', error); return []; }
     _catalogCategories = data || [];
     return _catalogCategories;
