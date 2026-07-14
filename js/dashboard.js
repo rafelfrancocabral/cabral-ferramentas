@@ -2910,6 +2910,14 @@ function classifyClient(quotes) {
     return { label: 'Ativo', color: '#2ed573', bg: 'rgba(46,213,115,0.1)' };
 }
 
+function generateClientCode(telefone) {
+    const digits = (telefone || '').replace(/\D/g, '');
+    const hash = digits.split('').reduce((sum, d) => sum + parseInt(d), 0);
+    const suffix = digits.slice(-4).padStart(4, '0');
+    const code = (hash * 7 + parseInt(suffix.slice(0, 2)) * 3) % 9999;
+    return 'C-' + String(code).padStart(4, '0');
+}
+
 function getClients() {
     const quotes = getQuotes();
     const clientMap = {};
@@ -2925,13 +2933,18 @@ function getClients() {
         const cls = classifyClient(c.quotes);
         const lastQuote = c.quotes.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
         const lastDate = new Date(lastQuote.created_at);
+        const firstQuote = c.quotes.reduce((a, b) => new Date(a.created_at) < new Date(b.created_at) ? a : b);
         return {
             ...c,
+            code: generateClientCode(c.telefone),
             classification: cls,
             lastPurchase: lastDate.toLocaleDateString('pt-BR'),
-            quoteCount: c.quotes.length
+            quoteCount: c.quotes.length,
+            firstQuoteDate: new Date(firstQuote.created_at)
         };
-    }).sort((a, b) => b.totalSpent - a.totalSpent);
+    }).sort((a, b) => a.firstQuoteDate - b.firstQuoteDate)
+      .map((c, i) => ({ ...c, sequentialCode: 'C-' + String(i + 1).padStart(4, '0') }))
+      .sort((a, b) => b.totalSpent - a.totalSpent);
 }
 
 function renderClients(filter = 'all', search = '') {
@@ -2959,7 +2972,8 @@ function renderClients(filter = 'all', search = '') {
         const phoneDigits = (c.telefone || '').replace(/\D/g, '');
         return `
         <tr>
-            <td><strong style="cursor:pointer;color:var(--accent);text-decoration:underline;" onclick="openClientQuotes('${c.nome.replace(/'/g, "\\'")}', '${c.telefone}')">${c.nome}</strong></td>
+            <td><span class="client-code" onclick="openClientQuotes('${c.nome.replace(/'/g, "\\'")}', '${c.telefone}')">${c.sequentialCode}</span></td>
+            <td><strong style="cursor:pointer;color:var(--accent);" onclick="openClientQuotes('${c.nome.replace(/'/g, "\\'")}', '${c.telefone}')">${c.nome}</strong></td>
             <td><i class="fab fa-whatsapp" style="color:#25d366;margin-right:4px;"></i>${c.telefone}</td>
             <td>${c.lastPurchase}</td>
             <td><strong>${formatPrice(c.totalSpent)}</strong></td>
@@ -2986,39 +3000,77 @@ window.openClientQuotes = function(nome, telefone) {
     const modal = document.getElementById('clientQuotesModal');
     const body = document.getElementById('clientQuotesBody');
     const title = document.getElementById('clientQuotesTitle');
+    const subtitle = document.getElementById('clientQuotesSubtitle');
+    const stats = document.getElementById('clientQuotesStats');
+    const header = document.getElementById('clientQuotesHeader');
 
     if (!modal || !body) return;
 
-    title.textContent = nome + ' — Orçamentos';
-    body.innerHTML = quotes.map(q => {
-        const date = new Date(q.created_at).toLocaleDateString('pt-BR');
-        const items = Array.isArray(q.itens) ? q.itens : [];
-        const statusColors = {
-            recebido: '#0099cc', analise: '#ffa502', aprovado: '#2ed573', entregue: '#2ed573', cancelado: '#ff4757'
-        };
-        const color = statusColors[q.status] || '#888';
+    const sorted = [...quotes].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const totalSpent = quotes.reduce((sum, q) => sum + (Number(q.total) || 0), 0);
+    const clientCode = generateClientCode(telefone);
+    const seqCode = (getClients().find(c => c.nome === nome && c.telefone === telefone) || {}).sequentialCode || clientCode;
 
-        return `
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-                <span style="font-weight:700;font-size:0.85rem;">#${q.id}</span>
-                <span style="font-size:0.75rem;color:var(--text-muted);">${date}</span>
-                <span style="color:${color};font-size:0.75rem;font-weight:600;text-transform:capitalize;">${q.status}</span>
-                <span style="font-weight:700;font-size:0.85rem;">${formatPrice(q.total)}</span>
-            </div>
-            <div style="border-top:1px solid var(--border);padding-top:8px;">
-                ${items.map(item => `
-                    <div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:3px 0;color:var(--text-secondary);">
-                        <span>${item.codigo ? 'CÓD ' + item.codigo + ' | ' : ''}${item.nome}</span>
-                        <span style="white-space:nowrap;">${item.quantidade}x ${formatPrice(item.preco)}</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>`;
-    }).join('');
+    title.textContent = nome;
+    subtitle.textContent = `${seqCode} | ${telefone}`;
+
+    const statusColors = {
+        recebido: '#0099cc', analise: '#ffa502', aprovado: '#2ed573', entregue: '#2ed573', cancelado: '#ff4757'
+    };
+    const statusLabels = {
+        recebido: 'Recebido', analise: 'Em Analise', aprovado: 'Aprovado', entregue: 'Entregue', cancelado: 'Cancelado'
+    };
+
+    stats.innerHTML = `
+        <div class="cq-stat">
+            <span class="cq-stat-value">${quotes.length}</span>
+            <span class="cq-stat-label">Orcamentos</span>
+        </div>
+        <div class="cq-stat">
+            <span class="cq-stat-value">${formatPrice(totalSpent)}</span>
+            <span class="cq-stat-label">Total Gasto</span>
+        </div>
+        <div class="cq-stat">
+            <span class="cq-stat-value">${quotes.filter(q => q.status !== 'cancelado').length}</span>
+            <span class="cq-stat-label">Ativos</span>
+        </div>
+    `;
 
     if (quotes.length === 0) {
-        body.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);">Nenhum orçamento encontrado</div>';
+        body.innerHTML = '<div class="cq-empty"><i class="fas fa-file-invoice"></i><p>Nenhum orcamento encontrado</p></div>';
+    } else {
+        body.innerHTML = sorted.map(q => {
+            const date = new Date(q.created_at).toLocaleDateString('pt-BR');
+            const time = new Date(q.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const items = Array.isArray(q.itens) ? q.itens : [];
+            const color = statusColors[q.status] || '#888';
+            const statusLabel = statusLabels[q.status] || q.status;
+            const isCancelled = q.status === 'cancelado';
+
+            return `
+            <div class="cq-card${isCancelled ? ' cq-cancelled' : ''}">
+                <div class="cq-card-header">
+                    <div class="cq-card-id">
+                        <span class="cq-card-hash">#${q.id}</span>
+                        <span class="cq-card-date">${date} | ${time}</span>
+                    </div>
+                    <div class="cq-card-right">
+                        <span class="cq-card-status" style="color:${color};border-color:${color};">${statusLabel}</span>
+                        <span class="cq-card-total">${formatPrice(q.total)}</span>
+                    </div>
+                </div>
+                ${q.cupom ? `<div class="cq-card-cupom"><i class="fas fa-tag"></i> Cupom: ${q.cupom} (-${formatPrice(q.desconto || 0)})</div>` : ''}
+                <div class="cq-card-items">
+                    ${items.map(item => `
+                        <div class="cq-item">
+                            <span class="cq-item-name">${item.codigo ? '<code>' + item.codigo + '</code> ' : ''}${item.nome}</span>
+                            <span class="cq-item-qty">${item.quantidade}x ${formatPrice(item.preco)}</span>
+                            <span class="cq-item-sub">${formatPrice(item.subtotal)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }).join('');
     }
 
     modal.classList.add('active');

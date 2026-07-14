@@ -2362,6 +2362,287 @@ button { cursor: pointer; }
 }
 
 /* ===========================
+   Client Code
+   =========================== */
+.client-code {
+    display: inline-block;
+    background: rgba(0, 153, 204, 0.08);
+    border: 1px solid rgba(0, 153, 204, 0.2);
+    color: var(--accent);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: 'Rajdhani', monospace;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.client-code:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* ===========================
+   Client Quotes Modal
+   =========================== */
+.client-quotes-modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 660px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+    overflow: hidden;
+}
+
+.client-quotes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.client-quotes-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.client-quotes-avatar {
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 153, 204, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.client-quotes-title-row h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.client-quotes-subtitle {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.client-quotes-close {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.client-quotes-close:hover {
+    background: #ff4757;
+    color: #fff;
+    border-color: #ff4757;
+}
+
+.client-quotes-stats {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.cq-stat {
+    flex: 1;
+    background: var(--bg-secondary);
+    padding: 14px 16px;
+    text-align: center;
+}
+
+.cq-stat-value {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.cq-stat-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.client-quotes-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.client-quotes-body::-webkit-scrollbar { width: 5px; }
+.client-quotes-body::-webkit-scrollbar-track { background: transparent; }
+.client-quotes-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.cq-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.cq-card:hover {
+    border-color: rgba(0, 153, 204, 0.3);
+}
+
+.cq-card.cq-cancelled {
+    opacity: 0.55;
+}
+
+.cq-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.cq-card-id {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cq-card-hash {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.cq-card-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.cq-card-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cq-card-status {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border: 1px solid;
+    border-radius: 4px;
+}
+
+.cq-card-total {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.cq-card-cupom {
+    padding: 6px 16px;
+    font-size: 0.75rem;
+    color: var(--accent);
+    background: rgba(0, 153, 204, 0.04);
+    border-bottom: 1px solid var(--border);
+}
+
+.cq-card-cupom i {
+    margin-right: 4px;
+}
+
+.cq-card-items {
+    padding: 8px 16px 12px;
+}
+
+.cq-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 0.78rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.cq-item:last-child {
+    border-bottom: none;
+}
+
+.cq-item-name {
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cq-item-name code {
+    background: rgba(0, 153, 204, 0.08);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.cq-item-qty {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.cq-item-sub {
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    text-align: right;
+}
+
+.cq-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.cq-empty i {
+    font-size: 2rem;
+    opacity: 0.3;
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* ===========================
    Form Styles
    =========================== */
 .form-grid {

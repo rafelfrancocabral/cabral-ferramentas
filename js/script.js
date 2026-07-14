@@ -847,6 +847,7 @@ if (cartCheckout) {
         document.getElementById('checkoutCoupon').value = '';
         document.getElementById('checkoutPhoneMsg').textContent = '';
         checkoutKnownName = null;
+        checkoutClientCode = null;
 
         const checkoutOverlay = document.getElementById('checkoutOverlay');
         checkoutOverlay.classList.add('active');
@@ -914,12 +915,23 @@ document.getElementById('checkoutCouponApply')?.addEventListener('click', () => 
 });
 
 let checkoutKnownName = null;
+let checkoutClientCode = null;
+
+function generateClientCode(telefone) {
+    const digits = (telefone || '').replace(/\D/g, '');
+    const hash = digits.split('').reduce((sum, d) => sum + parseInt(d), 0);
+    const suffix = digits.slice(-4).padStart(4, '0');
+    const code = (hash * 7 + parseInt(suffix.slice(0, 2)) * 3) % 9999;
+    return 'C-' + String(code).padStart(4, '0');
+}
 
 async function checkPhoneRegistered(phone) {
     const phoneMsg = document.getElementById('checkoutPhoneMsg');
     const nameInput = document.getElementById('checkoutName');
     const raw = phone.replace(/\D/g, '');
-    if (raw.length < 10) { phoneMsg.textContent = ''; checkoutKnownName = null; return; }
+    if (raw.length < 10) { phoneMsg.textContent = ''; checkoutKnownName = null; checkoutClientCode = null; return; }
+
+    checkoutClientCode = generateClientCode(phone);
 
     try {
         const { data } = await db
@@ -1020,10 +1032,13 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
             `  Desconto: -${formatPrice(checkoutDiscount)}\n`;
     }
 
+    const code = checkoutClientCode || generateClientCode(phone);
+
     const msg =
         `*Orçamento - Cabral Ferramentas*\n` +
         `........................................\n\n` +
         `  *cliente:* _${name}_\n` +
+        `  *codigo:* _${code}_\n` +
         `  *telefone:* _${phone}_\n` +
         `  *data:* _${dateStr} | ${timeStr}_\n\n` +
         `........................................\n\n` +
@@ -1043,6 +1058,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
         await db.from(SUPABASE_QUOTES_TABLE).insert({
             nome_cliente: name,
             telefone: phone,
+            codigo_cliente: code,
             itens: itens,
             total: finalTotal,
             cupom: checkoutCouponCode || null,
@@ -1068,6 +1084,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
     checkoutCouponCode = '';
     checkoutSubtotal = 0;
     checkoutKnownName = null;
+    checkoutClientCode = null;
 
     document.getElementById('checkoutOverlay').classList.remove('active');
     document.body.style.overflow = '';

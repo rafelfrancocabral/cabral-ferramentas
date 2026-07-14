@@ -833,6 +833,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
+                            <th>Código</th>
                             <th>Cliente</th>
                             <th>Telefone</th>
                             <th>Última Compra</th>
@@ -1104,14 +1105,20 @@
     </main>
 
     <!-- Client Quotes Modal -->
-    <div id="clientQuotesModal" class="modal">
-        <div class="modal-overlay" onclick="closeModal('clientQuotesModal')"></div>
-        <div class="modal-content" style="max-width:620px;">
-            <div class="modal-header">
-                <h3 id="clientQuotesTitle">Cliente — Orçamentos</h3>
-                <button class="modal-close" onclick="closeModal('clientQuotesModal')"><i class="fas fa-times"></i></button>
+    <div id="clientQuotesModal" class="modal-overlay">
+        <div class="client-quotes-modal">
+            <div class="client-quotes-header" id="clientQuotesHeader">
+                <div class="client-quotes-title-row">
+                    <div class="client-quotes-avatar"><i class="fas fa-user"></i></div>
+                    <div>
+                        <h3 id="clientQuotesTitle">Cliente</h3>
+                        <span class="client-quotes-subtitle" id="clientQuotesSubtitle"></span>
+                    </div>
+                </div>
+                <button class="client-quotes-close" onclick="closeModal('clientQuotesModal')"><i class="fas fa-xmark"></i></button>
             </div>
-            <div class="modal-body" id="clientQuotesBody" style="max-height:65vh;overflow-y:auto;"></div>
+            <div class="client-quotes-stats" id="clientQuotesStats"></div>
+            <div class="client-quotes-body" id="clientQuotesBody"></div>
         </div>
     </div>
 
@@ -1122,6 +1129,6 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/dashboard.js?v=29"></script>
+    <script src="js/dashboard.js?v=30"></script>
 </body>
 </html>
