@@ -943,31 +943,32 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
     let itemsMsg = '';
     cart.forEach((item, i) => {
         const subtotal = item.preco * item.qty;
-        const code = item.codigo ? `CÓD ${item.codigo}` : '';
-        itemsMsg += `${i + 1}. ${code ? code + ' | ' : ''}${item.nome}\n    Qtd: ${item.qty}x ${formatPrice(item.preco)} = ${formatPrice(subtotal)}\n`;
+        const code = item.codigo ? `(${item.codigo})` : '';
+        itemsMsg += `  ${i + 1}. ${item.nome} ${code}\n      ${item.qty}x ${formatPrice(item.preco)} .......... ${formatPrice(subtotal)}\n`;
     });
 
     let couponMsg = '';
     if (checkoutDiscount > 0 && checkoutCouponCode) {
         couponMsg =
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `*Cupom aplicado:*\n` +
-            `  Codigo: ${checkoutCouponCode}\n` +
+            `\n  Cupom: _${checkoutCouponCode}_\n` +
             `  Subtotal: ${formatPrice(checkoutSubtotal)}\n` +
-            `  Desconto: -${formatPrice(checkoutDiscount)}\n\n`;
+            `  Desconto: -${formatPrice(checkoutDiscount)}\n`;
     }
 
-    const msg = `*ORCAMENTO — CABRAL FERRAMENTAS*\n\n` +
-        `*Cliente:* ${name}\n` +
-        `*Telefone:* ${phone}\n` +
-        `*Data:* ${dateStr} as ${timeStr}\n\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n` +
-        `*Produtos:*\n\n` +
+    const msg =
+        `*orcamento - cabral ferramentas*\n` +
+        `........................................\n\n` +
+        `  *cliente:* _${name}_\n` +
+        `  *telefone:* _${phone}_\n` +
+        `  *data:* _${dateStr} | ${timeStr}_\n\n` +
+        `........................................\n\n` +
+        `  *itens*\n\n` +
         itemsMsg + `\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `........................................\n` +
         couponMsg +
-        `*TOTAL: ${formatPrice(finalTotal)}*\n\n` +
-        `Favor confirmar disponibilidade e enviar forma de pagamento. Obrigado!`;
+        `\n  *total: ${formatPrice(finalTotal)}*\n\n` +
+        `........................................\n\n` +
+        `_Aguardamos sua confirmacao para prosseguir com o pedido._`;
 
     const wppNum = '5512997144504';
     window.open(`https://wa.me/${wppNum}?text=${encodeURIComponent(msg)}`, '_blank');
