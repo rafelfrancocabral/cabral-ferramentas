@@ -956,7 +956,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
     }
 
     const msg =
-        `*orcamento - cabral ferramentas*\n` +
+        `*Orçamento - Cabral Ferramentas*\n` +
         `........................................\n\n` +
         `  *cliente:* _${name}_\n` +
         `  *telefone:* _${phone}_\n` +
@@ -968,7 +968,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
         couponMsg +
         `\n  *total: ${formatPrice(finalTotal)}*\n\n` +
         `........................................\n\n` +
-        `_Aguardamos sua confirmacao para prosseguir com o pedido._`;
+        `_Por favor confirmar disponibilidade do produto e formas de pagamento._`;
 
     const wppNum = '5512997144504';
     window.open(`https://wa.me/${wppNum}?text=${encodeURIComponent(msg)}`, '_blank');
