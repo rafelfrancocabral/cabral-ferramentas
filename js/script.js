@@ -1215,8 +1215,16 @@ async function initPromoPopup() {
 
         if (!data || data.length === 0) return;
 
-        const popup = data[0];
-        showPromoPopup(popup);
+        const now = new Date();
+        const valid = data.filter(p => {
+            if (p.data_inicio && new Date(p.data_inicio) > now) return false;
+            if (p.data_fim && new Date(p.data_fim) < now) return false;
+            return true;
+        });
+
+        if (valid.length === 0) return;
+
+        showPromoPopup(valid[0]);
     } catch (err) {
         console.error('Erro ao carregar popups:', err);
     }

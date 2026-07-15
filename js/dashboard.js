@@ -3237,7 +3237,17 @@ function renderPopups() {
         if (p.tipo === 'promocao') {
             detail = `<span class="popup-detail-text">${p.produto_codigo || '—'}</span>`;
         } else {
-            detail = `<span class="popup-detail-text">${(p.mensagem || '').substring(0, 50)}${(p.mensagem || '').length > 50 ? '...' : ''}</span>`;
+            detail = `<span class="popup-detail-text">${(p.mensagem || '').substring(0, 40)}${(p.mensagem || '').length > 40 ? '...' : ''}</span>`;
+        }
+        const formatDateShort = (v) => {
+            if (!v) return '';
+            const d = new Date(v);
+            return isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        };
+        const di = formatDateShort(p.data_inicio);
+        const df = formatDateShort(p.data_fim);
+        if (di || df) {
+            detail += `<br><span style="font-size:0.72rem;color:var(--text-muted);"><i class="fas fa-clock" style="font-size:0.65rem;"></i> ${di || 'início'} → ${df || 'sem fim'}</span>`;
         }
 
         const toggleChecked = p.ativo ? 'checked' : '';
@@ -3281,6 +3291,16 @@ window.editPopup = function(id) {
     document.getElementById('popupTitulo').value = popup.titulo || '';
     document.getElementById('popupMensagem').value = popup.mensagem || '';
     document.getElementById('popupAtivo').checked = popup.ativo !== false;
+
+    const toLocalDatetime = (val) => {
+        if (!val) return '';
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return '';
+        const pad = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+    document.getElementById('popupDataInicio').value = toLocalDatetime(popup.data_inicio);
+    document.getElementById('popupDataFim').value = toLocalDatetime(popup.data_fim);
 
     if (popup.tipo === 'promocao') {
         document.getElementById('popupProdutoCodigo').value = popup.produto_codigo || '';
@@ -3373,6 +3393,8 @@ function initPopupModal() {
         document.getElementById('popupBotaoTexto').value = 'Ver Produto';
         document.getElementById('popupBotaoLink').value = '';
         document.getElementById('popupAtivo').checked = true;
+        document.getElementById('popupDataInicio').value = '';
+        document.getElementById('popupDataFim').value = '';
         document.getElementById('popupPromoPreview').style.display = 'none';
         updateTipoFields();
         modal.classList.add('active');
@@ -3383,6 +3405,9 @@ function initPopupModal() {
         const tipo = tipoSelect.value;
         const titulo = document.getElementById('popupTitulo').value.trim();
         if (!titulo) { showToast('Preencha o título'); return; }
+
+        const dataInicio = document.getElementById('popupDataInicio').value;
+        const dataFim = document.getElementById('popupDataFim').value;
 
         const data = {
             titulo,
@@ -3395,7 +3420,9 @@ function initPopupModal() {
             botao_texto: document.getElementById('popupBotaoTexto').value.trim() || 'Ver Produto',
             botao_link: document.getElementById('popupBotaoLink').value.trim() || null,
             ativo: document.getElementById('popupAtivo').checked,
-            ordem: parseInt(document.getElementById('popupOrdem').value) || 0
+            ordem: parseInt(document.getElementById('popupOrdem').value) || 0,
+            data_inicio: dataInicio ? new Date(dataInicio).toISOString() : null,
+            data_fim: dataFim ? new Date(dataFim).toISOString() : null
         };
 
         try {
