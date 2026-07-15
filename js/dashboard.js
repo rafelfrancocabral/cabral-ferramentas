@@ -2164,7 +2164,7 @@ function countProductsByCategory(catName) {
 }
 
 function renderCategories() {
-    const cats = getCategories();
+    const cats = [...getCategories()].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
     const tbody = document.getElementById('categoryTableBody');
     const empty = document.getElementById('categoryListEmpty');
     const table = tbody.closest('.table-container').querySelector('.data-table');

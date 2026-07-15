@@ -601,7 +601,7 @@ function renderCatalog(filter = 'all') {
 
     if (!tabs || !allGrid) return;
 
-    const cats = [...new Set(products.map(p => p.categoria).filter(Boolean))];
+    const cats = [...new Set(products.map(p => p.categoria).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
     tabs.innerHTML = '<button class="catalog-tab active" data-cat="all"><i class="fas fa-th-large"></i> Todos</button>';
     cats.forEach(cat => {
         tabs.innerHTML += `<button class="catalog-tab" data-cat="${cat}"><i class="fas fa-tag"></i> ${cat}</button>`;
