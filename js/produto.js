@@ -223,9 +223,15 @@
         document.getElementById('navbar')?.classList.toggle('scrolled', window.scrollY > 50);
     });
 
-    // Cart sidebar (simplified — just open/close)
+    // Cart sidebar (simplified — redirect to index with cart open)
     const cartBtn = document.getElementById('navCartBtn');
     const cartBadge = document.getElementById('cartBadge');
+    if (cartBtn) {
+        cartBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = 'index.html?openCart=1';
+        });
+    }
     if (cartBadge) {
         try {
             const cart = JSON.parse(localStorage.getItem('cabral_cart') || '[]');

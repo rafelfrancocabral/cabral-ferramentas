@@ -791,6 +791,12 @@ if (cartBtn) cartBtn.addEventListener('click', openCart);
 if (cartCloseBtn) cartCloseBtn.addEventListener('click', closeCart);
 if (cartOverlay) cartOverlay.addEventListener('click', closeCart);
 
+// Auto-open cart if redirected from product page
+if (new URLSearchParams(window.location.search).get('openCart') === '1') {
+    setTimeout(() => { openCart(); }, 500);
+    history.replaceState(null, '', window.location.pathname);
+}
+
 // WhatsApp checkout
 let checkoutSubtotal = 0;
 let checkoutDiscount = 0;
