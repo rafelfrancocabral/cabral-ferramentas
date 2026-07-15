@@ -114,10 +114,19 @@
     async function loadRelated(category, currentId, productName) {
         if (!category) return;
         const catNorm = normalize(category);
-        const { data } = await db.from('produtos').select('*').eq('visivel', true).range(0, 9999);
-        if (!data || data.length <= 1) return;
+        const PAGE_SIZE = 1000;
+        let allProducts = [];
+        let from = 0;
+        while (true) {
+            const { data } = await db.from('produtos').select('*').eq('visivel', true).range(from, from + PAGE_SIZE - 1);
+            if (!data || data.length === 0) break;
+            allProducts = allProducts.concat(data);
+            if (data.length < PAGE_SIZE) break;
+            from += PAGE_SIZE;
+        }
+        if (allProducts.length <= 1) return;
 
-        let related = data.filter(p => p.id !== currentId && (p.estoque || 0) > 0);
+        let related = allProducts.filter(p => p.id !== currentId && (p.estoque || 0) > 0);
 
         const complementTerms = [];
         for (const [key, comps] of Object.entries(RELATED_PRODUCTS_MAP)) {

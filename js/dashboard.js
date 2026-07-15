@@ -578,15 +578,21 @@ if (_dashboardContent) barObserver.observe(_dashboardContent);
 let _quotesCache = [];
 
 async function loadQuotes() {
-    const { data, error } = await db.from(SUPABASE_QUOTES_TABLE)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .range(0, 9999);
-    if (error) {
-        console.error('Erro ao carregar orçamentos:', error);
-        return [];
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db.from(SUPABASE_QUOTES_TABLE)
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar orçamentos:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
     }
-    _quotesCache = data || [];
+    _quotesCache = all;
     return _quotesCache;
 }
 
@@ -941,19 +947,27 @@ function getProductCount() {
     return _productsTotalCount;
 }
 
+async function fetchAllProducts() {
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db
+            .from(SUPABASE_PRODUCTS_TABLE)
+            .select('*')
+            .order('id', { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar produtos:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+    }
+    return all;
+}
+
 async function loadProducts() {
-    const [data] = await Promise.all([
-        (async () => {
-            const { data, error } = await db
-                .from(SUPABASE_PRODUCTS_TABLE)
-                .select('*')
-                .order('id', { ascending: true })
-                .range(0, 9999);
-            if (error) { console.error('Erro ao carregar produtos:', error); return []; }
-            return data || [];
-        })(),
-        loadProductCount()
-    ]);
+    const [data, count] = await Promise.all([fetchAllProducts(), loadProductCount()]);
     _productsCache = data;
     return _productsCache;
 }
@@ -2115,12 +2129,22 @@ document.getElementById('btnSyncCat').addEventListener('click', async () => {
 let _categoriesCache = [];
 
 async function loadCategories() {
-    const { data, error } = await db
-        .from(SUPABASE_CATEGORIES_TABLE)
-        .select('*')
-        .order('id', { ascending: true });
-    if (error) { console.error('Erro ao carregar categorias:', error); return []; }
-    _categoriesCache = data || [];
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db
+            .from(SUPABASE_CATEGORIES_TABLE)
+            .select('*')
+            .order('id', { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar categorias:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+    }
+    _categoriesCache = all;
     return _categoriesCache;
 }
 

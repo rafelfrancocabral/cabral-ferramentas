@@ -15,15 +15,21 @@ const SUPABASE_POPUPS_TABLE = 'popups';
 let _visitorsCache = [];
 
 async function loadVisitors() {
-    const { data, error } = await db.from(SUPABASE_VISITORS_TABLE)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .range(0, 9999);
-    if (error) {
-        console.error('Erro ao carregar visitantes:', error);
-        return [];
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db.from(SUPABASE_VISITORS_TABLE)
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar visitantes:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
     }
-    _visitorsCache = data || [];
+    _visitorsCache = all;
     return _visitorsCache;
 }
 
@@ -35,15 +41,21 @@ function getVisitors() {
 let _viewsCache = [];
 
 async function loadViews() {
-    const { data, error } = await db.from(SUPABASE_VIEWS_TABLE)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .range(0, 9999);
-    if (error) {
-        console.error('Erro ao carregar visualizações:', error);
-        return [];
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db.from(SUPABASE_VIEWS_TABLE)
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar visualizações:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
     }
-    _viewsCache = data || [];
+    _viewsCache = all;
     return _viewsCache;
 }
 

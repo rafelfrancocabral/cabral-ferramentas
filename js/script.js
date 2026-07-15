@@ -479,24 +479,42 @@ let _catalogProducts = [];
 let _catalogCategories = [];
 
 async function fetchCatalogProducts() {
-    const { data, error } = await db
-        .from(SUPABASE_PRODUCTS_TABLE)
-        .select('*')
-        .order('id', { ascending: true })
-        .range(0, 9999);
-    if (error) { console.error('Erro ao carregar catálogo:', error); return []; }
-    _catalogProducts = (data || []).filter(p => p.visivel !== false);
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db
+            .from(SUPABASE_PRODUCTS_TABLE)
+            .select('*')
+            .order('id', { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar catálogo:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+    }
+    _catalogProducts = all.filter(p => p.visivel !== false);
     return _catalogProducts;
 }
 
 async function fetchCatalogCategories() {
-    const { data, error } = await db
-        .from(SUPABASE_CATEGORIES_TABLE)
-        .select('*')
-        .order('id', { ascending: true })
-        .range(0, 9999);
-    if (error) { console.error('Erro ao carregar categorias:', error); return []; }
-    _catalogCategories = data || [];
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db
+            .from(SUPABASE_CATEGORIES_TABLE)
+            .select('*')
+            .order('id', { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar categorias:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+    }
+    _catalogCategories = all;
     return _catalogCategories;
 }
 
