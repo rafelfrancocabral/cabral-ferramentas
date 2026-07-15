@@ -114,6 +114,7 @@ const pageNames = {
     entregas: { title: 'Entregas', subtitle: 'Configurar taxas de entrega' },
     clientes: { title: 'Clientes', subtitle: 'Clientes que enviaram orçamentos' },
     cupons: { title: 'Cupons', subtitle: 'Cupons e promoções' },
+    popups: { title: 'Popups', subtitle: 'Popups de promoção e avisos' },
     config: { title: 'Configurações', subtitle: 'Personalizar o sistema' }
 };
 
@@ -3190,15 +3191,243 @@ function renderMetrics() {
 }
 
 // ===========================
+// Popups CRUD
+// ===========================
+let _popupsCache = [];
+
+async function loadPopups() {
+    const { data, error } = await db
+        .from(SUPABASE_POPUPS_TABLE)
+        .select('*')
+        .order('ordem', { ascending: true })
+        .range(0, 9999);
+    if (error) { console.error('Erro ao carregar popups:', error); return []; }
+    _popupsCache = data || [];
+    return _popupsCache;
+}
+
+function getPopups() {
+    return _popupsCache;
+}
+
+function renderPopups() {
+    const popups = getPopups();
+    const tbody = document.getElementById('popupTableBody');
+    const empty = document.getElementById('popupListEmpty');
+    const table = tbody ? tbody.closest('.table-container').querySelector('.data-table') : null;
+
+    if (!tbody) return;
+
+    if (popups.length === 0) {
+        tbody.innerHTML = '';
+        if (table) table.style.display = 'none';
+        if (empty) empty.style.display = '';
+        return;
+    }
+
+    if (table) table.style.display = '';
+    if (empty) empty.style.display = 'none';
+
+    tbody.innerHTML = popups.map((p, i) => {
+        const tipoBadge = p.tipo === 'promocao'
+            ? '<span class="popup-type-badge promocao"><i class="fas fa-tag"></i> Promoção</span>'
+            : '<span class="popup-type-badge aviso"><i class="fas fa-info-circle"></i> Aviso</span>';
+
+        let detail = '';
+        if (p.tipo === 'promocao') {
+            detail = `<span class="popup-detail-text">${p.produto_codigo || '—'}</span>`;
+        } else {
+            detail = `<span class="popup-detail-text">${(p.mensagem || '').substring(0, 50)}${(p.mensagem || '').length > 50 ? '...' : ''}</span>`;
+        }
+
+        const toggleChecked = p.ativo ? 'checked' : '';
+
+        return `<tr data-id="${p.id}">
+            <td style="color:var(--text-muted);font-size:0.8rem;">${i + 1}</td>
+            <td>${tipoBadge}</td>
+            <td style="font-weight:500;">${p.titulo || ''}</td>
+            <td>${detail}</td>
+            <td>
+                <label class="toggle-switch small">
+                    <input type="checkbox" ${toggleChecked} onchange="togglePopupAtivo(${p.id}, this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </td>
+            <td>
+                <div style="display:flex;gap:6px;">
+                    <button class="action-btn edit-btn" onclick="editPopup(${p.id})" title="Editar"><i class="fas fa-pen"></i></button>
+                    <button class="action-btn delete-btn" onclick="deletePopup(${p.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+window.togglePopupAtivo = async function(id, ativo) {
+    await db.from(SUPABASE_POPUPS_TABLE).update({ ativo }).eq('id', id);
+    const p = _popupsCache.find(x => x.id === id);
+    if (p) p.ativo = ativo;
+    showToast(ativo ? 'Popup ativado' : 'Popup desativado');
+};
+
+window.editPopup = function(id) {
+    const popup = _popupsCache.find(p => p.id === id);
+    if (!popup) return;
+
+    document.getElementById('popupId').value = popup.id;
+    document.getElementById('popupModalTitle').innerHTML = '<i class="fas fa-rectangle-ad"></i> Editar Popup';
+    document.getElementById('popupTipo').value = popup.tipo || 'aviso';
+    document.getElementById('popupOrdem').value = popup.ordem || 0;
+    document.getElementById('popupTitulo').value = popup.titulo || '';
+    document.getElementById('popupMensagem').value = popup.mensagem || '';
+    document.getElementById('popupAtivo').checked = popup.ativo !== false;
+
+    if (popup.tipo === 'promocao') {
+        document.getElementById('popupProdutoCodigo').value = popup.produto_codigo || '';
+        document.getElementById('popupPrecoOriginal').value = popup.preco_original || '';
+        document.getElementById('popupPrecoPromo').value = popup.preco_promocional || '';
+        document.getElementById('popupPromoFields').style.display = '';
+        document.getElementById('popupAvisoFields').style.display = 'none';
+        lookupPopupProduct(popup.produto_codigo);
+    } else {
+        document.getElementById('popupImagemUrl').value = popup.imagem_url || '';
+        document.getElementById('popupPromoFields').style.display = 'none';
+        document.getElementById('popupAvisoFields').style.display = '';
+        document.getElementById('popupPromoPreview').style.display = 'none';
+    }
+
+    document.getElementById('popupBotaoTexto').value = popup.botao_texto || 'Ver Produto';
+    document.getElementById('popupBotaoLink').value = popup.botao_link || '';
+
+    document.getElementById('popupModal').classList.add('active');
+};
+
+window.deletePopup = async function(id) {
+    if (!confirm('Excluir este popup?')) return;
+    await db.from(SUPABASE_POPUPS_TABLE).delete().eq('id', id);
+    await loadPopups();
+    renderPopups();
+    showToast('Popup excluído!');
+};
+
+async function lookupPopupProduct(codigo) {
+    if (!codigo) return;
+    const preview = document.getElementById('popupPromoPreview');
+    const products = getProducts();
+    const product = products.find(p => p.codigo && p.codigo.toLowerCase() === codigo.toLowerCase());
+    if (product) {
+        const img = product.imagens && product.imagens.length > 0 ? product.imagens[0] : '';
+        document.getElementById('popupProdImg').src = img || 'https://via.placeholder.com/60';
+        document.getElementById('popupProdNome').textContent = product.nome;
+        document.getElementById('popupProdPrecoOld').textContent = 'R$ ' + (product.preco || 0).toFixed(2).replace('.', ',');
+        document.getElementById('popupProdPrecoNew').textContent = 'R$ ' + (product.precopromocional || product.precoPromocional || product.preco || 0).toFixed(2).replace('.', ',');
+        document.getElementById('popupPrecoOriginal').value = product.preco || '';
+        if (!document.getElementById('popupPrecoPromo').value) {
+            document.getElementById('popupPrecoPromo').value = product.precopromocional || product.precoPromocional || '';
+        }
+        if (!document.getElementById('popupTitulo').value) {
+            document.getElementById('popupTitulo').value = product.nome;
+        }
+        preview.style.display = 'flex';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+function initPopupModal() {
+    const modal = document.getElementById('popupModal');
+    const tipoSelect = document.getElementById('popupTipo');
+    const promoFields = document.getElementById('popupPromoFields');
+    const avisoFields = document.getElementById('popupAvisoFields');
+
+    function updateTipoFields() {
+        if (tipoSelect.value === 'promocao') {
+            promoFields.style.display = '';
+            avisoFields.style.display = 'none';
+        } else {
+            promoFields.style.display = 'none';
+            avisoFields.style.display = '';
+        }
+    }
+    updateTipoFields();
+    tipoSelect.addEventListener('change', updateTipoFields);
+
+    document.getElementById('popupProdutoCodigo').addEventListener('blur', function() {
+        lookupPopupProduct(this.value.trim());
+    });
+
+    document.getElementById('popupModalClose').addEventListener('click', () => modal.classList.remove('active'));
+    document.getElementById('popupCancelBtn').addEventListener('click', () => modal.classList.remove('active'));
+
+    document.getElementById('btnNewPopup').addEventListener('click', () => {
+        document.getElementById('popupId').value = '';
+        document.getElementById('popupModalTitle').innerHTML = '<i class="fas fa-rectangle-ad"></i> Novo Popup';
+        document.getElementById('popupTipo').value = 'aviso';
+        document.getElementById('popupOrdem').value = 0;
+        document.getElementById('popupTitulo').value = '';
+        document.getElementById('popupMensagem').value = '';
+        document.getElementById('popupProdutoCodigo').value = '';
+        document.getElementById('popupPrecoOriginal').value = '';
+        document.getElementById('popupPrecoPromo').value = '';
+        document.getElementById('popupImagemUrl').value = '';
+        document.getElementById('popupBotaoTexto').value = 'Ver Produto';
+        document.getElementById('popupBotaoLink').value = '';
+        document.getElementById('popupAtivo').checked = true;
+        document.getElementById('popupPromoPreview').style.display = 'none';
+        updateTipoFields();
+        modal.classList.add('active');
+    });
+
+    document.getElementById('popupSaveBtn').addEventListener('click', async () => {
+        const id = document.getElementById('popupId').value;
+        const tipo = tipoSelect.value;
+        const titulo = document.getElementById('popupTitulo').value.trim();
+        if (!titulo) { showToast('Preencha o título'); return; }
+
+        const data = {
+            titulo,
+            mensagem: document.getElementById('popupMensagem').value.trim(),
+            tipo,
+            produto_codigo: tipo === 'promocao' ? document.getElementById('popupProdutoCodigo').value.trim() : null,
+            preco_original: tipo === 'promocao' ? parseFloat(document.getElementById('popupPrecoOriginal').value) || null : null,
+            preco_promocional: tipo === 'promocao' ? parseFloat(document.getElementById('popupPrecoPromo').value) || null : null,
+            imagem_url: tipo === 'aviso' ? document.getElementById('popupImagemUrl').value.trim() : null,
+            botao_texto: document.getElementById('popupBotaoTexto').value.trim() || 'Ver Produto',
+            botao_link: document.getElementById('popupBotaoLink').value.trim() || null,
+            ativo: document.getElementById('popupAtivo').checked,
+            ordem: parseInt(document.getElementById('popupOrdem').value) || 0
+        };
+
+        try {
+            if (id) {
+                await db.from(SUPABASE_POPUPS_TABLE).update(data).eq('id', parseInt(id));
+                showToast('Popup atualizado!');
+            } else {
+                await db.from(SUPABASE_POPUPS_TABLE).insert(data);
+                showToast('Popup criado!');
+            }
+            await loadPopups();
+            renderPopups();
+            modal.classList.remove('active');
+        } catch (e) {
+            console.error('Erro ao salvar popup:', e);
+            showToast('Erro ao salvar popup');
+        }
+    });
+}
+
+// ===========================
 // Init: Load from Supabase
 // ===========================
 (async function initDashboard() {
-    await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadVisitors(), loadViews()]);
+    await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadVisitors(), loadViews(), loadPopups()]);
     renderProducts();
     renderCategories();
     renderQuotes();
     renderClients();
     renderMetrics();
+    renderPopups();
+    initPopupModal();
     updateCategorySelects();
     updateCharts('30d');
     const kpiRow = document.querySelector('.kpi-row');

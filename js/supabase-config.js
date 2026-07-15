@@ -9,6 +9,7 @@ const SUPABASE_QUOTES_TABLE = 'orcamentos';
 const SUPABASE_VISITORS_TABLE = 'visitantes';
 const SUPABASE_VIEWS_TABLE = 'visualizacoes_produto';
 const SUPABASE_STORAGE_BUCKET = 'produtos';
+const SUPABASE_POPUPS_TABLE = 'popups';
 
 // Visitors cache
 let _visitorsCache = [];

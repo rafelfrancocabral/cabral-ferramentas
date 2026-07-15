@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=14">
+    <link rel="stylesheet" href="css/style.css?v=15">
 </head>
 <body>
     <!-- Particles Background -->
@@ -444,6 +444,31 @@
         </div>
     </div>
 
+    <!-- Promo Popup Overlay -->
+    <div class="promo-popup-overlay" id="promoPopupOverlay" style="display:none;">
+        <div class="promo-popup-card" id="promoPopupCard">
+            <button class="promo-popup-close" id="promoPopupClose"><i class="fas fa-xmark"></i></button>
+            <div class="promo-popup-badge" id="promoPopupBadge">Oferta do Dia</div>
+            <div class="promo-popup-body">
+                <div class="promo-popup-image" id="promoPopupImageWrap">
+                    <img id="promoPopupImg" src="" alt="">
+                </div>
+                <div class="promo-popup-content">
+                    <h3 class="promo-popup-title" id="promoPopupTitle"></h3>
+                    <p class="promo-popup-msg" id="promoPopupMsg"></p>
+                    <div class="promo-popup-pricing" id="promoPopupPricing">
+                        <span class="promo-popup-old-price" id="promoPopupOldPrice"></span>
+                        <span class="promo-popup-new-price" id="promoPopupNewPrice"></span>
+                    </div>
+                    <a href="#" class="promo-popup-btn" id="promoPopupBtn" target="_blank">Ver Produto</a>
+                </div>
+            </div>
+            <div class="promo-popup-progress">
+                <div class="promo-popup-progress-bar" id="promoPopupProgressBar"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- WhatsApp Float Button -->
     <a href="https://wa.me/5512997144504" target="_blank" class="whatsapp-float" title="Fale conosco no WhatsApp">
         <i class="fab fa-whatsapp"></i>
@@ -452,6 +477,6 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/script.js?v=13"></script>
+    <script src="js/script.js?v=14"></script>
 </body>
 </html>

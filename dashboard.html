@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=29">
+    <link rel="stylesheet" href="css/dashboard.css?v=30">
 </head>
 <body>
     <script>
@@ -56,6 +56,10 @@
             <a href="#" class="sidebar-link" data-page="cupons">
                 <i class="fas fa-ticket"></i>
                 <span>Cupons</span>
+            </a>
+            <a href="#" class="sidebar-link" data-page="popups">
+                <i class="fas fa-rectangle-ad"></i>
+                <span>Popups</span>
             </a>
             <a href="#" class="sidebar-link" data-page="config">
                 <i class="fas fa-gear"></i>
@@ -853,6 +857,132 @@
             </div>
         </div>
 
+        <!-- Popups Page (hidden by default) -->
+        <div class="page-content hidden" id="popupsPage">
+            <div class="page-header-row">
+                <h2>Popups</h2>
+                <div class="page-actions">
+                    <button class="btn-primary-sm" id="btnNewPopup"><i class="fas fa-plus"></i> Novo Popup</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">#</th>
+                            <th>Tipo</th>
+                            <th>Título</th>
+                            <th>Detalhes</th>
+                            <th style="width:70px;">Ativo</th>
+                            <th style="width:100px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="popupTableBody">
+                    </tbody>
+                </table>
+                <div class="table-empty" id="popupListEmpty" style="display:none;">
+                    <i class="fas fa-rectangle-ad"></i>
+                    <p>Nenhum popup cadastrado</p>
+                    <span>Crie popups de promoção ou aviso para exibir no site</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup Modal -->
+        <div class="modal-overlay" id="popupModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title-row">
+                        <h3 id="popupModalTitle"><i class="fas fa-rectangle-ad"></i> Novo Popup</h3>
+                        <button class="modal-close" id="popupModalClose"><i class="fas fa-xmark"></i></button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="popupId">
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="popupTipo">
+                                <option value="aviso">Aviso</option>
+                                <option value="promocao">Promoção de Produto</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ordem</label>
+                            <input type="number" id="popupOrdem" value="0" min="0" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Título</label>
+                        <input type="text" id="popupTitulo" placeholder="Ex: Oferta Especial!">
+                    </div>
+                    <div class="form-group">
+                        <label>Mensagem</label>
+                        <textarea id="popupMensagem" rows="3" placeholder="Descrição do popup..."></textarea>
+                    </div>
+
+                    <!-- Promoção fields -->
+                    <div id="popupPromoFields">
+                        <div class="form-group">
+                            <label>Código do Produto</label>
+                            <input type="text" id="popupProdutoCodigo" placeholder="Ex: FUR-001">
+                            <small style="color:var(--text-muted);font-size:0.75rem;">Digite o código e pressione Enter ou clique fora para buscar</small>
+                        </div>
+                        <div class="popup-promo-preview" id="popupPromoPreview" style="display:none;">
+                            <img id="popupProdImg" src="" alt="">
+                            <div>
+                                <span id="popupProdNome" style="font-weight:600;"></span>
+                                <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+                                    <span id="popupProdPrecoOld" style="text-decoration:line-through;color:var(--text-muted);font-size:0.85rem;"></span>
+                                    <span id="popupProdPrecoNew" style="color:var(--accent);font-weight:700;"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label>Preço Original (auto)</label>
+                                <input type="text" id="popupPrecoOriginal" readonly style="opacity:0.6;">
+                            </div>
+                            <div class="form-group">
+                                <label>Preço Promocional</label>
+                                <input type="number" id="popupPrecoPromo" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aviso fields -->
+                    <div id="popupAvisoFields">
+                        <div class="form-group">
+                            <label>URL da Imagem (opcional)</label>
+                            <input type="url" id="popupImagemUrl" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <!-- Common fields -->
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Texto do Botão</label>
+                            <input type="text" id="popupBotaoTexto" value="Ver Produto" placeholder="Ver Produto">
+                        </div>
+                        <div class="form-group">
+                            <label>Link do Botão (URL)</label>
+                            <input type="url" id="popupBotaoLink" placeholder="https://... ou deixe vazio">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="popupAtivo" checked>
+                            <span>Ativo (visível no site)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer" style="justify-content:flex-end;">
+                    <button class="btn-secondary" id="popupCancelBtn">Cancelar</button>
+                    <button class="btn-primary" id="popupSaveBtn"><i class="fas fa-check"></i> Salvar</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Configurações Page (hidden by default) -->
         <div class="page-content hidden" id="configPage">
             <div class="page-header-row">
@@ -1129,6 +1259,6 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/dashboard.js?v=31"></script>
+    <script src="js/dashboard.js?v=32"></script>
 </body>
 </html>

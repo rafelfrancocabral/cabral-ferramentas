@@ -1158,6 +1158,7 @@ document.addEventListener('keydown', (e) => {
     renderCartSidebar();
     console.log(`Catálogo: ${_catalogProducts.length} produtos, ${_catalogCategories.length} categorias`);
     trackVisitor();
+    initPromoPopup();
 })();
 
 function renderBrands() {
@@ -1195,5 +1196,118 @@ async function trackVisitor() {
         });
     } catch (err) {
         console.error('Erro ao rastrear visitante:', err);
+    }
+}
+
+// ===========================
+// Promo Popup
+// ===========================
+async function initPromoPopup() {
+    if (sessionStorage.getItem('cabral_popup_shown')) return;
+
+    try {
+        const { data } = await db
+            .from('popups')
+            .select('*')
+            .eq('ativo', true)
+            .order('ordem', { ascending: true })
+            .range(0, 9999);
+
+        if (!data || data.length === 0) return;
+
+        const popup = data[0];
+        showPromoPopup(popup);
+    } catch (err) {
+        console.error('Erro ao carregar popups:', err);
+    }
+}
+
+function showPromoPopup(popup) {
+    const overlay = document.getElementById('promoPopupOverlay');
+    const card = document.getElementById('promoPopupCard');
+    if (!overlay || !card) return;
+
+    document.getElementById('promoPopupBadge').textContent = popup.tipo === 'promocao' ? 'Oferta do Dia' : (popup.titulo || 'Aviso');
+    document.getElementById('promoPopupTitle').textContent = popup.titulo || '';
+    document.getElementById('promoPopupMsg').textContent = popup.mensagem || '';
+
+    const pricing = document.getElementById('promoPopupPricing');
+    const oldPrice = document.getElementById('promoPopupOldPrice');
+    const newPrice = document.getElementById('promoPopupNewPrice');
+
+    if (popup.tipo === 'promocao' && popup.preco_original) {
+        pricing.style.display = 'flex';
+        oldPrice.textContent = 'R$ ' + parseFloat(popup.preco_original).toFixed(2).replace('.', ',');
+        newPrice.textContent = popup.preco_promocional ? 'R$ ' + parseFloat(popup.preco_promocional).toFixed(2).replace('.', ',') : '';
+    } else {
+        pricing.style.display = 'none';
+    }
+
+    const imgWrap = document.getElementById('promoPopupImageWrap');
+    const img = document.getElementById('promoPopupImg');
+    if (popup.tipo === 'promocao' && popup.produto_codigo) {
+        const product = _catalogProducts.find(p => p.codigo && p.codigo.toLowerCase() === popup.produto_codigo.toLowerCase());
+        if (product && product.imagens && product.imagens.length > 0) {
+            img.src = product.imagens[0];
+            imgWrap.style.display = '';
+        } else {
+            imgWrap.style.display = 'none';
+        }
+    } else if (popup.imagem_url) {
+        img.src = popup.imagem_url;
+        imgWrap.style.display = '';
+    } else {
+        imgWrap.style.display = 'none';
+    }
+
+    const btn = document.getElementById('promoPopupBtn');
+    btn.textContent = popup.botao_texto || 'Ver Produto';
+    if (popup.tipo === 'promocao' && popup.produto_codigo) {
+        const product = _catalogProducts.find(p => p.codigo && p.codigo.toLowerCase() === popup.produto_codigo.toLowerCase());
+        btn.href = product ? '#produtos' : (popup.botao_link || '#');
+        btn.onclick = function(e) {
+            if (product) {
+                e.preventDefault();
+                closePromoPopup();
+                openProductModal(product);
+            }
+        };
+    } else {
+        btn.href = popup.botao_link || '#';
+        btn.onclick = function() { closePromoPopup(); };
+    }
+
+    overlay.style.display = 'flex';
+
+    const progressBar = document.getElementById('promoPopupProgressBar');
+    progressBar.style.animation = 'none';
+    progressBar.offsetHeight;
+    progressBar.style.animation = 'popupProgress 8s linear forwards';
+
+    const fadeTimer = setTimeout(() => closePromoPopup(), 8000);
+
+    document.getElementById('promoPopupClose').onclick = function() {
+        clearTimeout(fadeTimer);
+        closePromoPopup();
+    };
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            clearTimeout(fadeTimer);
+            closePromoPopup();
+        }
+    });
+
+    sessionStorage.setItem('cabral_popup_shown', '1');
+}
+
+function closePromoPopup() {
+    const overlay = document.getElementById('promoPopupOverlay');
+    if (overlay) {
+        overlay.style.animation = 'popupFadeIn 0.3s ease reverse';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            overlay.style.animation = '';
+        }, 280);
     }
 }
