@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=15">
+    <link rel="stylesheet" href="css/style.css?v=16">
 </head>
 <body>
     <!-- Particles Background -->
@@ -323,7 +323,11 @@
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2026 Cabral Ferramentas. Todos os direitos reservados.</p>
-                <p class="footer-dev">Developed by <strong>BlackShell</strong></p>
+                <div class="footer-bottom-links">
+                    <a href="#" id="privacyPolicyLink">Política de Privacidade</a>
+                    <span class="footer-dot">·</span>
+                    <p class="footer-dev">Developed by <strong>BlackShell</strong></p>
+                </div>
             </div>
         </div>
     </footer>
@@ -474,9 +478,90 @@
         <i class="fab fa-whatsapp"></i>
     </a>
 
+    <!-- Privacy Policy Modal -->
+    <div class="privacy-overlay" id="privacyOverlay" style="display:none;">
+        <div class="privacy-modal">
+            <div class="privacy-header">
+                <h2><i class="fas fa-shield-halved"></i> Política de Privacidade</h2>
+                <button class="privacy-close" id="privacyClose"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="privacy-body">
+                <p class="privacy-updated">Última atualização: Julho de 2026</p>
+
+                <h3>1. Sobre a Cabral Ferramentas</h3>
+                <p>A Cabral Ferramentas é uma loja de ferramentas, ferragens, materiais hidráulicos, elétricos, tintas, jardinagem, construção civil, EPI e rodízios, com mais de 20 anos de atendimento no Vale do Paraíba. Este site tem como objetivo apresentar nosso catálogo de produtos, facilitar orçamentos e proporcionar uma experiência de compra acessível e transparente.</p>
+
+                <h3>2. Funcionamento do Site e Catálogo</h3>
+                <p>O site funciona como um catálogo online de produtos. Os preços, disponibilidade e informações exibidos são de caráter informativo. Para efetuar uma compra ou solicitar um orçamento formal, o cliente deve entrar em contato diretamente via WhatsApp ou visitar nossa loja física.</p>
+                <ul>
+                    <li>Os produtos são organizados por categorias e marcas para facilitar a navegação.</li>
+                    <li>As imagens dos produtos são ilustrativas e podem diferir ligeiramente do produto final.</li>
+                    <li>Preços e condições de estoque estão sujeitos a alterações sem aviso prévio.</li>
+                    <li>O assistente virtual (IA) ajuda a encontrar produtos, mas suas respostas não substituem o atendimento profissional.</li>
+                </ul>
+
+                <h3>3. Dados Coletados</h3>
+                <p>Para funcionamento do site e melhoria do atendimento, podemos coletar:</p>
+                <ul>
+                    <li><strong>Dados de navegação:</strong> Páginas visitadas, tempo de permanência e produtos consultados, para entendermos quais produtos são mais procurados.</li>
+                    <li><strong>Dados fornecidos pelo cliente:</strong> Nome, telefone e informações enviadas ao solicitar orçamentos via formulário ou WhatsApp.</li>
+                    <li><strong>Dados de localização:</strong> Cidade e estado, de forma aproximada, para melhorar nosso atendimento regional.</li>
+                </ul>
+
+                <h3>4. Uso dos Dados</h3>
+                <p>Os dados coletados são utilizados exclusivamente para:</p>
+                <ul>
+                    <li>Processar e responder orçamentos solicitados pelos clientes.</li>
+                    <li>Melhorar a experiência de navegação e o catálogo de produtos.</li>
+                    <li>Enviar informações sobre promoções e ofertas (quando autorizado pelo cliente).</li>
+                    <li>Garantir a segurança e o funcionamento adequado do site.</li>
+                </ul>
+
+                <h3>5. Compartilhamento de Dados</h3>
+                <p>A Cabral Ferramentas não vende, aluga ou compartilha dados pessoais com terceiros para fins comerciais. Os dados podem ser compartilhados apenas quando:</p>
+                <ul>
+                    <li>Necessário para cumprir obrigação legal ou regulatória.</li>
+                    <li>Para proteger os direitos, a segurança ou a propriedade da Cabral Ferramentas e seus clientes.</li>
+                </ul>
+
+                <h3>6. Cookies e Tecnologias de Rastreamento</h3>
+                <p>Este site utiliza cookies e tecnologias semelhantes para:</p>
+                <ul>
+                    <li>Manter o carrinho de compras ativo durante a navegação.</li>
+                    <li>Controlar a exibição de popups de promoção (exibidos uma vez por sessão).</li>
+                    <li>Realizar estatísticas de访问 (analytics) de forma anônima.</li>
+                </ul>
+                <p>O cliente pode configurar seu navegador para recusar cookies, porém isso pode afetar o funcionamento de algumas funcionalidades do site.</p>
+
+                <h3>7. Segurança</h3>
+                <p>Adotamos medidas de segurança técnicas e organizacionais para proteger os dados pessoais contra acesso não autorizado, alteração, divulgação ou destruição. No entanto, nenhum método de transmissão pela internet é 100% seguro, e não podemos garantir segurança absoluta.</p>
+
+                <h3>8. Direitos do Cliente (LGPD)</h3>
+                <p>Em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), o cliente tem direito a:</p>
+                <ul>
+                    <li>Solicitar acesso aos seus dados pessoais armazenados.</li>
+                    <li>Solicitar correção de dados incompletos ou desatualizados.</li>
+                    <li>Solicitar a exclusão de seus dados pessoais.</li>
+                    <li>Revogar o consentimento para uso de dados a qualquer momento.</li>
+                </ul>
+                <p>Para exercer esses entre em contato pelo e-mail ou WhatsApp disponibilizados no site.</p>
+
+                <h3>9. Alterações nesta Política</h3>
+                <p>Esta Política de Privacidade pode ser atualizada periodicamente. Quaisquer alterações serão publicadas nesta página com a data de atualização revisada. Recomendamos que os clientes revisem esta política regularmente.</p>
+
+                <h3>10. Contato</h3>
+                <p>Em caso de dúvidas sobre esta Política de Privacidade ou sobre o tratamento de seus dados, entre em contato:</p>
+                <ul>
+                    <li><strong>WhatsApp:</strong> (12) 99714-4504</li>
+                    <li><strong>Endereço:</strong> Cabral Ferramentas — Vale do Paraíba, SP</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/script.js?v=16"></script>
+    <script src="js/script.js?v=17"></script>
 </body>
 </html>

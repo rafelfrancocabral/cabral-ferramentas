@@ -797,6 +797,19 @@ if (new URLSearchParams(window.location.search).get('openCart') === '1') {
     history.replaceState(null, '', window.location.pathname);
 }
 
+// Privacy Policy Modal
+const privacyLink = document.getElementById('privacyPolicyLink');
+const privacyOverlay = document.getElementById('privacyOverlay');
+const privacyClose = document.getElementById('privacyClose');
+if (privacyLink && privacyOverlay) {
+    privacyLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        privacyOverlay.style.display = 'flex';
+    });
+    if (privacyClose) privacyClose.addEventListener('click', () => privacyOverlay.style.display = 'none');
+    privacyOverlay.addEventListener('click', (e) => { if (e.target === privacyOverlay) privacyOverlay.style.display = 'none'; });
+}
+
 // WhatsApp checkout
 let checkoutSubtotal = 0;
 let checkoutDiscount = 0;
