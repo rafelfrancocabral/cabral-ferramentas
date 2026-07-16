@@ -749,7 +749,7 @@ ul { list-style: none; }
 .brands-track {
     display: flex;
     gap: 32px;
-    animation: scroll-brands 30s linear infinite;
+    animation: scroll-brands 60s linear infinite;
     width: max-content;
 }
 
