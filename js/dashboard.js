@@ -2115,8 +2115,12 @@ renderProducts();
 // ===========================
 // Product Search
 // ===========================
+let _searchDebounce = null;
 document.getElementById('productSearch').addEventListener('input', (e) => {
-    filterProducts(e.target.value.toLowerCase().trim());
+    clearTimeout(_searchDebounce);
+    _searchDebounce = setTimeout(() => {
+        filterProducts(e.target.value.toLowerCase().trim());
+    }, 200);
 });
 
 // ===========================
