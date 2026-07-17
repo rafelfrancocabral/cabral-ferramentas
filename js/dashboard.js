@@ -1130,6 +1130,7 @@ document.getElementById('btnNewProduct').addEventListener('click', () => {
     productSubmitText.textContent = 'Salvar';
     productIdInput.value = '';
     productForm.reset();
+    document.getElementById('prodDescricao').innerHTML = '';
     document.getElementById('promoPriceGroup').style.display = 'none';
     pendingUploadedImages = [];
     renderImagePreviews();
@@ -1159,6 +1160,16 @@ function closeProductModal() {
         showUrlPreview(input, preview);
     });
 }
+
+// ===========================
+// Rich Text Editor Toolbar
+// ===========================
+document.querySelectorAll('#richtextToolbar button[data-cmd]').forEach(btn => {
+    btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        document.execCommand(btn.dataset.cmd, false, null);
+    });
+});
 
 // ===========================
 // Image Upload System
@@ -1404,7 +1415,7 @@ window.editProduct = function(id) {
     document.getElementById('prodEstoque').value = product.estoque;
 
     // New fields
-    document.getElementById('prodDescricao').value = product.descricao || '';
+    document.getElementById('prodDescricao').innerHTML = product.descricao || '';
     pendingTags = [...(product.palavraschave || product.palavrasChave || [])];
     renderTags();
     const imgs = product.imagens || [];
@@ -1479,7 +1490,7 @@ productForm.addEventListener('submit', async (e) => {
         categoria: document.getElementById('prodCategoria').value,
         preco: preco,
         estoque: estoque,
-        descricao: document.getElementById('prodDescricao').value.trim(),
+        descricao: document.getElementById('prodDescricao').innerHTML.trim(),
         palavraschave: [...pendingTags],
         imagens: [
             ...pendingUploadedImages,

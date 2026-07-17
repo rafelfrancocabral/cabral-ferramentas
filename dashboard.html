@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=30">
+    <link rel="stylesheet" href="css/dashboard.css?v=31">
 </head>
 <body>
     <script>
@@ -390,9 +390,22 @@
                                 <label>Estoque</label>
                                 <input type="number" id="prodEstoque" placeholder="0" min="0" required>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group full-width">
                                 <label>Descrição Completa</label>
-                                <textarea id="prodDescricao" rows="1" placeholder="Detalhes do produto"></textarea>
+                                <div class="richtext-toolbar" id="richtextToolbar">
+                                    <button type="button" data-cmd="bold" title="Negrito"><i class="fas fa-bold"></i></button>
+                                    <button type="button" data-cmd="italic" title="Itálico"><i class="fas fa-italic"></i></button>
+                                    <button type="button" data-cmd="underline" title="Sublinhado"><i class="fas fa-underline"></i></button>
+                                    <button type="button" data-cmd="strikeThrough" title="Tachado"><i class="fas fa-strikethrough"></i></button>
+                                    <span class="richtext-sep"></span>
+                                    <button type="button" data-cmd="insertUnorderedList" title="Lista"><i class="fas fa-list-ul"></i></button>
+                                    <button type="button" data-cmd="insertOrderedList" title="Lista Numerada"><i class="fas fa-list-ol"></i></button>
+                                    <span class="richtext-sep"></span>
+                                    <button type="button" data-cmd="justifyLeft" title="Alinhar à esquerda"><i class="fas fa-align-left"></i></button>
+                                    <button type="button" data-cmd="justifyCenter" title="Centralizar"><i class="fas fa-align-center"></i></button>
+                                    <button type="button" data-cmd="removeFormat" title="Limpar formatação"><i class="fas fa-eraser"></i></button>
+                                </div>
+                                <div class="richtext-editor" id="prodDescricao" contenteditable="true" data-placeholder="Detalhes do produto..."></div>
                             </div>
                             <div class="form-group full-width">
                                 <label>Palavras-chave</label>
@@ -1271,6 +1284,6 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/dashboard.js?v=35"></script>
+    <script src="js/dashboard.js?v=36"></script>
 </body>
 </html>

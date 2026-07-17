@@ -62,7 +62,7 @@
                 <h1 class="pp-title">${product.nome}</h1>
                 <div class="pp-brand">${product.marca || ''}</div>
                 <div class="pp-code">${product.codigo ? 'CÓD ' + product.codigo : ''}</div>
-                <p class="pp-desc">${product.descricao || product.descricaoCompleta || ''}</p>
+                <div class="pp-desc">${product.descricao || product.descricaoCompleta || ''}</div>
                 <div class="pp-pricing">
                     ${hasPromo ? `<span class="pp-price-old">${formatPrice(product.preco)}</span>` : ''}
                     <span class="pp-price ${hasPromo ? '' : 'no-promo'}">${formatPrice(price)}</span>
