@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=17">
+    <link rel="stylesheet" href="css/style.css?v=18">
 </head>
 <body>
     <!-- Particles Background -->
@@ -135,9 +135,21 @@
                 <h2 class="section-title">Nossos <span class="accent">Produtos</span></h2>
             </div>
 
-            <!-- Category Tabs -->
-            <div class="catalog-tabs" id="catalogTabs">
-                <button class="catalog-tab active" data-cat="all"><i class="fas fa-th-large"></i> Todos</button>
+            <!-- Category Filter -->
+            <div class="catalog-filter" id="catalogTabs">
+                <div class="catalog-dropdown" id="catalogDropdown">
+                    <button class="catalog-dropdown-btn" id="catalogDropdownBtn">
+                        <i class="fas fa-filter"></i>
+                        <span id="catalogDropdownLabel">Todas as Categorias</span>
+                        <i class="fas fa-chevron-down catalog-dropdown-arrow"></i>
+                    </button>
+                    <div class="catalog-dropdown-list" id="catalogDropdownList">
+                        <div class="catalog-dropdown-item active" data-cat="all">
+                            <i class="fas fa-th-large"></i> Todas as Categorias
+                        </div>
+                    </div>
+                </div>
+                <div class="catalog-active-filters" id="catalogActiveFilters"></div>
             </div>
 
             <!-- Destaques -->
@@ -562,6 +574,6 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/script.js?v=19"></script>
+    <script src="js/script.js?v=20"></script>
 </body>
 </html>

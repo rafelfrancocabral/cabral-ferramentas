@@ -590,7 +590,9 @@ function shuffleArray(arr) {
 
 function renderCatalog(filter = 'all') {
     const products = getCatalogProducts();
-    const tabs = document.getElementById('catalogTabs');
+    const dropdownList = document.getElementById('catalogDropdownList');
+    const dropdownLabel = document.getElementById('catalogDropdownLabel');
+    const dropdownBtn = document.getElementById('catalogDropdownBtn');
     const destaques = document.getElementById('gridDestaques');
     const promos = document.getElementById('gridPromos');
     const allGrid = document.getElementById('gridAll');
@@ -599,20 +601,49 @@ function renderCatalog(filter = 'all') {
     const secAll = document.getElementById('catalogAll');
     const empty = document.getElementById('catalogEmpty');
 
-    if (!tabs || !allGrid) return;
+    if (!dropdownList || !allGrid) return;
 
-    const cats = [...new Set(products.map(p => p.categoria).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    tabs.innerHTML = '<button class="catalog-tab active" data-cat="all"><i class="fas fa-th-large"></i> Todos</button>';
+    const catCounts = {};
+    products.forEach(p => {
+        if (p.categoria) catCounts[p.categoria] = (catCounts[p.categoria] || 0) + 1;
+    });
+    const cats = Object.keys(catCounts).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+    dropdownList.innerHTML = `<div class="catalog-dropdown-item${filter === 'all' ? ' active' : ''}" data-cat="all"><i class="fas fa-th-large"></i> Todas as Categorias<span class="cat-count">${products.length}</span></div>`;
     cats.forEach(cat => {
-        tabs.innerHTML += `<button class="catalog-tab" data-cat="${cat}"><i class="fas fa-tag"></i> ${cat}</button>`;
+        dropdownList.innerHTML += `<div class="catalog-dropdown-item${filter === cat ? ' active' : ''}" data-cat="${cat}"><i class="fas fa-tag"></i> ${cat}<span class="cat-count">${catCounts[cat]}</span></div>`;
     });
 
-    tabs.querySelectorAll('.catalog-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.querySelectorAll('.catalog-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            renderCatalog(tab.dataset.cat);
+    if (filter === 'all') {
+        dropdownLabel.textContent = 'Todas as Categorias';
+    } else {
+        dropdownLabel.textContent = filter;
+    }
+
+    dropdownList.querySelectorAll('.catalog-dropdown-item').forEach(item => {
+        item.addEventListener('click', () => {
+            dropdownList.querySelectorAll('.catalog-dropdown-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            dropdownLabel.textContent = item.dataset.cat === 'all' ? 'Todas as Categorias' : item.dataset.cat;
+            dropdownBtn.classList.remove('open');
+            dropdownList.classList.remove('open');
+            renderCatalog(item.dataset.cat);
         });
+    });
+
+    if (dropdownBtn) {
+        dropdownBtn.onclick = (e) => {
+            e.stopPropagation();
+            dropdownBtn.classList.toggle('open');
+            dropdownList.classList.toggle('open');
+        };
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!dropdownBtn.contains(e.target) && !dropdownList.contains(e.target)) {
+            dropdownBtn.classList.remove('open');
+            dropdownList.classList.remove('open');
+        }
     });
 
     let filtered = filter === 'all' ? [...products] : products.filter(p => p.categoria === filter);
