@@ -2323,7 +2323,7 @@ window.deleteCategory = async function(id) {
 };
 
 function updateCategorySelects() {
-    const cats = getCategories();
+    const cats = [...getCategories()].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
     const selects = document.querySelectorAll('#prodCategoria, #prodCategoriaFilter');
     selects.forEach(sel => {
         const current = sel.value;
