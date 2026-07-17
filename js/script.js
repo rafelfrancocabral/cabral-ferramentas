@@ -639,13 +639,6 @@ function renderCatalog(filter = 'all') {
         };
     }
 
-    document.addEventListener('click', (e) => {
-        if (!dropdownBtn.contains(e.target) && !dropdownList.contains(e.target)) {
-            dropdownBtn.classList.remove('open');
-            dropdownList.classList.remove('open');
-        }
-    });
-
     let filtered = filter === 'all' ? [...products] : products.filter(p => p.categoria === filter);
 
     if (filtered.length === 0) {
@@ -664,6 +657,17 @@ function renderCatalog(filter = 'all') {
     secAll.querySelector('.catalog-subtitle').innerHTML = '<i class="fas fa-boxes-stacked"></i> Produtos';
     renderProductGrid(shuffled, document.getElementById('gridAll'));
 }
+
+(function initCatalogDropdown() {
+    document.addEventListener('click', (e) => {
+        const btn = document.getElementById('catalogDropdownBtn');
+        const list = document.getElementById('catalogDropdownList');
+        if (btn && list && !btn.contains(e.target) && !list.contains(e.target)) {
+            btn.classList.remove('open');
+            list.classList.remove('open');
+        }
+    });
+})();
 
 function renderProductGrid(products, container) {
     if (!container) return;
