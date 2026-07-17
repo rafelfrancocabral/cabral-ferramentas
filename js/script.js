@@ -1240,11 +1240,6 @@ async function trackVisitor() {
 // Promo Popup
 // ===========================
 async function initPromoPopup() {
-    if (sessionStorage.getItem('cabral_popup_shown')) {
-        console.log('[Popup] Já exibido nesta sessão, ignorando.');
-        return;
-    }
-
     try {
         const { data, error } = await db
             .from('popups')
@@ -1258,7 +1253,7 @@ async function initPromoPopup() {
             return;
         }
 
-        console.log('[Popup] Popups ativos encontrados:', data ? data.length : 0, data);
+        console.log('[Popup] Popups encontrados:', data ? data.length : 0, data);
 
         if (!data || data.length === 0) return;
 
@@ -1269,11 +1264,11 @@ async function initPromoPopup() {
             return true;
         });
 
-        console.log('[Popup] Válidos após filtro de data:', valid.length);
+        console.log('[Popup] Válidos após filtro de data:', valid.length, valid);
 
         if (valid.length === 0) return;
 
-        showPromoPopup(valid[0]);
+        setTimeout(() => showPromoPopup(valid[0]), 2000);
     } catch (err) {
         console.error('[Popup] Erro ao carregar popups:', err);
     }

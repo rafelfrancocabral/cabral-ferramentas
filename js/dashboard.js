@@ -3461,13 +3461,18 @@ function initPopupModal() {
         };
 
         try {
+            let result;
             if (id) {
-                await db.from(SUPABASE_POPUPS_TABLE).update(data).eq('id', parseInt(id));
-                showToast('Popup atualizado!');
+                result = await db.from(SUPABASE_POPUPS_TABLE).update(data).eq('id', parseInt(id));
             } else {
-                await db.from(SUPABASE_POPUPS_TABLE).insert(data);
-                showToast('Popup criado!');
+                result = await db.from(SUPABASE_POPUPS_TABLE).insert(data);
             }
+            if (result.error) {
+                console.error('Erro Supabase popup:', result.error);
+                showToast('Erro ao salvar: ' + result.error.message);
+                return;
+            }
+            showToast(id ? 'Popup atualizado!' : 'Popup criado!');
             await loadPopups();
             renderPopups();
             modal.classList.remove('active');
