@@ -147,6 +147,12 @@ sidebarLinks.forEach(link => {
 
             // Lazy load products only when needed
             if (page === 'produtos' && !_productsLoaded) {
+                const tbody = document.getElementById('productsTableBody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>Carregando produtos...</td></tr>';
+                const table = document.getElementById('productsTable');
+                if (table) table.style.display = '';
+                const empty = document.getElementById('productsEmpty');
+                if (empty) empty.style.display = 'none';
                 await loadProducts();
                 renderProducts();
             }
@@ -961,7 +967,7 @@ async function fetchAllProducts() {
     while (true) {
         const { data, error } = await db
             .from(SUPABASE_PRODUCTS_TABLE)
-            .select('id, codigo, nome, unidade, marca, categoria, preco, precoPromocional, isPromocao, isDestaque, estoque, imagens, palavraschave, palavrasChave, visivel, descricaoCompleta, dataCriacao, dataAtualizacao')
+            .select('id, codigo, nome, unidade, marca, categoria, preco, precoPromocional, isPromocao, isDestaque, estoque, imagens, visivel')
             .order('id', { ascending: true })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar produtos:', error); break; }
@@ -971,6 +977,16 @@ async function fetchAllProducts() {
         from += PAGE_SIZE;
     }
     return all;
+}
+
+async function fetchProductFull(id) {
+    const { data, error } = await db
+        .from(SUPABASE_PRODUCTS_TABLE)
+        .select('*')
+        .eq('id', id)
+        .single();
+    if (error) { console.error('Erro ao carregar produto completo:', error); return null; }
+    return data;
 }
 
 async function loadProducts() {
@@ -1405,10 +1421,12 @@ if (tagInput) {
     tagContainer.addEventListener('click', () => tagInput.focus());
 }
 
-window.editProduct = function(id) {
-    const products = getProducts();
-    const product = products.find(p => p.id === id);
-    if (!product) return;
+window.editProduct = async function(id) {
+    const lite = getProducts().find(p => p.id === id);
+    if (!lite) return;
+
+    const product = await fetchProductFull(id);
+    if (!product) { showToast('Erro ao carregar produto'); return; }
 
     productModalTitle.textContent = 'Editar Produto';
     productSubmitText.textContent = 'Atualizar';
@@ -1452,7 +1470,8 @@ window.deleteProduct = async function(id) {
     if (!confirm('Tem certeza que deseja excluir este produto?')) return;
     try {
         await deleteProductDB(id);
-        await loadProducts();
+        _productsCache = _productsCache.filter(p => p.id !== id);
+        _productsTotalCount = Math.max(0, _productsTotalCount - 1);
         renderProducts();
         showToast('Produto excluído com sucesso!');
     } catch(e) {
@@ -1466,7 +1485,7 @@ window.toggleProductVisibility = async function(id) {
     const newVisivel = product.visivel === false ? true : false;
     try {
         await updateProductDB(id, { visivel: newVisivel });
-        await loadProducts();
+        product.visivel = newVisivel;
         renderProducts();
         showToast(newVisivel ? 'Produto visível no site' : 'Produto ocultado do site');
     } catch(e) {
