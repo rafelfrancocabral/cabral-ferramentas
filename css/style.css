@@ -3287,6 +3287,21 @@ ul { list-style: none; }
         gap: 8px;
     }
 
+    .catalog-card-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .catalog-qty {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-add-cart {
+        width: 100%;
+        padding: 10px;
+    }
+
     .brands-track {
         animation-duration: 20s;
     }
