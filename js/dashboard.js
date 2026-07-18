@@ -967,7 +967,7 @@ async function fetchAllProducts() {
     while (true) {
         const { data, error } = await db
             .from(SUPABASE_PRODUCTS_TABLE)
-            .select('id, codigo, nome, unidade, marca, categoria, preco, precoPromocional, isPromocao, isDestaque, estoque, imagens, visivel')
+            .select('*')
             .order('id', { ascending: true })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar produtos:', error); break; }
