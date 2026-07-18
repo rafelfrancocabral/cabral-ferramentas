@@ -119,7 +119,7 @@ const pageNames = {
 };
 
 sidebarLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
+    link.addEventListener('click', async (e) => {
         e.preventDefault();
         const page = link.dataset.page;
 
@@ -143,6 +143,12 @@ sidebarLinks.forEach(link => {
             const targetPage = document.getElementById(page + 'Page');
             if (targetPage) {
                 targetPage.classList.remove('hidden');
+            }
+
+            // Lazy load products only when needed
+            if (page === 'produtos' && !_productsLoaded) {
+                await loadProducts();
+                renderProducts();
             }
         }
 
@@ -932,13 +938,14 @@ function formatPrice(v) {
 // Product Management
 // ===========================
 let _productsCache = [];
+let _productsLoaded = false;
 
 let _productsTotalCount = 0;
 
 async function loadProductCount() {
     const { count, error } = await db
         .from(SUPABASE_PRODUCTS_TABLE)
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true });
     if (!error) _productsTotalCount = count || 0;
     return _productsTotalCount;
 }
@@ -954,7 +961,7 @@ async function fetchAllProducts() {
     while (true) {
         const { data, error } = await db
             .from(SUPABASE_PRODUCTS_TABLE)
-            .select('*')
+            .select('id, codigo, nome, unidade, marca, categoria, preco, precoPromocional, isPromocao, isDestaque, estoque, imagens, palavraschave, palavrasChave, visivel, descricaoCompleta, dataCriacao, dataAtualizacao')
             .order('id', { ascending: true })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar produtos:', error); break; }
@@ -969,6 +976,7 @@ async function fetchAllProducts() {
 async function loadProducts() {
     const [data, count] = await Promise.all([fetchAllProducts(), loadProductCount()]);
     _productsCache = data;
+    _productsLoaded = true;
     return _productsCache;
 }
 
@@ -2244,6 +2252,7 @@ categoryForm.addEventListener('submit', async (e) => {
         } catch(e) { console.error(e); }
 
         if (oldName && oldName !== name) {
+            if (!_productsLoaded) await loadProducts();
             const products = getProducts().filter(p => p.categoria === oldName);
             for (const p of products) {
                 await updateProductDB(p.id, { categoria: name });
@@ -2305,6 +2314,7 @@ window.deleteCategory = async function(id) {
     if (!confirm(msg)) return;
 
     if (count > 0) {
+        if (!_productsLoaded) await loadProducts();
         const products = getProducts().filter(p => p.categoria === cat.nome);
         for (const p of products) {
             await updateProductDB(p.id, { categoria: '' });
@@ -3491,8 +3501,7 @@ function initPopupModal() {
 // Init: Load from Supabase
 // ===========================
 (async function initDashboard() {
-    await Promise.all([loadProducts(), loadCategories(), loadQuotes(), loadVisitors(), loadViews(), loadPopups()]);
-    renderProducts();
+    await Promise.all([loadProductCount(), loadCategories(), loadQuotes(), loadVisitors(), loadViews(), loadPopups()]);
     renderCategories();
     renderQuotes();
     renderClients();
@@ -3506,7 +3515,7 @@ function initPopupModal() {
 
     updateQuoteBadges();
 
-    console.log(`Carregados ${getProducts().length} produtos, ${getCategories().length} categorias, ${getQuotes().length} orçamentos, ${getVisitors().length} visitantes, ${getViews().length} visualizações do Supabase`);
+    console.log(`Carregados ${getProductCount()} produtos (lazy), ${getCategories().length} categorias, ${getQuotes().length} orçamentos, ${getVisitors().length} visitantes, ${getViews().length} visualizações do Supabase`);
 })();
 
 function updateQuoteBadges() {
