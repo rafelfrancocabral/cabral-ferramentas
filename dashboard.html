@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=33">
+    <link rel="stylesheet" href="css/dashboard.css?v=34">
 </head>
 <body>
     <script>
@@ -283,6 +283,31 @@
                             </a>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quote Edit Modal -->
+        <div class="modal-overlay" id="quoteEditModal">
+            <div class="modal modal-lg">
+                <div class="modal-header">
+                    <div class="modal-title-row">
+                        <h3><i class="fas fa-pen"></i> Editar Orçamento <span id="editQuoteId"></span></h3>
+                        <button class="modal-close" id="quoteEditClose"><i class="fas fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-client" id="editQuoteClient"></div>
+                </div>
+                <div class="modal-body" style="overflow-y:auto;">
+                    <div class="edit-quote-items" id="editQuoteItems"></div>
+                    <button class="btn-add-item" id="editAddItem"><i class="fas fa-plus"></i> Adicionar Produto</button>
+                    <div class="edit-quote-total-row">
+                        <span>Total:</span>
+                        <input type="text" id="editQuoteTotal" class="edit-total-input">
+                    </div>
+                </div>
+                <div class="modal-footer" style="justify-content:flex-end;gap:10px;">
+                    <button class="btn-secondary-sm" id="editQuoteCancel"><i class="fas fa-xmark"></i> Cancelar</button>
+                    <button class="btn-primary-sm" id="editQuoteSave"><i class="fas fa-check"></i> Salvar Alterações</button>
                 </div>
             </div>
         </div>
@@ -1339,6 +1364,6 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/dashboard.js?v=45"></script>
+    <script src="js/dashboard.js?v=46"></script>
 </body>
 </html>

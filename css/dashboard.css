@@ -1784,6 +1784,16 @@ button { cursor: pointer; }
     .export-radio {
         min-width: auto;
     }
+
+    .edit-quote-item {
+        grid-template-columns: 1fr 60px 80px 36px;
+        gap: 6px;
+        padding: 8px 10px;
+    }
+
+    .edit-quote-item-name {
+        font-size: 0.8rem;
+    }
 }
 
 /* ===========================
@@ -3322,6 +3332,136 @@ button { cursor: pointer; }
     background: var(--bg-secondary);
     border-radius: 8px;
     text-align: center;
+}
+
+/* Quote Edit Modal */
+.edit-quote-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.edit-quote-item {
+    display: grid;
+    grid-template-columns: 1fr 80px 100px 40px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.edit-quote-item-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.edit-quote-item input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+}
+
+.edit-quote-item input[type="number"]:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.edit-quote-item-subtotal {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: right;
+}
+
+.btn-remove-item {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 71, 87, 0.1);
+    border: none;
+    border-radius: 6px;
+    color: #ff4757;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-remove-item:hover {
+    background: #ff4757;
+    color: white;
+}
+
+.btn-add-item {
+    width: 100%;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+}
+
+.btn-add-item:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0, 153, 204, 0.05);
+}
+
+.edit-quote-total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.edit-quote-total-row span {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.edit-total-input {
+    width: 140px;
+    padding: 8px 12px;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: #2ed573;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    text-align: right;
+}
+
+.edit-total-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.15);
 }
 
 /* CSV Preview */

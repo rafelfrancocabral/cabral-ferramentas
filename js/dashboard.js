@@ -683,6 +683,7 @@ function renderQuotes(filter = 'all') {
                 </div>
                 <div class="quote-actions">
                     <button class="action-btn view-quote" data-quote-id="${q.id}" title="Ver orçamento"><i class="fas fa-file-lines"></i></button>
+                    <button class="action-btn edit-quote" data-quote-id="${q.id}" title="Editar orçamento"><i class="fas fa-pen"></i></button>
                     <a href="https://wa.me/55${phoneDigits}" target="_blank" class="action-btn whatsapp-btn" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     <button class="action-btn cancel-quote ${isCancelled ? 'cancelled' : ''}" data-quote-id="${q.id}" data-status="${q.status}" title="${isCancelled ? 'Orçamento cancelado' : 'Cancelar orçamento'}"><i class="fas ${isCancelled ? 'fa-ban' : 'fa-ban'}"></i></button>
                 </div>
@@ -872,6 +873,10 @@ document.addEventListener('keydown', (e) => {
         if (quoteModal.classList.contains('active')) closeModal();
         const cqModal = document.getElementById('clientQuotesModal');
         if (cqModal && cqModal.classList.contains('active')) closeModal('clientQuotesModal');
+        if (quoteEditModal.classList.contains('active')) {
+            quoteEditModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
     }
 });
 
@@ -884,6 +889,160 @@ function closeModal(id) {
     }
     document.body.style.overflow = '';
 }
+
+// ===========================
+// Quote Edit Modal
+// ===========================
+const quoteEditModal = document.getElementById('quoteEditModal');
+let editQuoteData = null;
+let editQuoteItems = [];
+
+function formatEditPrice(v) {
+    return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function parseEditPrice(str) {
+    return parseFloat(String(str).replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+function renderEditQuoteItems() {
+    const container = document.getElementById('editQuoteItems');
+    container.innerHTML = editQuoteItems.map((item, i) => `
+        <div class="edit-quote-item" data-idx="${i}">
+            <div class="edit-quote-item-name">${item.nome}</div>
+            <input type="number" value="${item.quantidade}" min="1" data-field="qty" data-idx="${i}">
+            <input type="text" value="${formatEditPrice(item.preco)}" data-field="price" data-idx="${i}">
+            <button class="btn-remove-item" data-idx="${i}" title="Remover"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+
+    container.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            const field = e.target.dataset.field;
+            if (field === 'qty') {
+                editQuoteItems[idx].quantidade = Math.max(1, parseInt(e.target.value) || 1);
+            } else if (field === 'price') {
+                editQuoteItems[idx].preco = parseEditPrice(e.target.value);
+            }
+            editQuoteItems[idx].subtotal = editQuoteItems[idx].quantidade * editQuoteItems[idx].preco;
+            recalcEditTotal();
+            renderEditQuoteItems();
+        });
+    });
+
+    container.querySelectorAll('.btn-remove-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt(btn.dataset.idx);
+            editQuoteItems.splice(idx, 1);
+            renderEditQuoteItems();
+            recalcEditTotal();
+        });
+    });
+}
+
+function recalcEditTotal() {
+    const total = editQuoteItems.reduce((sum, item) => sum + (item.quantidade * item.preco), 0);
+    document.getElementById('editQuoteTotal').value = formatEditPrice(total);
+}
+
+document.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-quote');
+    if (!editBtn) return;
+
+    const quoteId = parseInt(editBtn.dataset.quoteId);
+    const quote = getQuotes().find(q => q.id === quoteId);
+    if (!quote) return;
+
+    editQuoteData = quote;
+    editQuoteItems = JSON.parse(JSON.stringify(quote.itens || []));
+
+    document.getElementById('editQuoteId').textContent = `#${quote.id}`;
+
+    const phoneDigits = (quote.telefone || '').replace(/\D/g, '');
+    document.getElementById('editQuoteClient').innerHTML = `
+        <div class="client-avatar-sm"><i class="fas fa-user"></i></div>
+        <div>
+            <span class="client-name">${quote.nome_cliente || 'Cliente'}</span>
+            <span class="client-contact"><i class="fab fa-whatsapp"></i> ${quote.telefone || ''}</span>
+        </div>
+    `;
+
+    renderEditQuoteItems();
+    recalcEditTotal();
+
+    quoteEditModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+
+document.getElementById('quoteEditClose').addEventListener('click', () => {
+    quoteEditModal.classList.remove('active');
+    document.body.style.overflow = '';
+});
+document.getElementById('editQuoteCancel').addEventListener('click', () => {
+    quoteEditModal.classList.remove('active');
+    document.body.style.overflow = '';
+});
+quoteEditModal.addEventListener('click', (e) => {
+    if (e.target === quoteEditModal) {
+        quoteEditModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+});
+
+document.getElementById('editAddItem').addEventListener('click', () => {
+    editQuoteItems.push({ codigo: '', nome: 'Novo produto', quantidade: 1, preco: 0, subtotal: 0 });
+    renderEditQuoteItems();
+    recalcEditTotal();
+});
+
+document.getElementById('editQuoteTotal').addEventListener('input', () => {
+    // Manual total override — user can type directly
+});
+
+document.getElementById('editQuoteSave').addEventListener('click', async () => {
+    if (!editQuoteData) return;
+
+    const totalInput = parseEditPrice(document.getElementById('editQuoteTotal').value);
+    const calculatedTotal = editQuoteItems.reduce((sum, item) => sum + (item.quantidade * item.preco), 0);
+    const finalTotal = totalInput || calculatedTotal;
+
+    try {
+        const { error } = await db
+            .from(SUPABASE_QUOTES_TABLE)
+            .update({
+                itens: editQuoteItems.map(item => ({
+                    codigo: item.codigo,
+                    nome: item.nome,
+                    quantidade: item.quantidade,
+                    preco: item.preco,
+                    subtotal: item.quantidade * item.preco,
+                    categoria: item.categoria || ''
+                })),
+                total: finalTotal,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', editQuoteData.id);
+
+        if (error) throw error;
+
+        const idx = _quotesCache.findIndex(q => q.id === editQuoteData.id);
+        if (idx !== -1) {
+            _quotesCache[idx].itens = editQuoteItems;
+            _quotesCache[idx].total = finalTotal;
+        }
+
+        renderQuotes(document.getElementById('statusFilter')?.value || 'all');
+        updateCharts('30d');
+
+        quoteEditModal.classList.remove('active');
+        document.body.style.overflow = '';
+        showToast('Orçamento atualizado com sucesso!');
+    } catch (e) {
+        console.error('Erro ao salvar orçamento:', e);
+        showToast('Erro ao salvar: ' + e.message);
+    }
+});
 
 // ===========================
 // Status Filter
