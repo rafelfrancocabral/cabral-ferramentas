@@ -2126,11 +2126,19 @@ document.getElementById('csvDownloadTemplate').addEventListener('click', () => {
         ['P001', 'Furadeira Bosch GSB 20-2RE', 'UN', 'Bosch', 'Elétricas', '489,90', '48', 'furadeira, bosch, elétrica, parafusar']
     ];
 
-    for (let i = 0; i < 499; i++) {
+    for (let i = 0; i < 999; i++) {
         sheetData.push(['', '', '', '', '', '', '', '']);
     }
 
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+    for (let r = 1; r <= 1000; r++) {
+        const addr = XLSX.utils.encode_cell({ r, c: 5 });
+        if (ws[addr]) {
+            ws[addr].t = 's';
+            ws[addr].z = '@';
+        }
+    }
 
     ws['!cols'] = [
         { wch: 12 },
