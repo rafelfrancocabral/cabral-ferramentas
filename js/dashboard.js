@@ -711,6 +711,15 @@ document.addEventListener('click', (e) => {
     const quoteCard = step.closest('.quote-card');
     const quoteId = quoteCard.dataset.id;
 
+    const statusMap = ['recebido', 'analise', 'aprovado', 'entregue'];
+    const statusLabels = ['Recebido', 'Em Análise', 'Aprovado', 'Entregue'];
+    const newStatus = statusMap[clickedStep] || 'recebido';
+    const currentStatus = quoteCard.dataset.status;
+
+    if (newStatus === currentStatus) return;
+
+    if (!confirm(`Tem certeza que quer alterar o status do Orçamento?\n\nOrçamento #${quoteId}: ${statusLabels[statusMap.indexOf(currentStatus)] || currentStatus} → ${statusLabels[clickedStep]}`)) return;
+
     const steps = timeline.querySelectorAll('.tl-step');
     const conns = timeline.querySelectorAll('.tl-conn');
 
@@ -735,8 +744,6 @@ document.addEventListener('click', (e) => {
         }
     });
 
-    const statusMap = ['recebido', 'analise', 'aprovado', 'entregue'];
-    const newStatus = statusMap[clickedStep] || 'recebido';
     quoteCard.dataset.status = newStatus;
 
     // Save to Supabase
