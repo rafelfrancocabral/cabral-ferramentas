@@ -1770,6 +1770,20 @@ button { cursor: pointer; }
     .quote-card {
         padding: 12px;
     }
+
+    #exportModal .modal {
+        max-width: 100vw;
+        margin: 8px;
+        max-height: 95vh;
+    }
+
+    .export-options {
+        flex-direction: column;
+    }
+
+    .export-radio {
+        min-width: auto;
+    }
 }
 
 /* ===========================
@@ -4229,6 +4243,28 @@ button { cursor: pointer; }
 
     .settings-section-header {
         flex-wrap: wrap;
+    }
+
+    #exportModal .modal {
+        max-width: 95vw;
+        margin: 16px;
+    }
+
+    .export-options {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .export-radio {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .export-radio-content {
+        padding: 10px 12px;
+        font-size: 0.82rem;
+        justify-content: center;
     }
 }
 
