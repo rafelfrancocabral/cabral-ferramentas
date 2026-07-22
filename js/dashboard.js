@@ -1605,6 +1605,15 @@ document.getElementById('btnExportXLSX').addEventListener('click', () => {
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+    for (let r = 1; r <= rows.length; r++) {
+        const addr = XLSX.utils.encode_cell({ r, c: 5 });
+        if (ws[addr]) {
+            ws[addr].t = 's';
+            ws[addr].z = '@';
+        }
+    }
+
     ws['!cols'] = [
         { wch: 15 },
         { wch: 45 },
@@ -1683,6 +1692,9 @@ function processCSVFile(file) {
                 const ws = wb.Sheets[wb.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
                 const csvText = json.map(row => row.map(cell => {
+                    if (typeof cell === 'number') {
+                        return cell.toLocaleString('pt-BR', { maximumFractionDigits: 10 });
+                    }
                     const s = String(cell ?? '');
                     return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s;
                 }).join(',')).join('\n');
