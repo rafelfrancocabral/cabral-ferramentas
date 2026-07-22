@@ -1599,7 +1599,7 @@ document.getElementById('btnExportXLSX').addEventListener('click', () => {
         p.unidade || '',
         p.marca || '',
         p.categoria || '',
-        (p.preco || 0).toFixed(2).replace('.', ','),
+        String(p.preco || 0).replace('.', ','),
         p.estoque != null ? p.estoque : '',
         Array.isArray(p.palavrasChave) ? p.palavrasChave.join(', ') : (p.palavrasChave || '')
     ]);
