@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=31">
+    <link rel="stylesheet" href="css/dashboard.css?v=32">
 </head>
 <body>
     <script>
@@ -593,6 +593,61 @@
                             <button class="btn-secondary-sm" id="csvBack"><i class="fas fa-arrow-left"></i> Voltar</button>
                             <button class="btn-primary-sm" id="csvConfirmImport" disabled><i class="fas fa-file-import"></i> Confirmar Importação</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Modal -->
+        <div class="modal-overlay" id="exportModal">
+            <div class="modal" style="max-width:440px;">
+                <div class="modal-header">
+                    <div class="modal-title-row">
+                        <h3><i class="fas fa-file-excel"></i> Exportar Produtos</h3>
+                        <button class="modal-close" id="exportModalClose"><i class="fas fa-xmark"></i></button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom:16px;color:var(--text-secondary);font-size:0.9rem;">Selecione o que deseja exportar:</p>
+                    <div class="export-options">
+                        <label class="export-radio active" data-filter="all">
+                            <input type="radio" name="exportFilter" value="all" checked>
+                            <div class="export-radio-content">
+                                <i class="fas fa-boxes-stacked"></i>
+                                <span>Todos os Produtos</span>
+                            </div>
+                        </label>
+                        <label class="export-radio" data-filter="category">
+                            <input type="radio" name="exportFilter" value="category">
+                            <div class="export-radio-content">
+                                <i class="fas fa-tag"></i>
+                                <span>Por Categoria</span>
+                            </div>
+                        </label>
+                        <label class="export-radio" data-filter="brand">
+                            <input type="radio" name="exportFilter" value="brand">
+                            <div class="export-radio-content">
+                                <i class="fas fa-building"></i>
+                                <span>Por Marca</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="export-select-group" id="exportCategoryGroup" style="display:none;">
+                        <label>Categoria</label>
+                        <select id="exportCategorySelect">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="export-select-group" id="exportBrandGroup" style="display:none;">
+                        <label>Marca</label>
+                        <select id="exportBrandSelect">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="export-count" id="exportCount"></div>
+                    <div class="modal-footer" style="justify-content:flex-end;gap:10px;padding-top:12px;border-top:none;">
+                        <button class="btn-secondary-sm" id="exportCancel"><i class="fas fa-xmark"></i> Cancelar</button>
+                        <button class="btn-primary-sm" id="exportConfirm"><i class="fas fa-file-excel"></i> Exportar</button>
                     </div>
                 </div>
             </div>
@@ -1284,6 +1339,6 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/dashboard.js?v=44"></script>
+    <script src="js/dashboard.js?v=45"></script>
 </body>
 </html>

@@ -1584,10 +1584,90 @@ document.getElementById('btnImportCSV').addEventListener('click', () => {
     document.body.style.overflow = 'hidden';
 });
 
-document.getElementById('btnExportXLSX').addEventListener('click', () => {
+// ===========================
+// Export Modal
+// ===========================
+const exportModal = document.getElementById('exportModal');
+const exportCategoryGroup = document.getElementById('exportCategoryGroup');
+const exportBrandGroup = document.getElementById('exportBrandGroup');
+const exportCategorySelect = document.getElementById('exportCategorySelect');
+const exportBrandSelect = document.getElementById('exportBrandSelect');
+const exportCount = document.getElementById('exportCount');
+
+function getExportFilteredProducts() {
+    const filter = document.querySelector('input[name="exportFilter"]:checked')?.value || 'all';
+    const products = getProducts();
+    if (filter === 'category') {
+        const cat = exportCategorySelect.value;
+        return cat ? products.filter(p => p.categoria === cat) : products;
+    }
+    if (filter === 'brand') {
+        const brand = exportBrandSelect.value;
+        return brand ? products.filter(p => p.marca === brand) : products;
+    }
+    return products;
+}
+
+function updateExportCount() {
+    const count = getExportFilteredProducts().length;
+    exportCount.textContent = `${count} produto${count !== 1 ? 's' : ''} será${count !== 1 ? 'ão' : ''} exportado${count !== 1 ? 's' : ''}`;
+}
+
+function openExportModal() {
     const products = getProducts();
     if (products.length === 0) {
         showToast('Nenhum produto para exportar');
+        return;
+    }
+
+    const cats = [...new Set(products.map(p => p.categoria).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    exportCategorySelect.innerHTML = '<option value="">Selecione...</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+
+    const brands = [...new Set(products.map(p => p.marca).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    exportBrandSelect.innerHTML = '<option value="">Selecione...</option>' + brands.map(b => `<option value="${b}">${b}</option>`).join('');
+
+    document.querySelector('input[name="exportFilter"][value="all"]').checked = true;
+    document.querySelectorAll('.export-radio').forEach(r => r.classList.remove('active'));
+    document.querySelector('.export-radio[data-filter="all"]').classList.add('active');
+    exportCategoryGroup.style.display = 'none';
+    exportBrandGroup.style.display = 'none';
+    exportCategorySelect.value = '';
+    exportBrandSelect.value = '';
+
+    updateExportCount();
+    exportModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeExportModal() {
+    exportModal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+document.querySelectorAll('.export-radio').forEach(radio => {
+    radio.addEventListener('click', () => {
+        document.querySelectorAll('.export-radio').forEach(r => r.classList.remove('active'));
+        radio.classList.add('active');
+        radio.querySelector('input').checked = true;
+        const val = radio.dataset.filter;
+        exportCategoryGroup.style.display = val === 'category' ? '' : 'none';
+        exportBrandGroup.style.display = val === 'brand' ? '' : 'none';
+        updateExportCount();
+    });
+});
+
+exportCategorySelect.addEventListener('change', updateExportCount);
+exportBrandSelect.addEventListener('change', updateExportCount);
+document.getElementById('exportModalClose').addEventListener('click', closeExportModal);
+document.getElementById('exportCancel').addEventListener('click', closeExportModal);
+exportModal.addEventListener('click', (e) => { if (e.target === exportModal) closeExportModal(); });
+
+document.getElementById('btnExportXLSX').addEventListener('click', openExportModal);
+
+document.getElementById('exportConfirm').addEventListener('click', () => {
+    const products = getExportFilteredProducts();
+    if (products.length === 0) {
+        showToast('Nenhum produto para exportar com o filtro selecionado');
         return;
     }
 
@@ -1628,6 +1708,7 @@ document.getElementById('btnExportXLSX').addEventListener('click', () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
     XLSX.writeFile(wb, 'catalogo_cabral.xlsx');
+    closeExportModal();
     showToast(`${products.length} produto(s) exportado(s) com sucesso!`);
 });
 

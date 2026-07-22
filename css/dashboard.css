@@ -3228,6 +3228,88 @@ button { cursor: pointer; }
     text-decoration: underline;
 }
 
+/* Export Modal */
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.export-radio {
+    cursor: pointer;
+}
+
+.export-radio input[type="radio"] {
+    display: none;
+}
+
+.export-radio-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.export-radio:hover .export-radio-content {
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+.export-radio.active .export-radio-content {
+    border-color: var(--accent);
+    background: rgba(0, 153, 204, 0.06);
+    color: var(--accent);
+}
+
+.export-radio-content i {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.export-select-group {
+    margin-bottom: 12px;
+}
+
+.export-select-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.export-select-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: 'Rajdhani', sans-serif;
+    cursor: pointer;
+}
+
+.export-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    text-align: center;
+}
+
 /* CSV Preview */
 .csv-preview-header {
     display: flex;
