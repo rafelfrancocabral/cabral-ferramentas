@@ -1224,7 +1224,6 @@ document.addEventListener('keydown', (e) => {
 (async function initCatalog() {
     await Promise.all([fetchCatalogProducts(), fetchCatalogCategories()]);
     renderCatalog();
-    renderBrands();
     renderFooterCategories();
     updateCartBadge();
     renderCartSidebar();
@@ -1232,15 +1231,6 @@ document.addEventListener('keydown', (e) => {
     trackVisitor();
     initPromoPopup();
 })();
-
-function renderBrands() {
-    const track = document.getElementById('brandsTrack');
-    if (!track) return;
-    const brands = [...new Set(_catalogProducts.map(p => p.marca).filter(Boolean))].sort();
-    if (!brands.length) return;
-    const items = brands.map(b => `<div class="brand-item"><div class="brand-name">${b}</div></div>`).join('');
-    track.innerHTML = items + items;
-}
 
 function renderFooterCategories() {
     const container = document.getElementById('footerCategories');

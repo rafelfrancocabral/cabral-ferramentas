@@ -740,53 +740,6 @@ ul { list-style: none; }
 /* ===========================
    Brands Section
    =========================== */
-.brands-scroll {
-    overflow: hidden;
-    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-}
-
-.brands-track {
-    display: flex;
-    gap: 32px;
-    animation: scroll-brands 60s linear infinite;
-    width: max-content;
-}
-
-@keyframes scroll-brands {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-}
-
-.brand-item {
-    flex-shrink: 0;
-    padding: 16px 32px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    transition: var(--transition);
-    cursor: default;
-}
-
-.brand-item:hover {
-    border-color: var(--accent);
-    box-shadow: var(--shadow-accent);
-}
-
-.brand-name {
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--text-secondary);
-    letter-spacing: 3px;
-    transition: var(--transition);
-    white-space: nowrap;
-}
-
-.brand-item:hover .brand-name {
-    color: var(--accent);
-}
-
 /* ===========================
    Products Section
    =========================== */
@@ -3303,10 +3256,6 @@ ul { list-style: none; }
     .btn-add-cart {
         width: 100%;
         padding: 10px;
-    }
-
-    .brands-track {
-        animation-duration: 20s;
     }
 }
 
