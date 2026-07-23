@@ -1940,8 +1940,7 @@ function processCSVFile(file) {
                 const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
                 const csvText = json.map(row => row.map(cell => {
                     if (typeof cell === 'number') {
-                        const s = cell.toLocaleString('pt-BR', { maximumFractionDigits: 10 });
-                        return s.includes(',') ? `"${s}"` : s;
+                        return String(cell);
                     }
                     const s = String(cell ?? '');
                     return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s;
@@ -1969,6 +1968,27 @@ function processCSVFile(file) {
     } else {
         showToast('Formato não suportado. Use CSV ou XLSX.');
     }
+}
+
+function parsePreco(str) {
+    if (!str) return NaN;
+    const s = String(str).trim();
+    const hasDot = s.includes('.');
+    const hasComma = s.includes(',');
+    if (hasDot && hasComma) {
+        return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+    }
+    if (hasComma) {
+        return parseFloat(s.replace(',', '.'));
+    }
+    if (hasDot) {
+        const parts = s.split('.');
+        if (parts.length > 2 || parts[parts.length - 1].length > 2) {
+            return parseFloat(s.replace(/\./g, ''));
+        }
+        return parseFloat(s);
+    }
+    return parseFloat(s);
 }
 
 function parseAndValidateCSV(text, fileName) {
@@ -2050,7 +2070,7 @@ function parseAndValidateCSV(text, fileName) {
             missingCategories.add(row.categoria);
         }
 
-        const precoNum = parseFloat(row.preco.replace('.', '').replace(',', '.'));
+        const precoNum = parsePreco(row.preco);
         if (isNaN(precoNum) || precoNum <= 0) {
             row.errors.push('Preço inválido');
         } else {
