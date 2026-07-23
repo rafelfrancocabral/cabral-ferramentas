@@ -1940,7 +1940,8 @@ function processCSVFile(file) {
                 const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
                 const csvText = json.map(row => row.map(cell => {
                     if (typeof cell === 'number') {
-                        return cell.toLocaleString('pt-BR', { maximumFractionDigits: 10 });
+                        const s = cell.toLocaleString('pt-BR', { maximumFractionDigits: 10 });
+                        return s.includes(',') ? `"${s}"` : s;
                     }
                     const s = String(cell ?? '');
                     return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s;
