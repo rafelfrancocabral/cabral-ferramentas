@@ -602,6 +602,7 @@ function shuffleArray(arr) {
 
 function renderCatalog(filter = 'all') {
     const products = getCatalogProducts();
+    const allCategories = getCatalogCategories();
     const dropdownList = document.getElementById('catalogDropdownList');
     const dropdownLabel = document.getElementById('catalogDropdownLabel');
     const dropdownBtn = document.getElementById('catalogDropdownBtn');
@@ -619,11 +620,12 @@ function renderCatalog(filter = 'all') {
     products.forEach(p => {
         if (p.categoria) catCounts[p.categoria] = (catCounts[p.categoria] || 0) + 1;
     });
-    const cats = Object.keys(catCounts).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    const cats = allCategories.map(c => c.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
     dropdownList.innerHTML = `<div class="catalog-dropdown-item${filter === 'all' ? ' active' : ''}" data-cat="all"><i class="fas fa-th-large"></i> Todas as Categorias<span class="cat-count">${products.length}</span></div>`;
     cats.forEach(cat => {
-        dropdownList.innerHTML += `<div class="catalog-dropdown-item${filter === cat ? ' active' : ''}" data-cat="${cat}"><i class="fas fa-tag"></i> ${cat}<span class="cat-count">${catCounts[cat]}</span></div>`;
+        const count = catCounts[cat] || 0;
+        dropdownList.innerHTML += `<div class="catalog-dropdown-item${filter === cat ? ' active' : ''}" data-cat="${cat}"><i class="fas fa-tag"></i> ${cat}<span class="cat-count">${count}</span></div>`;
     });
 
     if (filter === 'all') {
@@ -662,12 +664,20 @@ function renderCatalog(filter = 'all') {
     }
 
     empty.style.display = 'none';
-    const shuffled = shuffleArray(filtered);
+    filtered.sort((a, b) => {
+        const aPriority = (a.isdestaque || a.isDestaque) ? 2 : (a.ispromocao || a.isPromocao) ? 1 : 0;
+        const bPriority = (b.isdestaque || b.isDestaque) ? 2 : (b.ispromocao || b.isPromocao) ? 1 : 0;
+        if (bPriority !== aPriority) return bPriority - aPriority;
+        const aHasImg = a.imagens && a.imagens.length > 0 ? 1 : 0;
+        const bHasImg = b.imagens && b.imagens.length > 0 ? 1 : 0;
+        if (bHasImg !== aHasImg) return bHasImg - aHasImg;
+        return Math.random() - 0.5;
+    });
     secDestaques.style.display = 'none';
     secPromos.style.display = 'none';
     secAll.style.display = '';
     secAll.querySelector('.catalog-subtitle').innerHTML = '<i class="fas fa-boxes-stacked"></i> Produtos';
-    renderProductGrid(shuffled, document.getElementById('gridAll'));
+    renderProductGrid(filtered, document.getElementById('gridAll'));
 }
 
 (function initCatalogDropdown() {
