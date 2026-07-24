@@ -487,7 +487,7 @@ let _catalogProducts = [];
 let _catalogCategories = [];
 let _catalogAllLoaded = false;
 let _catalogPage = 0;
-const CATALOG_PAGE_SIZE = 30;
+const CATALOG_PAGE_SIZE = 100;
 
 async function fetchCatalogProducts(initial = false) {
     if (_catalogAllLoaded && !initial) return _catalogProducts;
@@ -511,11 +511,6 @@ async function fetchCatalogProducts(initial = false) {
 }
 
 async function fetchCatalogCategories() {
-    const cached = localStorage.getItem('cabral_categories');
-    if (cached) {
-        _catalogCategories = JSON.parse(cached);
-        return _catalogCategories;
-    }
     const PAGE_SIZE = 1000;
     let all = [];
     let from = 0;
@@ -532,7 +527,6 @@ async function fetchCatalogCategories() {
         from += PAGE_SIZE;
     }
     _catalogCategories = all;
-    try { localStorage.setItem('cabral_categories', JSON.stringify(all)); } catch(e) {}
     return _catalogCategories;
 }
 
