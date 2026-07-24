@@ -359,9 +359,9 @@ function updateCharts(period) {
 
     const quotes = getQuotes().filter(q => new Date(q.created_at) >= cutoff);
     const totalQuotes = quotes.length;
-    const totalRevenue = quotes.reduce((s, q) => s + (Number(q.total) || 0), 0);
     const delivered = quotes.filter(q => q.status === 'entregue');
     const deliveredCount = delivered.length;
+    const totalRevenue = delivered.reduce((s, q) => s + (Number(q.total) || 0), 0);
     const deliveryPct = totalQuotes > 0 ? Math.round((deliveredCount / totalQuotes) * 100) : 0;
     const converted = quotes.filter(q => q.status === 'aprovado' || q.status === 'entregue');
     const conversionPct = totalQuotes > 0 ? Math.round((converted.length / totalQuotes) * 100) : 0;
