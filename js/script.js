@@ -495,34 +495,68 @@ async function fetchCatalogProducts(initial = false) {
     if (_catalogAllLoaded && !initial) return _catalogProducts;
 
     if (initial) {
-        // First: fetch destaque + promo products
+        const selectFields = 'id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional';
+
+        // 1) All destaque + promo
         const { data: promoData } = await db
             .from(SUPABASE_PRODUCTS_TABLE)
-            .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional')
+            .select(selectFields)
             .eq('visivel', true)
             .or('isdestaque.eq.true,ispromocao.eq.true')
             .order('id', { ascending: true });
-        
-        const promoIds = new Set((promoData || []).map(p => p.id));
+
         const promoProducts = (promoData || []).filter(p => p.visivel !== false);
+        const usedIds = new Set(promoProducts.map(p => p.id));
+        const usedCats = new Set(promoProducts.map(p => p.categoria).filter(Boolean));
 
-        // Then: fetch remaining products (excluding promo/destaque)
-        let remainingQuery = db
-            .from(SUPABASE_PRODUCTS_TABLE)
-            .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional')
-            .eq('visivel', true)
-            .order('id', { ascending: true })
-            .range(0, CATALOG_PAGE_SIZE - 1);
-        if (promoIds.size > 0) {
-            remainingQuery = remainingQuery.not('id', 'in', `(${Array.from(promoIds).join(',')})`);
+        // 2) 1 representative per missing category (with photo preferred)
+        const missingCats = _catalogCategories.filter(c => !usedCats.has(c.nome));
+        const catRepresentatives = [];
+        for (const cat of missingCats) {
+            // Try with photo first
+            let { data } = await db
+                .from(SUPABASE_PRODUCTS_TABLE)
+                .select(selectFields)
+                .eq('visivel', true)
+                .eq('categoria', cat.nome)
+                .not('imagens', 'eq', '{}')
+                .not('imagens', 'is', null)
+                .limit(1);
+            if (!data || data.length === 0) {
+                // Fallback: any product from this category
+                ({ data } = await db
+                    .from(SUPABASE_PRODUCTS_TABLE)
+                    .select(selectFields)
+                    .eq('visivel', true)
+                    .eq('categoria', cat.nome)
+                    .limit(1));
+            }
+            if (data && data.length > 0 && !usedIds.has(data[0].id)) {
+                catRepresentatives.push(data[0]);
+                usedIds.add(data[0].id);
+            }
         }
-        const { data, error } = await remainingQuery;
 
-        if (error) { console.error('Erro ao carregar catálogo:', error); return _catalogProducts; }
-        const remaining = data || [];
-        _catalogProducts = [...promoProducts, ...remaining];
-        if (remaining.length < CATALOG_PAGE_SIZE) _catalogAllLoaded = true;
-        else _catalogPage = 1;
+        // 3) Fill remaining slots from general pool
+        const slotsLeft = CATALOG_PAGE_SIZE - promoProducts.length - catRepresentatives.length;
+        let remainingProducts = [];
+        if (slotsLeft > 0) {
+            const { data } = await db
+                .from(SUPABASE_PRODUCTS_TABLE)
+                .select(selectFields)
+                .eq('visivel', true)
+                .order('id', { ascending: true })
+                .range(0, CATALOG_PAGE_SIZE * 2);
+            if (data) {
+                remainingProducts = data
+                    .filter(p => !usedIds.has(p.id))
+                    .slice(0, slotsLeft);
+            }
+        }
+
+        _catalogProducts = [...promoProducts, ...catRepresentatives, ...remainingProducts];
+        _catalogAllLoaded = _catalogProducts.length < CATALOG_PAGE_SIZE;
+        if (!_catalogAllLoaded) _catalogPage = 1;
     } else {
         const from = _catalogPage * CATALOG_PAGE_SIZE;
         const { data, error } = await db
