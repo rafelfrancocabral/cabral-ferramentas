@@ -156,6 +156,13 @@ sidebarLinks.forEach(link => {
                 await loadProducts();
                 renderProducts();
             }
+
+            // Refresh quotes when navigating to orçamentos page
+            if (page === 'orcamentos') {
+                await loadQuotes();
+                renderQuotes();
+                updateQuoteBadges();
+            }
         }
 
         // Close mobile sidebar
@@ -3964,7 +3971,7 @@ function updateQuoteBadges() {
 // Poll for new quotes every 30s
 setInterval(async () => {
     try {
-        const { data } = await db.from(SUPABASE_QUOTES_TABLE).select('id, status').range(0, 9999);
+        const { data } = await db.from(SUPABASE_QUOTES_TABLE).select('id, status').order('created_at', { ascending: false }).range(0, 9999);
         if (data) {
             const pending = data.filter(q => q.status !== 'entregue' && q.status !== 'cancelado').length;
             const sidebarBadge = document.getElementById('sidebarQuoteBadge');
@@ -3976,6 +3983,14 @@ setInterval(async () => {
             if (notifBadge) {
                 notifBadge.textContent = pending;
                 notifBadge.style.display = pending > 0 ? 'flex' : 'none';
+            }
+            // Update quotes cache and re-render if on orçamentos page
+            if (data.length !== _quotesCache.length) {
+                await loadQuotes();
+                const orcPage = document.getElementById('orcamentosPage');
+                if (orcPage && !orcPage.classList.contains('hidden')) {
+                    renderQuotes();
+                }
             }
         }
     } catch(e) {}
