@@ -1365,6 +1365,7 @@ document.querySelectorAll('#richtextToolbar button[data-cmd]').forEach(btn => {
 // Image Upload System
 // ===========================
 let pendingUploadedImages = [];
+let pendingUploadedStorageUrls = [];
 const IMG_MAX_DIM = 800;
 const IMG_QUALITY = 0.7;
 
@@ -1425,6 +1426,44 @@ function handleImageFiles(files) {
         pendingUploadedImages.push(base64);
         renderImagePreviews();
     });
+}
+
+// ===========================
+// Supabase Storage Image Upload
+// ===========================
+function base64ToBlob(base64) {
+    const parts = base64.split(',');
+    const mime = parts[0].match(/:(.*?);/)[1];
+    const b64 = parts[1];
+    const byteChars = atob(b64);
+    const byteArr = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+    return new Blob([byteArr], { type: mime });
+}
+
+async function uploadImageToStorage(base64, codigo, index) {
+    const blob = base64ToBlob(base64);
+    const ext = blob.type.includes('png') ? 'png' : 'jpg';
+    const path = `produtos/${codigo || 'sem_codigo'}_${Date.now()}_${index}.${ext}`;
+    const { data, error } = await db.storage.from(SUPABASE_STORAGE_BUCKET).upload(path, blob, { contentType: blob.type, upsert: true });
+    if (error) { console.error('Erro upload storage:', error); return null; }
+    const { data: urlData } = db.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(path);
+    return urlData?.publicUrl || null;
+}
+
+async function uploadAllImagesToStorage(imagens, codigo) {
+    const results = [];
+    for (let i = 0; i < imagens.length; i++) {
+        const img = imagens[i];
+        if (!img) continue;
+        if (img.startsWith('http://') || img.startsWith('https://')) {
+            results.push(img);
+        } else if (img.startsWith('data:image')) {
+            const url = await uploadImageToStorage(img, codigo, i);
+            if (url) results.push(url);
+        }
+    }
+    return results;
 }
 
 imgUploadZone.addEventListener('click', () => imgFileInput.click());
@@ -1675,39 +1714,44 @@ productForm.addEventListener('submit', async (e) => {
         return;
     }
 
-    const productData = {
-        codigo: document.getElementById('prodCodigo').value.trim(),
-        nome: document.getElementById('prodNome').value.trim(),
-        unidade: document.getElementById('prodUnidade').value,
-        marca: document.getElementById('prodMarca').value.trim(),
-        categoria: document.getElementById('prodCategoria').value,
-        preco: preco,
-        estoque: estoque,
-        descricao: document.getElementById('prodDescricao').innerHTML.trim(),
-        palavraschave: [...pendingTags],
-        imagens: [
-            ...pendingUploadedImages,
-            document.getElementById('prodImg1').value.trim(),
-            document.getElementById('prodImg2').value.trim(),
-            document.getElementById('prodImg3').value.trim(),
-            document.getElementById('prodImg4').value.trim(),
-            document.getElementById('prodImg5').value.trim()
-        ].filter(Boolean).slice(0, 5),
-        video: document.getElementById('prodVideo').value.trim(),
-        visivel: true,
-        isdestaque: document.getElementById('prodDestaque').checked,
-        ispromocao: document.getElementById('prodPromocao').checked,
-        precopromocional: document.getElementById('prodPromocao').checked
-            ? parseFloat(document.getElementById('prodPrecoPromo').value.replace('.', '').replace(',', '.')) || 0
-            : 0
-    };
-
     const existingId = productIdInput.value;
     const submitBtn = document.getElementById('productSubmit');
+    const productCodigo = document.getElementById('prodCodigo').value.trim();
+
+    const rawImages = [
+        ...pendingUploadedImages,
+        document.getElementById('prodImg1').value.trim(),
+        document.getElementById('prodImg2').value.trim(),
+        document.getElementById('prodImg3').value.trim(),
+        document.getElementById('prodImg4').value.trim(),
+        document.getElementById('prodImg5').value.trim()
+    ].filter(Boolean).slice(0, 5);
 
     try {
         submitBtn.disabled = true;
-        productSubmitText.textContent = 'Salvando...';
+        productSubmitText.textContent = 'Enviando imagens...';
+        const uploadedImages = await uploadAllImagesToStorage(rawImages, productCodigo);
+
+        const productData = {
+            codigo: productCodigo,
+            nome: document.getElementById('prodNome').value.trim(),
+            unidade: document.getElementById('prodUnidade').value,
+            marca: document.getElementById('prodMarca').value.trim(),
+            categoria: document.getElementById('prodCategoria').value,
+            preco: preco,
+            estoque: estoque,
+            descricao: document.getElementById('prodDescricao').innerHTML.trim(),
+            palavraschave: [...pendingTags],
+            imagens: uploadedImages,
+            video: document.getElementById('prodVideo').value.trim(),
+            visivel: true,
+            isdestaque: document.getElementById('prodDestaque').checked,
+            ispromocao: document.getElementById('prodPromocao').checked,
+            precopromocional: document.getElementById('prodPromocao').checked
+                ? parseFloat(document.getElementById('prodPrecoPromo').value.replace('.', '').replace(',', '.')) || 0
+                : 0
+        };
+
         if (existingId) {
             const existing = getProducts().find(p => p.id === parseInt(existingId));
             productData.visivel = existing ? existing.visivel : true;
@@ -3269,6 +3313,11 @@ document.getElementById('btnResetTheme').addEventListener('click', () => {
 
 loadSettings();
 
+document.getElementById('btnMigrateImages').addEventListener('click', async () => {
+    if (!confirm('Isto vai transferir todas as imagens base64 do banco para o Supabase Storage.\n\nContinuar?')) return;
+    await migrateImagesToStorage();
+});
+
 // ===========================
 // Client Classification
 // ===========================
@@ -3802,6 +3851,41 @@ function initPopupModal() {
             showToast('Erro ao salvar popup');
         }
     });
+}
+
+// ===========================
+// Migrate Base64 Images to Storage
+// ===========================
+async function migrateImagesToStorage() {
+    const btn = document.getElementById('btnMigrateImages');
+    if (btn) { btn.disabled = true; btn.textContent = 'Migrando...'; }
+    try {
+        const products = getProducts();
+        const productsWithBase64 = products.filter(p => Array.isArray(p.imagens) && p.imagens.some(img => img && img.startsWith('data:image')));
+        if (productsWithBase64.length === 0) {
+            showToast('Nenhuma imagem base64 encontrada. Tudo já está no Storage!');
+            if (btn) { btn.disabled = false; btn.textContent = 'Migrar imagens para Storage'; }
+            return;
+        }
+        let migrated = 0, failed = 0;
+        for (const p of productsWithBase64) {
+            const newImagens = await uploadAllImagesToStorage(p.imagens, p.codigo);
+            if (newImagens.length > 0) {
+                await updateProductDB(p.id, { imagens: newImagens });
+                migrated++;
+            } else {
+                failed++;
+            }
+        }
+        await loadProducts();
+        renderProducts();
+        showToast(`Migração concluída: ${migrated} produto(s) migrado(s), ${failed} falha(s).`);
+    } catch(e) {
+        console.error('Erro na migração:', e);
+        showToast('Erro na migração: ' + e.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Migrar imagens para Storage'; }
+    }
 }
 
 // ===========================
