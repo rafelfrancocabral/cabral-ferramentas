@@ -493,22 +493,50 @@ const CATALOG_PAGE_SIZE = 100;
 
 async function fetchCatalogProducts(initial = false) {
     if (_catalogAllLoaded && !initial) return _catalogProducts;
-    const from = initial ? 0 : _catalogPage * CATALOG_PAGE_SIZE;
-    const { data, error } = await db
-        .from(SUPABASE_PRODUCTS_TABLE)
-        .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional')
-        .order('id', { ascending: true })
-        .range(from, from + CATALOG_PAGE_SIZE - 1);
-    if (error) { console.error('Erro ao carregar catálogo:', error); return _catalogProducts; }
-    if (!data || data.length === 0) { _catalogAllLoaded = true; return _catalogProducts; }
-    const visible = data.filter(p => p.visivel !== false);
+
     if (initial) {
-        _catalogProducts = visible;
+        // First: fetch destaque + promo products
+        const { data: promoData } = await db
+            .from(SUPABASE_PRODUCTS_TABLE)
+            .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional')
+            .eq('visivel', true)
+            .or('isdestaque.eq.true,ispromocao.eq.true')
+            .order('id', { ascending: true });
+        
+        const promoIds = new Set((promoData || []).map(p => p.id));
+        const promoProducts = (promoData || []).filter(p => p.visivel !== false);
+
+        // Then: fetch remaining products (excluding promo/destaque)
+        let remainingQuery = db
+            .from(SUPABASE_PRODUCTS_TABLE)
+            .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional')
+            .eq('visivel', true)
+            .order('id', { ascending: true })
+            .range(0, CATALOG_PAGE_SIZE - 1);
+        if (promoIds.size > 0) {
+            remainingQuery = remainingQuery.not('id', 'in', `(${Array.from(promoIds).join(',')})`);
+        }
+        const { data, error } = await remainingQuery;
+
+        if (error) { console.error('Erro ao carregar catálogo:', error); return _catalogProducts; }
+        const remaining = data || [];
+        _catalogProducts = [...promoProducts, ...remaining];
+        if (remaining.length < CATALOG_PAGE_SIZE) _catalogAllLoaded = true;
+        else _catalogPage = 1;
     } else {
-        _catalogProducts = _catalogProducts.concat(visible);
+        const from = _catalogPage * CATALOG_PAGE_SIZE;
+        const { data, error } = await db
+            .from(SUPABASE_PRODUCTS_TABLE)
+            .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional')
+            .eq('visivel', true)
+            .order('id', { ascending: true })
+            .range(from, from + CATALOG_PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar catálogo:', error); return _catalogProducts; }
+        if (!data || data.length === 0) { _catalogAllLoaded = true; return _catalogProducts; }
+        _catalogProducts = _catalogProducts.concat(data);
+        if (data.length < CATALOG_PAGE_SIZE) _catalogAllLoaded = true;
+        else _catalogPage++;
     }
-    if (data.length < CATALOG_PAGE_SIZE) _catalogAllLoaded = true;
-    else _catalogPage++;
     return _catalogProducts;
 }
 
@@ -753,7 +781,7 @@ function renderProductGrid(products, container, append = false) {
 
     products.forEach(rawProduct => {
         const product = normalizeProduct(rawProduct);
-        const hasPromo = product.isPromocao && product.precoPromocional;
+        const hasPromo = product.isPromocao && product.precoPromocional > 0;
         const price = hasPromo ? product.precoPromocional : product.preco;
         const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0].replace('.webp', '_thumb.webp') : '';
         const stockClass = product.estoque <= 0 ? 'out' : '';
