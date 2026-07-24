@@ -1059,6 +1059,126 @@ document.getElementById('editQuoteSave').addEventListener('click', async () => {
 });
 
 // ===========================
+// Manual Quote Modal
+// ===========================
+let mqItems = [];
+
+function renderMqItems() {
+    const list = document.getElementById('mqItemsList');
+    if (!list) return;
+    if (mqItems.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:0.85rem;">Nenhum item adicionado</div>';
+        return;
+    }
+    list.innerHTML = mqItems.map((item, i) => `
+        <div class="edit-quote-item" style="display:grid;grid-template-columns:1fr 80px 100px 100px 36px;gap:8px;align-items:center;margin-bottom:8px;">
+            <input type="text" value="${item.nome || ''}" placeholder="Nome do produto" class="mq-item-nome" data-idx="${i}" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;">
+            <input type="text" value="${item.quantidade || 1}" class="mq-item-qty" data-idx="${i}" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;text-align:center;">
+            <input type="text" value="${item.preco ? item.preco.toFixed(2).replace('.', ',') : ''}" placeholder="Preço" class="mq-item-price" data-idx="${i}" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;text-align:right;">
+            <span style="font-size:0.85rem;text-align:right;color:var(--text-muted);">${item.subtotal ? 'R$ ' + item.subtotal.toFixed(2).replace('.', ',') : ''}</span>
+            <button class="btn-remove-item" onclick="mqRemoveItem(${i})" style="background:none;border:none;color:var(--danger,#ef4444);cursor:pointer;font-size:1rem;"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+
+    list.querySelectorAll('.mq-item-nome').forEach(el => {
+        el.addEventListener('input', (e) => { mqItems[parseInt(e.target.dataset.idx)].nome = e.target.value; });
+    });
+    list.querySelectorAll('.mq-item-qty').forEach(el => {
+        el.addEventListener('input', (e) => { mqItems[parseInt(e.target.dataset.idx)].quantidade = parseInt(e.target.value) || 1; recalcMqTotal(); });
+    });
+    list.querySelectorAll('.mq-item-price').forEach(el => {
+        el.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            const v = e.target.value.replace('.', '').replace(',', '.');
+            mqItems[idx].preco = parseFloat(v) || 0;
+            mqItems[idx].subtotal = mqItems[idx].preco * mqItems[idx].quantidade;
+            recalcMqTotal();
+            renderMqItems();
+        });
+    });
+    recalcMqTotal();
+}
+
+function recalcMqTotal() {
+    const total = mqItems.reduce((sum, item) => sum + (item.preco || 0) * (item.quantidade || 1), 0);
+    document.getElementById('mqTotal').value = total.toFixed(2).replace('.', ',');
+}
+
+window.mqRemoveItem = function(idx) {
+    mqItems.splice(idx, 1);
+    renderMqItems();
+};
+
+document.getElementById('mqAddItem').addEventListener('click', () => {
+    mqItems.push({ codigo: '', nome: '', quantidade: 1, preco: 0, subtotal: 0 });
+    renderMqItems();
+    const list = document.getElementById('mqItemsList');
+    const lastInput = list.querySelector('.mq-item-nome:last-child');
+    if (lastInput) lastInput.focus();
+});
+
+document.getElementById('btnNewQuoteManual').addEventListener('click', () => {
+    mqItems = [];
+    document.getElementById('mqName').value = '';
+    document.getElementById('mqPhone').value = '';
+    document.getElementById('mqTotal').value = '0,00';
+    renderMqItems();
+    document.getElementById('manualQuoteModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+});
+
+document.getElementById('mqSave').addEventListener('click', async () => {
+    const name = document.getElementById('mqName').value.trim();
+    const phone = document.getElementById('mqPhone').value.trim();
+    if (!name) { showToast('Informe o nome do cliente'); return; }
+    if (!phone) { showToast('Informe o telefone'); return; }
+
+    const itens = mqItems.filter(item => item.nome).map(item => ({
+        codigo: item.codigo || '',
+        nome: item.nome,
+        quantidade: item.quantidade || 1,
+        preco: item.preco || 0,
+        subtotal: (item.preco || 0) * (item.quantidade || 1)
+    }));
+    if (itens.length === 0) { showToast('Adicione pelo menos um item'); return; }
+
+    const totalStr = document.getElementById('mqTotal').value.replace('.', '').replace(',', '.');
+    const total = parseFloat(totalStr) || itens.reduce((s, i) => s + i.subtotal, 0);
+
+    try {
+        const code = generateClientCode(phone);
+        const { error } = await db.from(SUPABASE_QUOTES_TABLE).insert({
+            nome_cliente: name,
+            telefone: phone,
+            codigo_cliente: code,
+            itens: itens,
+            total: total,
+            status: 'recebido',
+            status_entrega: 'pendente'
+        });
+        if (error) throw error;
+
+        await loadQuotes();
+        renderQuotes(document.getElementById('statusFilter')?.value || 'all');
+        updateQuoteBadges();
+        closeModal('manualQuoteModal');
+        showToast('Orçamento criado com sucesso!');
+    } catch (e) {
+        console.error('Erro ao criar orçamento:', e);
+        showToast('Erro ao salvar: ' + e.message);
+    }
+});
+
+// Phone mask for manual quote
+document.getElementById('mqPhone')?.addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '').substring(0, 11);
+    if (v.length > 6) v = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
+    else if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+    else if (v.length > 0) v = `(${v}`;
+    this.value = v;
+});
+
+// ===========================
 // Status Filter
 // ===========================
 const statusFilter = document.getElementById('statusFilter');
