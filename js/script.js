@@ -485,28 +485,37 @@ const CART_KEY = 'cabral_cart';
 
 let _catalogProducts = [];
 let _catalogCategories = [];
+let _catalogAllLoaded = false;
+let _catalogPage = 0;
+const CATALOG_PAGE_SIZE = 30;
 
-async function fetchCatalogProducts() {
-    const PAGE_SIZE = 1000;
-    let all = [];
-    let from = 0;
-    while (true) {
-        const { data, error } = await db
-            .from(SUPABASE_PRODUCTS_TABLE)
-            .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, descricao, estoque, isdestaque, ispromocao, precopromocional')
-            .order('id', { ascending: true })
-            .range(from, from + PAGE_SIZE - 1);
-        if (error) { console.error('Erro ao carregar catálogo:', error); break; }
-        if (!data || data.length === 0) break;
-        all = all.concat(data);
-        if (data.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
+async function fetchCatalogProducts(initial = false) {
+    if (_catalogAllLoaded && !initial) return _catalogProducts;
+    const from = initial ? 0 : _catalogPage * CATALOG_PAGE_SIZE;
+    const { data, error } = await db
+        .from(SUPABASE_PRODUCTS_TABLE)
+        .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional')
+        .order('id', { ascending: true })
+        .range(from, from + CATALOG_PAGE_SIZE - 1);
+    if (error) { console.error('Erro ao carregar catálogo:', error); return _catalogProducts; }
+    if (!data || data.length === 0) { _catalogAllLoaded = true; return _catalogProducts; }
+    const visible = data.filter(p => p.visivel !== false);
+    if (initial) {
+        _catalogProducts = visible;
+    } else {
+        _catalogProducts = _catalogProducts.concat(visible);
     }
-    _catalogProducts = all.filter(p => p.visivel !== false);
+    if (data.length < CATALOG_PAGE_SIZE) _catalogAllLoaded = true;
+    else _catalogPage++;
     return _catalogProducts;
 }
 
 async function fetchCatalogCategories() {
+    const cached = localStorage.getItem('cabral_categories');
+    if (cached) {
+        _catalogCategories = JSON.parse(cached);
+        return _catalogCategories;
+    }
     const PAGE_SIZE = 1000;
     let all = [];
     let from = 0;
@@ -523,6 +532,7 @@ async function fetchCatalogCategories() {
         from += PAGE_SIZE;
     }
     _catalogCategories = all;
+    try { localStorage.setItem('cabral_categories', JSON.stringify(all)); } catch(e) {}
     return _catalogCategories;
 }
 
@@ -677,9 +687,9 @@ function renderCatalog(filter = 'all') {
     });
 })();
 
-function renderProductGrid(products, container) {
+function renderProductGrid(products, container, append = false) {
     if (!container) return;
-    container.innerHTML = '';
+    if (!append) container.innerHTML = '';
 
     products.forEach(rawProduct => {
         const product = normalizeProduct(rawProduct);
@@ -1231,15 +1241,42 @@ document.addEventListener('keydown', (e) => {
 
 // Init
 (async function initCatalog() {
-    await Promise.all([fetchCatalogProducts(), fetchCatalogCategories()]);
+    await Promise.all([fetchCatalogProducts(true), fetchCatalogCategories()]);
     renderCatalog();
     renderFooterCategories();
     updateCartBadge();
     renderCartSidebar();
+    const loader = document.getElementById('catalogLoadMore');
+    if (loader) loader.style.display = _catalogAllLoaded ? 'none' : '';
     console.log(`Catálogo: ${_catalogProducts.length} produtos, ${_catalogCategories.length} categorias`);
     trackVisitor();
     initPromoPopup();
 })();
+
+// Infinite scroll
+let _loadingMore = false;
+let _renderedCount = 0;
+async function loadMoreProducts() {
+    if (_loadingMore || _catalogAllLoaded) return;
+    _loadingMore = true;
+    const loader = document.getElementById('catalogLoadMore');
+    if (loader) loader.style.display = '';
+    const prevCount = _catalogProducts.length;
+    await fetchCatalogProducts(false);
+    const newProducts = _catalogProducts.slice(prevCount);
+    if (newProducts.length > 0) {
+        const grid = document.getElementById('gridAll');
+        if (grid) renderProductGrid(newProducts, grid, true);
+    }
+    _loadingMore = false;
+    if (loader) loader.style.display = _catalogAllLoaded ? 'none' : '';
+}
+window.addEventListener('scroll', () => {
+    if (_catalogAllLoaded) return;
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 400) {
+        loadMoreProducts();
+    }
+});
 
 function renderFooterCategories() {
     const container = document.getElementById('footerCategories');
