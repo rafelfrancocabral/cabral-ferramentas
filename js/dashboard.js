@@ -1441,11 +1441,31 @@ function base64ToBlob(base64) {
     return new Blob([byteArr], { type: mime });
 }
 
+async function computeImageHash(base64) {
+    const raw = atob(base64.split(',')[1]);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function uploadImageToStorage(base64, codigo, index) {
     const blob = base64ToBlob(base64);
     const ext = blob.type.includes('png') ? 'png' : 'jpg';
-    const path = `produtos/${codigo || 'sem_codigo'}_${Date.now()}_${index}.${ext}`;
-    const { data, error } = await db.storage.from(SUPABASE_STORAGE_BUCKET).upload(path, blob, { contentType: blob.type, upsert: true });
+    const hash = await computeImageHash(base64);
+    const path = `produtos/${hash}.${ext}`;
+
+    const { data: existing } = await db.storage
+        .from(SUPABASE_STORAGE_BUCKET)
+        .list('produtos', { search: `${hash}.${ext}` });
+
+    if (existing && existing.length > 0) {
+        const { data: urlData } = db.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(path);
+        return urlData?.publicUrl || null;
+    }
+
+    const { data, error } = await db.storage.from(SUPABASE_STORAGE_BUCKET).upload(path, blob, { contentType: blob.type, upsert: false });
     if (error) { console.error('Erro upload storage:', error); return null; }
     const { data: urlData } = db.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(path);
     return urlData?.publicUrl || null;
