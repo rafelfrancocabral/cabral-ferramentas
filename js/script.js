@@ -1126,17 +1126,18 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
 
     // Save quote to Supabase
     try {
-        await db.from(SUPABASE_QUOTES_TABLE).insert({
+        const quoteData = {
             nome_cliente: name,
             telefone: phone,
             codigo_cliente: code,
             itens: itens,
             total: finalTotal,
-            cupom: checkoutCouponCode || null,
-            desconto: checkoutDiscount || 0,
             status: 'recebido',
             status_entrega: 'pendente'
-        });
+        };
+        if (checkoutCouponCode) quoteData.cupom = checkoutCouponCode;
+        if (checkoutDiscount > 0) quoteData.desconto = checkoutDiscount;
+        await db.from(SUPABASE_QUOTES_TABLE).insert(quoteData);
 
         // Update coupon usage count
         if (checkoutCouponCode && checkoutDiscount > 0) {

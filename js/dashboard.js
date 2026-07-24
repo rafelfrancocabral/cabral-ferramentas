@@ -602,7 +602,7 @@ async function loadQuotes() {
     let from = 0;
     while (true) {
         const { data, error } = await db.from(SUPABASE_QUOTES_TABLE)
-            .select('id, nome_cliente, telefone, codigo_cliente, itens, total, cupom, desconto, status, status_entrega, created_at, updated_at')
+            .select('id, nome_cliente, telefone, codigo_cliente, itens, total, status, status_entrega, created_at, updated_at')
             .order('created_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar orçamentos:', error); break; }
