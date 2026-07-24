@@ -487,6 +487,8 @@ let _catalogProducts = [];
 let _catalogCategories = [];
 let _catalogAllLoaded = false;
 let _catalogPage = 0;
+let _categoryProductsCache = {};
+let _categoryCounts = {};
 const CATALOG_PAGE_SIZE = 100;
 
 async function fetchCatalogProducts(initial = false) {
@@ -536,6 +538,48 @@ function getCatalogProducts() {
 
 function getCatalogCategories() {
     return _catalogCategories;
+}
+
+async function fetchCategoryCounts() {
+    const PAGE_SIZE = 1000;
+    let from = 0;
+    const counts = {};
+    while (true) {
+        const { data, error } = await db
+            .from(SUPABASE_PRODUCTS_TABLE)
+            .select('categoria')
+            .eq('visivel', true)
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) break;
+        if (!data || data.length === 0) break;
+        data.forEach(p => { if (p.categoria) counts[p.categoria] = (counts[p.categoria] || 0) + 1; });
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+    }
+    _categoryCounts = counts;
+    return counts;
+}
+
+async function fetchCategoryProducts(category) {
+    if (_categoryProductsCache[category]) return _categoryProductsCache[category];
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db
+            .from(SUPABASE_PRODUCTS_TABLE)
+            .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional')
+            .eq('categoria', category)
+            .order('id', { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar categoria:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data.filter(p => p.visivel !== false));
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+    }
+    _categoryProductsCache[category] = all;
+    return all;
 }
 
 function normalizeProduct(p) {
@@ -600,7 +644,7 @@ function shuffleArray(arr) {
     return a;
 }
 
-function renderCatalog(filter = 'all') {
+async function renderCatalog(filter = 'all') {
     const products = getCatalogProducts();
     const allCategories = getCatalogCategories();
     const dropdownList = document.getElementById('catalogDropdownList');
@@ -616,13 +660,11 @@ function renderCatalog(filter = 'all') {
 
     if (!dropdownList || !allGrid) return;
 
-    const catCounts = {};
-    products.forEach(p => {
-        if (p.categoria) catCounts[p.categoria] = (catCounts[p.categoria] || 0) + 1;
-    });
+    const catCounts = _categoryCounts;
+    const totalProducts = Object.values(catCounts).reduce((s, c) => s + c, 0);
     const cats = allCategories.map(c => c.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
-    dropdownList.innerHTML = `<div class="catalog-dropdown-item${filter === 'all' ? ' active' : ''}" data-cat="all"><i class="fas fa-th-large"></i> Todas as Categorias<span class="cat-count">${products.length}</span></div>`;
+    dropdownList.innerHTML = `<div class="catalog-dropdown-item${filter === 'all' ? ' active' : ''}" data-cat="all"><i class="fas fa-th-large"></i> Todas as Categorias<span class="cat-count">${totalProducts}</span></div>`;
     cats.forEach(cat => {
         const count = catCounts[cat] || 0;
         dropdownList.innerHTML += `<div class="catalog-dropdown-item${filter === cat ? ' active' : ''}" data-cat="${cat}"><i class="fas fa-tag"></i> ${cat}<span class="cat-count">${count}</span></div>`;
@@ -635,13 +677,19 @@ function renderCatalog(filter = 'all') {
     }
 
     dropdownList.querySelectorAll('.catalog-dropdown-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', async () => {
             dropdownList.querySelectorAll('.catalog-dropdown-item').forEach(i => i.classList.remove('active'));
             item.classList.add('active');
             dropdownLabel.textContent = item.dataset.cat === 'all' ? 'Todas as Categorias' : item.dataset.cat;
             dropdownBtn.classList.remove('open');
             dropdownList.classList.remove('open');
-            renderCatalog(item.dataset.cat);
+            if (item.dataset.cat !== 'all') {
+                allGrid.innerHTML = '<div style="text-align:center;padding:40px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;color:var(--accent);"></i><p style="margin-top:8px;color:var(--text-muted);">Carregando produtos...</p></div>';
+                secAll.style.display = '';
+                secDestaques.style.display = 'none';
+                secPromos.style.display = 'none';
+            }
+            await renderCatalog(item.dataset.cat);
         });
     });
 
@@ -653,7 +701,12 @@ function renderCatalog(filter = 'all') {
         };
     }
 
-    let filtered = filter === 'all' ? [...products] : products.filter(p => p.categoria === filter);
+    let filtered;
+    if (filter === 'all') {
+        filtered = [...products];
+    } else {
+        filtered = await fetchCategoryProducts(filter);
+    }
 
     if (filtered.length === 0) {
         secDestaques.style.display = 'none';
@@ -677,8 +730,10 @@ function renderCatalog(filter = 'all') {
     secDestaques.style.display = 'none';
     secPromos.style.display = 'none';
     secAll.style.display = '';
-    secAll.querySelector('.catalog-subtitle').innerHTML = '<i class="fas fa-boxes-stacked"></i> Produtos';
+    secAll.querySelector('.catalog-subtitle').innerHTML = filter === 'all' ? '<i class="fas fa-boxes-stacked"></i> Produtos' : `<i class="fas fa-tag"></i> ${filter}`;
     renderProductGrid(filtered, document.getElementById('gridAll'));
+    const loader = document.getElementById('catalogLoadMore');
+    if (loader) loader.style.display = (filter === 'all' && !_catalogAllLoaded) ? '' : 'none';
 }
 
 (function initCatalogDropdown() {
@@ -1173,6 +1228,11 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
     checkoutKnownName = null;
     checkoutClientCode = null;
 
+    cart = [];
+    saveCart(cart);
+    updateCartBadge();
+    renderCartSidebar();
+
     document.getElementById('checkoutOverlay').classList.remove('active');
     document.body.style.overflow = '';
     document.getElementById('checkoutForm').reset();
@@ -1246,14 +1306,14 @@ document.addEventListener('keydown', (e) => {
 
 // Init
 (async function initCatalog() {
-    await Promise.all([fetchCatalogProducts(true), fetchCatalogCategories()]);
+    await Promise.all([fetchCatalogProducts(true), fetchCatalogCategories(), fetchCategoryCounts()]);
     renderCatalog();
     renderFooterCategories();
     updateCartBadge();
     renderCartSidebar();
     const loader = document.getElementById('catalogLoadMore');
     if (loader) loader.style.display = _catalogAllLoaded ? 'none' : '';
-    console.log(`Catálogo: ${_catalogProducts.length} produtos, ${_catalogCategories.length} categorias`);
+    console.log(`Catálogo: ${Object.values(_categoryCounts).reduce((s,c)=>s+c,0)} produtos, ${_catalogCategories.length} categorias`);
     trackVisitor();
     initPromoPopup();
 })();
