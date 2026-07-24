@@ -1,6 +1,14 @@
 // ===========================
 // Particles Background
 // ===========================
+function getThumbUrl(url) {
+    if (!url || !url.includes('.webp')) return url;
+    return url.replace('.webp', '_thumb.webp');
+}
+function getMainUrl(url) {
+    if (!url) return url;
+    return url.replace('_thumb.webp', '.webp');
+}
 function createParticles() {
     const container = document.getElementById('particles');
     if (!container) return;
@@ -677,7 +685,7 @@ function renderProductGrid(products, container) {
         const product = normalizeProduct(rawProduct);
         const hasPromo = product.isPromocao && product.precoPromocional;
         const price = hasPromo ? product.precoPromocional : product.preco;
-        const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0] : '';
+        const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0].replace('.webp', '_thumb.webp') : '';
         const stockClass = product.estoque <= 0 ? 'out' : '';
 
         const badges = [];
@@ -688,7 +696,7 @@ function renderProductGrid(products, container) {
         card.className = 'catalog-card';
         card.innerHTML = `
             <div class="catalog-card-img" onclick="openProductModal(${product.id})">
-                ${img ? `<img src="${img}" alt="${product.nome}" loading="lazy">` : '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:0.85rem;"><i class="fas fa-image" style="font-size:2rem;opacity:0.3;display:block;margin-bottom:8px;"></i> Sem imagem</div>'}
+                ${img ? `<img src="${img}" alt="${product.nome}" loading="lazy" onerror="this.onerror=null;this.src='${product.imagens[0]}'">` : '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:0.85rem;"><i class="fas fa-image" style="font-size:2rem;opacity:0.3;display:block;margin-bottom:8px;"></i> Sem imagem</div>'}
                 ${badges.length ? `<div class="catalog-card-badges">${badges.join('')}</div>` : ''}
             </div>
             <div class="catalog-card-body">
@@ -739,7 +747,7 @@ window.addToCart = function(productId, btnEl) {
     if (existing) {
         existing.qty = Math.min(existing.qty + qty, product.estoque);
     } else {
-        const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0] : '';
+        const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0].replace('.webp', '_thumb.webp') : '';
         const hasPromo = product.isPromocao && product.precoPromocional;
         cart.push({
             id: product.id,
@@ -788,7 +796,7 @@ function renderCartSidebar() {
         return `
         <div class="cart-item">
             <div class="cart-item-img">
-                ${item.imagem ? `<img src="${item.imagem}" alt="${item.nome}">` : '<i class="fas fa-box" style="color:var(--text-muted);"></i>'}
+                ${item.imagem ? `<img src="${item.imagem}" alt="${item.nome}" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">` : '<i class="fas fa-box" style="color:var(--text-muted);"></i>'}
             </div>
             <div class="cart-item-info">
                 <div class="cart-item-code">${item.codigo ? 'CÓD ' + item.codigo : ''}</div>
@@ -1325,7 +1333,8 @@ function showPromoPopup(popup) {
     if (popup.tipo === 'promocao' && popup.produto_codigo) {
         const product = _catalogProducts.find(p => p.codigo && p.codigo.toLowerCase() === popup.produto_codigo.toLowerCase());
         if (product && product.imagens && product.imagens.length > 0) {
-            img.src = product.imagens[0];
+            img.src = product.imagens[0].replace('.webp', '_thumb.webp');
+            img.onerror = function() { this.onerror = null; this.src = product.imagens[0]; };
             imgWrap.style.display = '';
         } else {
             imgWrap.style.display = 'none';

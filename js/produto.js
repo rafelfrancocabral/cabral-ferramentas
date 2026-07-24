@@ -153,13 +153,13 @@
         section.style.display = '';
 
         grid.innerHTML = related.map(rp => {
-            const img = (rp.imagens && rp.imagens.length > 0) ? rp.imagens[0] : '';
+            const img = (rp.imagens && rp.imagens.length > 0) ? rp.imagens[0].replace('.webp', '_thumb.webp') : '';
             const rNorm = normalize(rp);
             const rHasPromo = rNorm.isPromocao && rNorm.precoPromocional;
             const rPrice = rHasPromo ? rNorm.precoPromocional : rNorm.preco;
             return `
             <a href="produto.html?id=${rp.id}" class="pp-related-card">
-                ${img ? `<img src="${img}" alt="${rp.nome}" loading="lazy">` : '<div style="height:140px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);"><i class="fas fa-image"></i></div>'}
+                ${img ? `<img src="${img}" alt="${rp.nome}" loading="lazy" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">` : '<div style="height:140px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);"><i class="fas fa-image"></i></div>'}
                 <div class="pp-related-name">${rp.nome}</div>
                 <div class="pp-related-price">${formatPrice(rPrice)}</div>
             </a>`;

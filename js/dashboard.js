@@ -1266,9 +1266,9 @@ async function filterProducts(query) {
 
     tbody.innerHTML = filtered.map(p => {
         const estoqueClass = p.estoque > 20 ? 'high' : p.estoque > 5 ? 'medium' : 'low';
-        const img = (p.imagens && p.imagens.length > 0) ? p.imagens[0] : '';
+        const img = (p.imagens && p.imagens.length > 0) ? p.imagens[0].replace('.webp', '_thumb.webp') : '';
         const thumb = img
-            ? `<img src="${img}" class="product-thumb product-thumb-click" onclick="editProduct(${p.id})" title="Clique para editar">`
+            ? `<img src="${img}" class="product-thumb product-thumb-click" onclick="editProduct(${p.id})" title="Clique para editar" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">`
             : `<div class="product-thumb product-thumb-empty product-thumb-click" onclick="editProduct(${p.id})" title="Clique para adicionar foto"><i class="fas fa-image"></i></div>`;
         const isVisivel = p.visivel !== false;
         const eyeIcon = isVisivel ? 'fa-eye' : 'fa-eye-slash';
@@ -1366,8 +1366,9 @@ document.querySelectorAll('#richtextToolbar button[data-cmd]').forEach(btn => {
 // ===========================
 let pendingUploadedImages = [];
 let pendingUploadedStorageUrls = [];
-const IMG_MAX_DIM = 800;
-const IMG_QUALITY = 0.7;
+const IMG_MAX_DIM = 600;
+const IMG_QUALITY = 0.65;
+const IMG_THUMB_DIM = 300;
 
 const imgUploadZone = document.getElementById('imgUploadZone');
 const imgFileInput = document.getElementById('imgFileInput');
@@ -1380,16 +1381,19 @@ function compressImage(file) {
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let w = img.width, h = img.height;
-                if (w > IMG_MAX_DIM || h > IMG_MAX_DIM) {
-                    if (w > h) { h = Math.round(h * IMG_MAX_DIM / w); w = IMG_MAX_DIM; }
-                    else { w = Math.round(w * IMG_MAX_DIM / h); h = IMG_MAX_DIM; }
+                function resize(maxDim) {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+                        else { w = Math.round(w * maxDim / h); h = maxDim; }
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    return canvas.toDataURL('image/webp', IMG_QUALITY);
                 }
-                canvas.width = w;
-                canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                resolve(canvas.toDataURL('image/jpeg', IMG_QUALITY));
+                resolve({ main: resize(IMG_MAX_DIM), thumb: resize(IMG_THUMB_DIM) });
             };
             img.src = e.target.result;
         };
@@ -1400,9 +1404,10 @@ function compressImage(file) {
 function renderImagePreviews() {
     imgPreviewList.innerHTML = '';
     imgUploadPlaceholder.style.display = pendingUploadedImages.length > 0 ? 'none' : '';
-    pendingUploadedImages.forEach((src, i) => {
+    pendingUploadedImages.forEach((item, i) => {
         const div = document.createElement('div');
         div.className = 'img-preview-item';
+        const src = typeof item === 'string' ? item : (item.thumb || item.main || item);
         div.innerHTML = `<img src="${src}"><button class="img-preview-remove" data-idx="${i}"><i class="fas fa-times"></i></button>`;
         imgPreviewList.appendChild(div);
     });
@@ -1422,8 +1427,8 @@ function handleImageFiles(files) {
             showToast('Maximo de 5 imagens.');
             return;
         }
-        const base64 = await compressImage(file);
-        pendingUploadedImages.push(base64);
+        const { main, thumb } = await compressImage(file);
+        pendingUploadedImages.push({ main, thumb });
         renderImagePreviews();
     });
 }
@@ -1450,25 +1455,31 @@ async function computeImageHash(base64) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function uploadImageToStorage(base64, codigo, index) {
-    const blob = base64ToBlob(base64);
-    const ext = blob.type.includes('png') ? 'png' : 'jpg';
-    const hash = await computeImageHash(base64);
-    const path = `produtos/${hash}.${ext}`;
+async function uploadImageToStorage(base64Main, base64Thumb, codigo, index) {
+    const hash = await computeImageHash(base64Main);
 
     const { data: existing } = await db.storage
         .from(SUPABASE_STORAGE_BUCKET)
-        .list('produtos', { search: `${hash}.${ext}` });
+        .list('produtos', { search: `${hash}.webp` });
 
     if (existing && existing.length > 0) {
-        const { data: urlData } = db.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(path);
-        return urlData?.publicUrl || null;
+        const { data: urlMain } = db.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(`produtos/${hash}.webp`);
+        const { data: urlThumb } = db.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(`produtos/${hash}_thumb.webp`);
+        return { main: urlMain?.publicUrl || null, thumb: urlThumb?.publicUrl || null };
     }
 
-    const { data, error } = await db.storage.from(SUPABASE_STORAGE_BUCKET).upload(path, blob, { contentType: blob.type, upsert: false });
-    if (error) { console.error('Erro upload storage:', error); return null; }
-    const { data: urlData } = db.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(path);
-    return urlData?.publicUrl || null;
+    const blobMain = base64ToBlob(base64Main);
+    const blobThumb = base64ToBlob(base64Thumb);
+
+    const { error: errMain } = await db.storage.from(SUPABASE_STORAGE_BUCKET).upload(`produtos/${hash}.webp`, blobMain, { contentType: 'image/webp', upsert: false });
+    if (errMain) { console.error('Erro upload main:', errMain); return null; }
+
+    const { error: errThumb } = await db.storage.from(SUPABASE_STORAGE_BUCKET).upload(`produtos/${hash}_thumb.webp`, blobThumb, { contentType: 'image/webp', upsert: false });
+    if (errThumb) console.warn('Erro upload thumb:', errThumb);
+
+    const { data: urlMain } = db.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(`produtos/${hash}.webp`);
+    const { data: urlThumb } = db.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(`produtos/${hash}_thumb.webp`);
+    return { main: urlMain?.publicUrl || null, thumb: urlThumb?.publicUrl || null };
 }
 
 async function uploadAllImagesToStorage(imagens, codigo) {
@@ -1477,10 +1488,10 @@ async function uploadAllImagesToStorage(imagens, codigo) {
         const img = imagens[i];
         if (!img) continue;
         if (img.startsWith('http://') || img.startsWith('https://')) {
-            results.push(img);
+            results.push({ main: img, thumb: img });
         } else if (img.startsWith('data:image')) {
-            const url = await uploadImageToStorage(img, codigo, i);
-            if (url) results.push(url);
+            const urls = await uploadImageToStorage(img.main || img, img.thumb || img, codigo, i);
+            if (urls) results.push(urls);
         }
     }
     return results;
@@ -1739,7 +1750,7 @@ productForm.addEventListener('submit', async (e) => {
     const productCodigo = document.getElementById('prodCodigo').value.trim();
 
     const rawImages = [
-        ...pendingUploadedImages,
+        ...pendingUploadedImages.map(item => typeof item === 'string' ? item : item.main),
         document.getElementById('prodImg1').value.trim(),
         document.getElementById('prodImg2').value.trim(),
         document.getElementById('prodImg3').value.trim(),
@@ -1762,7 +1773,7 @@ productForm.addEventListener('submit', async (e) => {
             estoque: estoque,
             descricao: document.getElementById('prodDescricao').innerHTML.trim(),
             palavraschave: [...pendingTags],
-            imagens: uploadedImages,
+            imagens: uploadedImages.map(u => u.main || u),
             video: document.getElementById('prodVideo').value.trim(),
             visivel: true,
             isdestaque: document.getElementById('prodDestaque').checked,
@@ -3761,8 +3772,10 @@ async function lookupPopupProduct(codigo) {
     const products = getProducts();
     const product = products.find(p => p.codigo && p.codigo.toLowerCase() === codigo.toLowerCase());
     if (product) {
-        const img = product.imagens && product.imagens.length > 0 ? product.imagens[0] : '';
-        document.getElementById('popupProdImg').src = img || 'https://via.placeholder.com/60';
+        const img = product.imagens && product.imagens.length > 0 ? product.imagens[0].replace('.webp', '_thumb.webp') : '';
+        const popupImg = document.getElementById('popupProdImg');
+        popupImg.src = img || 'https://via.placeholder.com/60';
+        if (img) popupImg.onerror = function() { this.onerror = null; this.src = product.imagens[0]; };
         document.getElementById('popupProdNome').textContent = product.nome;
         document.getElementById('popupProdPrecoOld').textContent = 'R$ ' + (product.preco || 0).toFixed(2).replace('.', ',');
         document.getElementById('popupProdPrecoNew').textContent = 'R$ ' + (product.precopromocional || product.precoPromocional || product.preco || 0).toFixed(2).replace('.', ',');
@@ -3883,7 +3896,7 @@ async function migrateImagesToStorage() {
         const products = getProducts();
         const productsWithBase64 = products.filter(p => Array.isArray(p.imagens) && p.imagens.some(img => img && img.startsWith('data:image')));
         if (productsWithBase64.length === 0) {
-            showToast('Nenhuma imagem base64 encontrada. Tudo já está no Storage!');
+            showToast('Nenhuma imagem base64 encontrada. Tudo ja esta no Storage!');
             if (btn) { btn.disabled = false; btn.textContent = 'Migrar imagens para Storage'; }
             return;
         }
@@ -3891,7 +3904,8 @@ async function migrateImagesToStorage() {
         for (const p of productsWithBase64) {
             const newImagens = await uploadAllImagesToStorage(p.imagens, p.codigo);
             if (newImagens.length > 0) {
-                await updateProductDB(p.id, { imagens: newImagens });
+                const mainUrls = newImagens.map(u => u.main || u);
+                await updateProductDB(p.id, { imagens: mainUrls });
                 migrated++;
             } else {
                 failed++;
@@ -3899,10 +3913,10 @@ async function migrateImagesToStorage() {
         }
         await loadProducts();
         renderProducts();
-        showToast(`Migração concluída: ${migrated} produto(s) migrado(s), ${failed} falha(s).`);
+        showToast(`Migracao concluida: ${migrated} produto(s) migrado(s), ${failed} falha(s).`);
     } catch(e) {
-        console.error('Erro na migração:', e);
-        showToast('Erro na migração: ' + e.message);
+        console.error('Erro na migracao:', e);
+        showToast('Erro na migracao: ' + e.message);
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = 'Migrar imagens para Storage'; }
     }
