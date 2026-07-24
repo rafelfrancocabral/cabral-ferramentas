@@ -658,8 +658,9 @@ function renderCatalog(filter = 'all') {
     if (filtered.length === 0) {
         secDestaques.style.display = 'none';
         secPromos.style.display = 'none';
-        secAll.style.display = 'none';
-        empty.style.display = '';
+        secAll.style.display = '';
+        secAll.querySelector('.catalog-subtitle').innerHTML = `<i class="fas fa-tag"></i> ${filter === 'all' ? 'Produtos' : filter}`;
+        allGrid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><i class="fas fa-box-open" style="font-size:2rem;opacity:0.3;display:block;margin-bottom:8px;"></i>Nenhum produto encontrado${filter !== 'all' ? ' nesta categoria' : ''}</div>`;
         return;
     }
 

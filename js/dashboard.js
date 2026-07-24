@@ -161,7 +161,8 @@ sidebarLinks.forEach(link => {
             if (page === 'orcamentos') {
                 await loadQuotes();
                 renderQuotes();
-                updateQuoteBadges();
+    updateQuoteBadges();
+    _lastQuoteCount = getQuotes().length;
             }
         }
 
@@ -4088,7 +4089,8 @@ function updateQuoteBadges() {
     }
 }
 
-// Poll for new quotes every 30s
+// Poll for new quotes every 5s
+let _lastQuoteCount = 0;
 setInterval(async () => {
     try {
         const { data } = await db.from(SUPABASE_QUOTES_TABLE).select('id, status').order('created_at', { ascending: false }).range(0, 9999);
@@ -4104,14 +4106,17 @@ setInterval(async () => {
                 notifBadge.textContent = pending;
                 notifBadge.style.display = pending > 0 ? 'flex' : 'none';
             }
-            // Update quotes cache and re-render if on orçamentos page
-            if (data.length !== _quotesCache.length) {
+            // Detect new quotes
+            if (_lastQuoteCount > 0 && data.length > _lastQuoteCount) {
+                const diff = data.length - _lastQuoteCount;
                 await loadQuotes();
+                showToast(`${diff} novo(s) orçamento(s) recebido(s)!`);
                 const orcPage = document.getElementById('orcamentosPage');
                 if (orcPage && !orcPage.classList.contains('hidden')) {
-                    renderQuotes();
+                    renderQuotes(document.getElementById('statusFilter')?.value || 'all');
                 }
             }
+            _lastQuoteCount = data.length;
         }
     } catch(e) {}
-}, 30000);
+}, 5000);
