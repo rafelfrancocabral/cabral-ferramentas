@@ -485,7 +485,7 @@ async function fetchCatalogProducts() {
     while (true) {
         const { data, error } = await db
             .from(SUPABASE_PRODUCTS_TABLE)
-            .select('*')
+            .select('id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, descricao, estoque, isdestaque, ispromocao, precopromocional')
             .order('id', { ascending: true })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar catálogo:', error); break; }
@@ -505,7 +505,7 @@ async function fetchCatalogCategories() {
     while (true) {
         const { data, error } = await db
             .from(SUPABASE_CATEGORIES_TABLE)
-            .select('*')
+            .select('id, nome')
             .order('id', { ascending: true })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar categorias:', error); break; }
@@ -1268,7 +1268,7 @@ async function initPromoPopup() {
     try {
         const { data, error } = await db
             .from('popups')
-            .select('*')
+            .select('id, titulo, mensagem, tipo, produto_codigo, preco_original, preco_promocional, imagem_url, botao_texto, botao_link, ativo, ordem, data_inicio, data_fim')
             .eq('ativo', true)
             .order('ordem', { ascending: true })
             .range(0, 9999);

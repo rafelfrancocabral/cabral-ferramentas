@@ -595,7 +595,7 @@ async function loadQuotes() {
     let from = 0;
     while (true) {
         const { data, error } = await db.from(SUPABASE_QUOTES_TABLE)
-            .select('*')
+            .select('id, nome_cliente, telefone, codigo_cliente, itens, total, cupom, desconto, status, status_entrega, created_at, updated_at')
             .order('created_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar orçamentos:', error); break; }
@@ -1133,7 +1133,7 @@ async function fetchAllProducts() {
     while (true) {
         const { data, error } = await db
             .from(SUPABASE_PRODUCTS_TABLE)
-            .select('*')
+            .select('id, codigo, nome, marca, categoria, preco, unidade, estoque, visivel, imagens, palavraschave')
             .order('id', { ascending: true })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar produtos:', error); break; }
@@ -2465,7 +2465,7 @@ async function loadCategories() {
     while (true) {
         const { data, error } = await db
             .from(SUPABASE_CATEGORIES_TABLE)
-            .select('*')
+            .select('id, nome')
             .order('id', { ascending: true })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar categorias:', error); break; }
@@ -3846,10 +3846,19 @@ function updateQuoteBadges() {
 // Poll for new quotes every 30s
 setInterval(async () => {
     try {
-        const { data } = await db.from(SUPABASE_QUOTES_TABLE).select('*').range(0, 9999);
+        const { data } = await db.from(SUPABASE_QUOTES_TABLE).select('id, status').range(0, 9999);
         if (data) {
-            _quotesCache = data;
-            updateQuoteBadges();
+            const pending = data.filter(q => q.status !== 'entregue' && q.status !== 'cancelado').length;
+            const sidebarBadge = document.getElementById('sidebarQuoteBadge');
+            if (sidebarBadge) {
+                sidebarBadge.textContent = pending;
+                sidebarBadge.style.display = pending > 0 ? 'flex' : 'none';
+            }
+            const notifBadge = document.getElementById('notifBadge');
+            if (notifBadge) {
+                notifBadge.textContent = pending;
+                notifBadge.style.display = pending > 0 ? 'flex' : 'none';
+            }
         }
     } catch(e) {}
 }, 30000);

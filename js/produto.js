@@ -118,7 +118,7 @@
         let allProducts = [];
         let from = 0;
         while (true) {
-            const { data } = await db.from('produtos').select('*').eq('visivel', true).range(from, from + PAGE_SIZE - 1);
+            const { data } = await db.from('produtos').select('id, codigo, nome, marca, categoria, preco, unidade, imagens, estoque, visivel, palavraschave, descricao').eq('visivel', true).range(from, from + PAGE_SIZE - 1);
             if (!data || data.length === 0) break;
             allProducts = allProducts.concat(data);
             if (data.length < PAGE_SIZE) break;

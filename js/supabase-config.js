@@ -20,7 +20,7 @@ async function loadVisitors() {
     let from = 0;
     while (true) {
         const { data, error } = await db.from(SUPABASE_VISITORS_TABLE)
-            .select('*')
+            .select('id, session_id, page, created_at')
             .order('created_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar visitantes:', error); break; }
@@ -46,7 +46,7 @@ async function loadViews() {
     let from = 0;
     while (true) {
         const { data, error } = await db.from(SUPABASE_VIEWS_TABLE)
-            .select('*')
+            .select('id, produto_id, produto_nome, created_at')
             .order('created_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar visualizações:', error); break; }
