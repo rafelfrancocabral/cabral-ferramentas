@@ -1583,12 +1583,33 @@ async function computeImageHash(base64) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+function ensureWebp(dataUrl) {
+    return new Promise((resolve) => {
+        if (!dataUrl || /^data:image\/webp;/.test(dataUrl)) { resolve(dataUrl); return; }
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                canvas.getContext('2d').drawImage(img, 0, 0);
+                const out = canvas.toDataURL('image/webp', 0.8);
+                resolve(out.startsWith('data:image/webp') ? out : dataUrl);
+            } catch (e) { resolve(dataUrl); }
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+    });
+}
+
 async function uploadImageToR2(base64Main, base64Thumb) {
-    const hash = await computeImageHash(base64Main);
+    const mainWebp = await ensureWebp(base64Main);
+    const thumbWebp = await ensureWebp(base64Thumb);
+    const hash = await computeImageHash(mainWebp);
 
     const form = new FormData();
-    form.append('main', base64ToBlob(base64Main), `${hash}.webp`);
-    form.append('thumb', base64ToBlob(base64Thumb), `${hash}_thumb.webp`);
+    form.append('main', base64ToBlob(mainWebp), `${hash}.webp`);
+    form.append('thumb', base64ToBlob(thumbWebp), `${hash}_thumb.webp`);
     form.append('hash', hash);
 
     const headers = {};
