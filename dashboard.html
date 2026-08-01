@@ -1380,10 +1380,10 @@
                 <div class="settings-section-header">
                     <div class="settings-section-icon"><i class="fas fa-images"></i></div>
                     <div>
-                        <h3>Imagens</h3>
-                        <p>Migrar imagens base64 armazenadas no banco para o Supabase Storage.</p>
+                        <h3>Imagens (Cloudflare R2)</h3>
+                        <p>Migrar imagens base64 e do Supabase Storage para o Cloudflare R2 (egress gratuito).</p>
                     </div>
-                    <button class="btn-primary-sm" id="btnMigrateImages"><i class="fas fa-cloud-arrow-up"></i> Migrar imagens para Storage</button>
+                    <button class="btn-primary-sm" id="btnMigrateImages"><i class="fas fa-cloud-arrow-up"></i> Migrar imagens para R2</button>
                 </div>
             </div>
         </div>
@@ -1414,6 +1414,7 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/dashboard.js?v=54"></script>
+    <script src="js/r2-config.js"></script>
+    <script src="js/dashboard.js?v=55"></script>
 </body>
 </html>

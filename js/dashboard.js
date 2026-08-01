@@ -1583,7 +1583,36 @@ async function computeImageHash(base64) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+async function uploadImageToR2(base64Main, base64Thumb) {
+    const hash = await computeImageHash(base64Main);
+
+    const form = new FormData();
+    form.append('main', base64ToBlob(base64Main), `${hash}.webp`);
+    form.append('thumb', base64ToBlob(base64Thumb), `${hash}_thumb.webp`);
+    form.append('hash', hash);
+
+    const headers = {};
+    if (R2_WORKER_SECRET) headers['Authorization'] = `Bearer ${R2_WORKER_SECRET}`;
+
+    const resp = await fetch(`${R2_WORKER_URL}/upload`, { method: 'POST', body: form, headers });
+    if (!resp.ok) {
+        let msg = `Erro no upload R2 (${resp.status})`;
+        try { const j = await resp.json(); if (j.error) msg = j.error; } catch(e) {}
+        throw new Error(msg);
+    }
+    const j = await resp.json();
+    if (!j.keys || j.keys.length < 2) throw new Error('Resposta R2 invalida');
+    return {
+        main: `${R2_PUBLIC_BASE_URL}/${j.keys[0]}`,
+        thumb: `${R2_PUBLIC_BASE_URL}/${j.keys[1]}`
+    };
+}
+
 async function uploadImageToStorage(base64Main, base64Thumb, codigo, index) {
+    if (R2_WORKER_URL && R2_PUBLIC_BASE_URL) {
+        return await uploadImageToR2(base64Main, base64Thumb);
+    }
+
     const hash = await computeImageHash(base64Main);
 
     const { data: existing } = await db.storage
@@ -1610,13 +1639,69 @@ async function uploadImageToStorage(base64Main, base64Thumb, codigo, index) {
     return { main: urlMain?.publicUrl || null, thumb: urlThumb?.publicUrl || null };
 }
 
+function isSupabaseStorageUrl(url) {
+    return typeof url === 'string' && url.includes('/storage/v1/object/public/');
+}
+
+async function migrateSupabaseUrlsToR2(urls) {
+    const files = [];
+    const relList = [];
+    for (const u of urls) {
+        if (!isSupabaseStorageUrl(u)) continue;
+        const marker = '/storage/v1/object/public/';
+        const idx = u.indexOf(marker);
+        const rel = u.substring(idx + marker.length);
+        const mainName = rel.split('/').pop();
+        if (!/\.webp$/.test(mainName)) continue;
+        const dir = rel.substring(0, rel.lastIndexOf('/'));
+        const thumbName = mainName.replace('.webp', '_thumb.webp');
+        relList.push({ dir, mainName, thumbName });
+        files.push({ sourceUrl: u, destPath: `${dir}/${mainName}` });
+        files.push({ sourceUrl: u.replace(mainName, thumbName), destPath: `${dir}/${thumbName}` });
+    }
+    if (files.length === 0) return [];
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (R2_WORKER_SECRET) headers['Authorization'] = `Bearer ${R2_WORKER_SECRET}`;
+
+    const resp = await fetch(`${R2_WORKER_URL}/migrate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ files })
+    });
+    if (!resp.ok) {
+        let msg = `Erro na migracao R2 (${resp.status})`;
+        try { const j = await resp.json(); if (j.error) msg = j.error; } catch(e) {}
+        throw new Error(msg);
+    }
+    const j = await resp.json();
+    const results = Array.isArray(j.results) ? j.results : [];
+    const byDest = {};
+    for (const r of results) byDest[r.destPath] = r;
+
+    const out = [];
+    for (const item of relList) {
+        const mainOk = byDest[`${item.dir}/${item.mainName}`]?.ok;
+        if (!mainOk) continue;
+        const mainUrl = `${R2_PUBLIC_BASE_URL}/${item.dir}/${item.mainName}`;
+        const thumbOk = byDest[`${item.dir}/${item.thumbName}`]?.ok;
+        out.push({ main: mainUrl, thumb: thumbOk ? `${R2_PUBLIC_BASE_URL}/${item.dir}/${item.thumbName}` : mainUrl });
+    }
+    return out;
+}
+
 async function uploadAllImagesToStorage(imagens, codigo) {
     const results = [];
     for (let i = 0; i < imagens.length; i++) {
         const img = imagens[i];
         if (!img) continue;
         if (img.startsWith('http://') || img.startsWith('https://')) {
-            results.push({ main: img, thumb: img });
+            if (isSupabaseStorageUrl(img) && R2_WORKER_URL && R2_PUBLIC_BASE_URL) {
+                const urls = await migrateSupabaseUrlsToR2([img]);
+                if (urls.length > 0) results.push(urls[0]);
+            } else {
+                results.push({ main: img, thumb: img });
+            }
         } else if (img.startsWith('data:image')) {
             const urls = await uploadImageToStorage(img.main || img, img.thumb || img, codigo, i);
             if (urls) results.push(urls);
@@ -3473,8 +3558,8 @@ document.getElementById('btnResetTheme').addEventListener('click', () => {
 loadSettings();
 
 document.getElementById('btnMigrateImages').addEventListener('click', async () => {
-    if (!confirm('Isto vai transferir todas as imagens base64 do banco para o Supabase Storage.\n\nContinuar?')) return;
-    await migrateImagesToStorage();
+    if (!confirm('Isto vai transferir as imagens (base64 + Supabase Storage) para o Cloudflare R2.\n\nContinuar?')) return;
+    await migrateImagesToR2();
 });
 
 // ===========================
@@ -4015,21 +4100,26 @@ function initPopupModal() {
 }
 
 // ===========================
-// Migrate Base64 Images to Storage
+// Migrate Images to Cloudflare R2
 // ===========================
-async function migrateImagesToStorage() {
+async function migrateImagesToR2() {
     const btn = document.getElementById('btnMigrateImages');
     if (btn) { btn.disabled = true; btn.textContent = 'Migrando...'; }
     try {
-        const products = getProducts();
-        const productsWithBase64 = products.filter(p => Array.isArray(p.imagens) && p.imagens.some(img => img && img.startsWith('data:image')));
-        if (productsWithBase64.length === 0) {
-            showToast('Nenhuma imagem base64 encontrada. Tudo ja esta no Storage!');
-            if (btn) { btn.disabled = false; btn.textContent = 'Migrar imagens para Storage'; }
+        if (!R2_WORKER_URL || !R2_PUBLIC_BASE_URL) {
+            showToast('Configure o Cloudflare R2 em js/r2-config.js antes de migrar.');
+            return;
+        }
+        btn.textContent = 'Carregando produtos...';
+        const products = await loadProducts();
+        const toMigrate = products.filter(p => Array.isArray(p.imagens) && p.imagens.some(img =>
+            img && (img.startsWith('data:image') || isSupabaseStorageUrl(img))));
+        if (toMigrate.length === 0) {
+            showToast('Nenhuma imagem para migrar. Tudo ja esta no R2!');
             return;
         }
         let migrated = 0, failed = 0;
-        for (const p of productsWithBase64) {
+        for (const p of toMigrate) {
             const newImagens = await uploadAllImagesToStorage(p.imagens, p.codigo);
             if (newImagens.length > 0) {
                 const mainUrls = newImagens.map(u => u.main || u);
@@ -4046,7 +4136,7 @@ async function migrateImagesToStorage() {
         console.error('Erro na migracao:', e);
         showToast('Erro na migracao: ' + e.message);
     } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Migrar imagens para Storage'; }
+        if (btn) { btn.disabled = false; btn.textContent = 'Migrar imagens para R2'; }
     }
 }
 
