@@ -11,6 +11,6 @@
 // IMPORTANTE: deixe tudo '' para o site continuar usando o Supabase Storage.
 // ============================================================
 
-const R2_WORKER_URL = '';
-const R2_PUBLIC_BASE_URL = '';
-const R2_WORKER_SECRET = '';
+const R2_WORKER_URL = 'https://cabral-r2-uploader.rafaelfrancocabral.workers.dev';
+const R2_PUBLIC_BASE_URL = 'https://pub-86a2cc413c6b4677b366096c64c61169.r2.dev';
+const R2_WORKER_SECRET = 'admincabral123';
