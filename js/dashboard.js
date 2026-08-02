@@ -1382,10 +1382,20 @@ async function filterProducts(query) {
 
     if (query && badge) badge.textContent = `${filtered.length} de ${totalCount} produto${totalCount !== 1 ? 's' : ''}`;
 
+    if (_productSortKey) {
+        const key = _productSortKey;
+        const dir = _productSortDir;
+        filtered.sort((a, b) => {
+            const sa = a[key] == null ? '' : String(a[key]);
+            const sb = b[key] == null ? '' : String(b[key]);
+            return sa.localeCompare(sb, 'pt-BR', { numeric: true, sensitivity: 'base' }) * dir;
+        });
+    }
+
     if (filtered.length === 0) {
         table.style.display = '';
         empty.style.display = 'none';
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">Nenhum produto encontrado</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted);">Nenhum produto encontrado</td></tr>`;
         return;
     }
 
@@ -1405,6 +1415,7 @@ async function filterProducts(query) {
         const kw = p.palavraschave || p.palavrasChave || [];
         return `
         <tr data-id="${p.id}" ${!isVisivel ? 'style="opacity:0.45;"' : ''}>
+            <td class="col-check"><input type="checkbox" class="row-check" data-id="${p.id}" ${_productSelection.has(p.id) ? 'checked' : ''}></td>
             <td>${thumb}</td>
             <td><span class="stock-badge" style="background:rgba(0,153,204,0.1);color:var(--accent);">${p.codigo}</span></td>
             <td>${p.nome}</td>
@@ -1423,6 +1434,8 @@ async function filterProducts(query) {
             </td>
         </tr>`;
     }).join('');
+
+    syncCheckAllState();
 }
 
 function getCurrentSearchQuery() {
@@ -1433,6 +1446,117 @@ function getCurrentSearchQuery() {
 function renderProducts() {
     filterProducts(getCurrentSearchQuery());
 }
+
+// ===========================
+// Product Sorting & Bulk Selection
+// ===========================
+let _productSortKey = null;
+let _productSortDir = 1;
+const _productSelection = new Set();
+
+function sortProductsBy(key) {
+    if (_productSortKey === key) {
+        _productSortDir *= -1;
+    } else {
+        _productSortKey = key;
+        _productSortDir = 1;
+    }
+    updateSortIndicators();
+    renderProducts();
+}
+
+function updateSortIndicators() {
+    const map = { codigo: 'thSortCodigo', nome: 'thSortNome' };
+    for (const [key, id] of Object.entries(map)) {
+        const th = document.getElementById(id);
+        if (!th) continue;
+        const indicator = th.querySelector('.sort-indicator');
+        if (indicator) {
+            indicator.textContent = _productSortKey === key ? (_productSortDir > 0 ? ' ▲' : ' ▼') : '';
+        }
+    }
+}
+
+function getSelectedProductIds() {
+    return Array.from(_productSelection);
+}
+
+function updateBulkBar() {
+    const bar = document.getElementById('productsBulkBar');
+    const count = document.getElementById('productsBulkCount');
+    const n = _productSelection.size;
+    if (!bar || !count) return;
+    bar.style.display = n > 0 ? 'flex' : 'none';
+    count.textContent = `${n} produto${n !== 1 ? 's' : ''} selecionado${n !== 1 ? 's' : ''}`;
+    syncCheckAllState();
+}
+
+function syncCheckAllState() {
+    const checkAll = document.getElementById('checkAllProducts');
+    if (!checkAll) return;
+    const boxes = Array.from(document.querySelectorAll('#productsTableBody .row-check'));
+    if (boxes.length === 0) {
+        checkAll.checked = false;
+        checkAll.indeterminate = false;
+        return;
+    }
+    const checked = boxes.filter(b => b.checked).length;
+    checkAll.checked = checked === boxes.length;
+    checkAll.indeterminate = checked > 0 && checked < boxes.length;
+}
+
+async function deleteProductsDB(ids) {
+    const { error } = await db
+        .from(SUPABASE_PRODUCTS_TABLE)
+        .delete()
+        .in('id', ids);
+    if (error) throw error;
+}
+
+document.getElementById('thSortCodigo')?.addEventListener('click', () => sortProductsBy('codigo'));
+document.getElementById('thSortNome')?.addEventListener('click', () => sortProductsBy('nome'));
+
+document.getElementById('checkAllProducts')?.addEventListener('change', (e) => {
+    const checked = e.target.checked;
+    document.querySelectorAll('#productsTableBody .row-check').forEach(b => {
+        b.checked = checked;
+        const id = Number(b.dataset.id);
+        if (checked) _productSelection.add(id);
+        else _productSelection.delete(id);
+    });
+    updateBulkBar();
+});
+
+document.getElementById('productsTableBody').addEventListener('change', (e) => {
+    if (!e.target.classList.contains('row-check')) return;
+    const id = Number(e.target.dataset.id);
+    if (e.target.checked) _productSelection.add(id);
+    else _productSelection.delete(id);
+    updateBulkBar();
+});
+
+document.getElementById('btnBulkDelete').addEventListener('click', async () => {
+    const ids = getSelectedProductIds();
+    if (ids.length === 0) return;
+    if (!confirm(`Excluir ${ids.length} produto(s) selecionado(s)?`)) return;
+    try {
+        await deleteProductsDB(ids);
+        _productsCache = _productsCache.filter(p => !ids.includes(p.id));
+        _productsTotalCount = Math.max(0, _productsTotalCount - ids.length);
+        ids.forEach(id => _productSelection.delete(id));
+        updateBulkBar();
+        renderProducts();
+        showToast(`${ids.length} produto(s) excluído(s) com sucesso!`);
+    } catch(e) {
+        showToast('Erro ao excluir: ' + e.message);
+    }
+});
+
+document.getElementById('btnBulkClear').addEventListener('click', () => {
+    _productSelection.clear();
+    updateBulkBar();
+    renderProducts();
+});
 
 // ===========================
 // Product Modal (Add/Edit)
@@ -1940,6 +2064,7 @@ window.deleteProduct = async function(id) {
     if (!confirm('Tem certeza que deseja excluir este produto?')) return;
     try {
         await deleteProductDB(id);
+        _productSelection.delete(id);
         _productsCache = _productsCache.filter(p => p.id !== id);
         _productsTotalCount = Math.max(0, _productsTotalCount - 1);
         renderProducts();

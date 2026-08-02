@@ -1054,6 +1054,54 @@ button { cursor: pointer; }
 }
 
 /* ===========================
+   Products Table: sort + bulk selection
+   =========================== */
+.col-check {
+    width: 40px;
+    text-align: center !important;
+}
+.col-check input[type="checkbox"],
+.row-check {
+    accent-color: var(--accent);
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+.th-sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color var(--transition);
+}
+.th-sortable:hover {
+    color: var(--accent);
+}
+.sort-indicator {
+    font-size: 0.75rem;
+    margin-left: 4px;
+}
+.bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: rgba(0, 153, 204, 0.08);
+    border: 1px solid rgba(0, 153, 204, 0.25);
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+}
+.bulk-bar-count {
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: auto;
+}
+.bulk-bar .btn-secondary-sm {
+    margin: 0;
+}
+
+/* ===========================
    Categories Grid
    =========================== */
 .categories-grid {

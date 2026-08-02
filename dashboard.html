@@ -365,13 +365,19 @@
                     <button class="btn-primary-sm" id="btnNewProduct"><i class="fas fa-plus"></i> Novo Produto</button>
                 </div>
             </div>
+            <div class="bulk-bar" id="productsBulkBar" style="display:none;">
+                <span class="bulk-bar-count" id="productsBulkCount"></span>
+                <button class="btn-secondary-sm" id="btnBulkDelete"><i class="fas fa-trash"></i> Excluir selecionados</button>
+                <button class="btn-secondary-sm" id="btnBulkClear">Limpar seleção</button>
+            </div>
             <div class="table-container">
                 <table class="data-table" id="productsTable">
                     <thead>
                         <tr>
+                            <th class="col-check"><input type="checkbox" id="checkAllProducts" title="Selecionar todos os produtos visíveis"></th>
                             <th>Imagem</th>
-                            <th>Código</th>
-                            <th>Descrição</th>
+                            <th class="th-sortable" id="thSortCodigo" title="Ordenar por código"><span>Código</span><span class="sort-indicator"></span></th>
+                            <th class="th-sortable" id="thSortNome" title="Ordenar por descrição"><span>Descrição</span><span class="sort-indicator"></span></th>
                             <th>Unidade</th>
                             <th>Marca</th>
                             <th>Categoria</th>
