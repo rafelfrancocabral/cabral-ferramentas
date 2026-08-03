@@ -1559,6 +1559,110 @@ document.getElementById('btnBulkClear').addEventListener('click', () => {
 });
 
 // ===========================
+// Select products by codes (upload file with one column)
+// ===========================
+document.getElementById('btnSelectByCodes').addEventListener('click', () => {
+    document.getElementById('codesFileInput').click();
+});
+
+function codesMatch(dbCode, fileCode) {
+    const a = String(dbCode).trim().toLowerCase();
+    const b = String(fileCode).trim().toLowerCase();
+    if (a === b) return true;
+    const na = Number(a);
+    const nb = Number(b);
+    if (!isNaN(na) && !isNaN(nb) && String(na) === String(nb)) return true;
+    return false;
+}
+
+function readCodesFile(file) {
+    return new Promise((resolve, reject) => {
+        const ext = file.name.split('.').pop().toLowerCase();
+        const finish = (lines) => {
+            const codes = [];
+            for (let i = 0; i < lines.length; i++) {
+                const s = String(lines[i]).trim().replace(/^"|"$/g, '').trim();
+                if (!s) continue;
+                if (i === 0 && /^(c[oó]digo|code|sku)$/i.test(s)) continue;
+                codes.push(s);
+            }
+            resolve(codes);
+        };
+        if (ext === 'xlsx') {
+            if (typeof XLSX === 'undefined') {
+                reject(new Error('Biblioteca XLSX não carregada. Recarregue a página.'));
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                    finish(json.map(row => row[0]));
+                } catch (err) { reject(err); }
+            };
+            reader.onerror = () => reject(new Error('Erro ao ler o ficheiro'));
+            reader.readAsArrayBuffer(file);
+        } else {
+            const reader = new FileReader();
+            reader.onload = (ev) => finish(String(ev.target.result).split(/\r?\n/));
+            reader.onerror = () => reject(new Error('Erro ao ler o ficheiro'));
+            reader.readAsText(file, 'UTF-8');
+        }
+    });
+}
+
+document.getElementById('codesFileInput').addEventListener('change', async (e) => {
+    const input = e.target;
+    const file = input.files[0];
+    input.value = '';
+    if (!file) return;
+
+    let codes;
+    try {
+        codes = await readCodesFile(file);
+    } catch (err) {
+        showToast('Erro ao ler o ficheiro: ' + err.message);
+        return;
+    }
+    if (codes.length === 0) {
+        showToast('Nenhum código encontrado no ficheiro.');
+        return;
+    }
+    if (!_productsLoaded) await loadProducts();
+
+    const products = getProducts();
+    const uniqueCodes = [...new Set(codes)];
+    const found = new Set();
+    const matchedCodes = new Set();
+    for (const p of products) {
+        const pc = String(p.codigo == null ? '' : p.codigo).trim();
+        if (!pc) continue;
+        for (const c of uniqueCodes) {
+            if (codesMatch(pc, c)) {
+                found.add(p.id);
+                matchedCodes.add(c);
+            }
+        }
+    }
+    const notFound = uniqueCodes.filter(c => !matchedCodes.has(c));
+
+    found.forEach(id => _productSelection.add(id));
+    const search = document.getElementById('productSearch');
+    if (search) search.value = '';
+    updateBulkBar();
+    renderProducts();
+
+    if (notFound.length > 0) {
+        showToast(`${found.size} produto(s) selecionado(s). ${notFound.length} código(s) não encontrado(s).`);
+        console.warn('Códigos não encontrados:', notFound);
+    } else {
+        showToast(`${found.size} produto(s) selecionado(s) por código.`);
+    }
+});
+
+// ===========================
 // Product Modal (Add/Edit)
 // ===========================
 const productModal = document.getElementById('productModal');

@@ -362,9 +362,11 @@
                     <button class="btn-secondary-sm" id="btnImportCSV"><i class="fas fa-file-csv"></i> Importar Produtos</button>
                     <button class="btn-secondary-sm" id="btnExportXLSX"><i class="fas fa-file-excel"></i> Exportar Produtos</button>
                     <button class="btn-secondary-sm" id="btnSyncSite"><i class="fas fa-rotate"></i> Sincronizar Site</button>
+                    <button class="btn-secondary-sm" id="btnSelectByCodes"><i class="fas fa-file-lines"></i> Selecionar por Códigos</button>
                     <button class="btn-primary-sm" id="btnNewProduct"><i class="fas fa-plus"></i> Novo Produto</button>
                 </div>
             </div>
+            <input type="file" id="codesFileInput" accept=".csv,.txt,.xlsx" style="display:none;">
             <div class="bulk-bar" id="productsBulkBar" style="display:none;">
                 <span class="bulk-bar-count" id="productsBulkCount"></span>
                 <button class="btn-secondary-sm" id="btnBulkDelete"><i class="fas fa-trash"></i> Excluir selecionados</button>
@@ -1421,6 +1423,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/r2-config.js"></script>
-    <script src="js/dashboard.js?v=56"></script>
+    <script src="js/dashboard.js?v=57"></script>
 </body>
 </html>
