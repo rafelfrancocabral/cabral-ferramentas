@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=35">
+    <link rel="stylesheet" href="css/dashboard.css?v=36">
 </head>
 <body>
     <script>
@@ -44,6 +44,10 @@
             <a href="#" class="sidebar-link" data-page="categorias">
                 <i class="fas fa-tags"></i>
                 <span>Categorias</span>
+            </a>
+            <a href="#" class="sidebar-link" data-page="subcategorias">
+                <i class="fas fa-list-tree"></i>
+                <span>Sub-Categorias</span>
             </a>
             <a href="#" class="sidebar-link" data-page="entregas">
                 <i class="fas fa-truck-fast"></i>
@@ -454,6 +458,12 @@
                                 </div>
                             </div>
                             <div class="form-group">
+                                <label>Sub-Categoria</label>
+                                <select id="prodSubcategoria">
+                                    <option value="">Nenhuma</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label>Preço (R$)</label>
                                 <input type="text" id="prodPreco" placeholder="0,00" required>
                             </div>
@@ -599,7 +609,7 @@
                     <div class="csv-info">
                         <h5><i class="fas fa-info-circle"></i> Formato do Ficheiro</h5>
                         <p>O ficheiro deve ter os seguintes cabeçalhos, nesta ordem:</p>
-                        <code>Código, Descrição, Unidade, Marca, Categoria, Preço, Estoque, Palavras Chaves - (separar com virgula)</code>
+                        <code>Código, Descrição, Unidade, Marca, Categoria, Sub-Categoria, Preço, Estoque, Palavras Chaves - (separar com virgula)</code>
                         <div class="csv-info-rules">
                             <p><i class="fas fa-database"></i> Tipos de dados:</p>
                             <ul>
@@ -608,6 +618,7 @@
                                 <li><strong>Unidade</strong> → texto</li>
                                 <li><strong>Marca</strong> → texto</li>
                                 <li><strong>Categoria</strong> → texto</li>
+                                <li><strong>Sub-Categoria</strong> → texto (opcional, pertencente à categoria)</li>
                                 <li><strong>Preço</strong> → número decimal (ex: 49,90)</li>
                                 <li><strong>Estoque</strong> → número inteiro</li>
                                 <li><strong>Palavras Chaves</strong> → separadas por vírgula</li>
@@ -649,6 +660,7 @@
                                         <th>Unidade</th>
                                         <th>Marca</th>
                                         <th>Categoria</th>
+                                        <th>Sub-Categoria</th>
                                         <th>Preço</th>
                                         <th>Estoque</th>
                                         <th>Palavras Chave</th>
@@ -761,6 +773,52 @@
                         <i class="fas fa-folder-open"></i>
                         <p>Nenhuma categoria cadastrada</p>
                         <span>Crie uma categoria acima para começar</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sub-Categorias Page (hidden by default) -->
+        <div class="page-content hidden" id="subcategoriasPage">
+            <div class="page-header-row">
+                <h2>Sub-Categorias</h2>
+                <div class="page-header-actions">
+                    <button class="btn-secondary-sm" id="btnSyncSubcat"><i class="fas fa-rotate"></i> Sincronizar Site</button>
+                </div>
+            </div>
+            <div class="categories-layout">
+                <div class="category-form-card">
+                    <h3><i class="fas fa-plus-circle"></i> <span id="subcatFormTitle">Nova Sub-Categoria</span></h3>
+                    <form id="subcategoryForm">
+                        <input type="hidden" id="subcatId">
+                        <div class="category-form-row">
+                            <select id="subcatCategoria" required>
+                                <option value="">Selecione a categoria</option>
+                            </select>
+                            <input type="text" id="subcatName" placeholder="Nome da sub-categoria" required>
+                            <button type="submit" class="btn-primary-sm" id="subcatSubmitBtn"><i class="fas fa-check"></i> <span>Salvar</span></button>
+                            <button type="button" class="btn-secondary-sm" id="subcatCancelBtn" style="display:none;"><i class="fas fa-xmark"></i> Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width:50px;">#</th>
+                                <th>Categoria</th>
+                                <th>Nome</th>
+                                <th>Produtos</th>
+                                <th style="width:120px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subcategoryTableBody">
+                        </tbody>
+                    </table>
+                    <div class="table-empty" id="subcategoryListEmpty" style="display:none;">
+                        <i class="fas fa-list-ul"></i>
+                        <p>Nenhuma sub-categoria cadastrada</p>
+                        <span>Crie uma sub-categoria acima para começar</span>
                     </div>
                 </div>
             </div>
@@ -1421,8 +1479,8 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js"></script>
-    <script src="js/dashboard.js?v=57"></script>
+    <script src="js/dashboard.js?v=58"></script>
 </body>
 </html>

@@ -3853,6 +3853,26 @@ button { cursor: pointer; }
     color: var(--text-muted);
 }
 
+.category-form-row select {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.category-form-row select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 153, 204, 0.1);
+}
+
 /* Category Warning (inline in product form) */
 .category-warning {
     display: flex;
@@ -4389,6 +4409,10 @@ button { cursor: pointer; }
 
     .category-form-row {
         flex-direction: column;
+    }
+
+    .category-form-row select {
+        min-width: 0;
     }
 
     .delivery-config-grid {

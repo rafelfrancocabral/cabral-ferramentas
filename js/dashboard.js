@@ -111,6 +111,7 @@ const pageNames = {
     orcamentos: { title: 'Orçamentos', subtitle: 'Gerenciar orçamentos recebidos' },
     produtos: { title: 'Produtos', subtitle: 'Catálogo de produtos' },
     categorias: { title: 'Categorias', subtitle: 'Gerenciar categorias' },
+    subcategorias: { title: 'Sub-Categorias', subtitle: 'Gerenciar sub-categorias por categoria' },
     entregas: { title: 'Entregas', subtitle: 'Configurar taxas de entrega' },
     clientes: { title: 'Clientes', subtitle: 'Clientes que enviaram orçamentos' },
     cupons: { title: 'Cupons', subtitle: 'Cupons e promoções' },
@@ -1261,7 +1262,7 @@ async function fetchAllProducts() {
     while (true) {
         const { data, error } = await db
             .from(SUPABASE_PRODUCTS_TABLE)
-            .select('id, codigo, nome, marca, categoria, preco, unidade, estoque, visivel, imagens, palavraschave')
+            .select('id, codigo, nome, marca, categoria, subcategoria, preco, unidade, estoque, visivel, imagens, palavraschave')
             .order('id', { ascending: true })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar produtos:', error); break; }
@@ -1676,6 +1677,7 @@ document.getElementById('btnNewProduct').addEventListener('click', () => {
     productSubmitText.textContent = 'Salvar';
     productIdInput.value = '';
     productForm.reset();
+    updateSubcategorySelects();
     document.getElementById('prodDescricao').innerHTML = '';
     document.getElementById('promoPriceGroup').style.display = 'none';
     pendingUploadedImages = [];
@@ -2135,6 +2137,8 @@ window.editProduct = async function(id) {
     document.getElementById('prodUnidade').value = product.unidade;
     document.getElementById('prodMarca').value = product.marca;
     document.getElementById('prodCategoria').value = product.categoria;
+    updateSubcategorySelects();
+    document.getElementById('prodSubcategoria').value = product.subcategoria || '';
     document.getElementById('prodPreco').value = product.preco.toFixed(2).replace('.', ',');
     document.getElementById('prodEstoque').value = product.estoque;
 
@@ -2232,6 +2236,7 @@ productForm.addEventListener('submit', async (e) => {
             unidade: document.getElementById('prodUnidade').value,
             marca: document.getElementById('prodMarca').value.trim(),
             categoria: document.getElementById('prodCategoria').value,
+            subcategoria: document.getElementById('prodSubcategoria').value || '',
             preco: preco,
             estoque: estoque,
             descricao: document.getElementById('prodDescricao').innerHTML.trim(),
@@ -2278,6 +2283,7 @@ const csvStep1 = document.getElementById('csvStep1');
 const csvStep2 = document.getElementById('csvStep2');
 let csvParsedData = [];
 let csvMissingCategories = [];
+let csvMissingSubcategories = [];
 
 document.getElementById('btnImportCSV').addEventListener('click', () => {
     csvStep1.style.display = '';
@@ -2375,7 +2381,7 @@ document.getElementById('exportConfirm').addEventListener('click', () => {
         return;
     }
 
-    const headers = ['Código', 'Descrição', 'Unidade', 'Marca', 'Categoria', 'Preço', 'Estoque', 'Palavras Chaves - (separar com virgula)'];
+    const headers = ['Código', 'Descrição', 'Unidade', 'Marca', 'Categoria', 'Sub-Categoria', 'Preço', 'Estoque', 'Palavras Chaves - (separar com virgula)'];
 
     const rows = products.map(p => [
         p.codigo || '',
@@ -2383,6 +2389,7 @@ document.getElementById('exportConfirm').addEventListener('click', () => {
         p.unidade || '',
         p.marca || '',
         p.categoria || '',
+        p.subcategoria || '',
         String(p.preco || 0).replace('.', ','),
         p.estoque != null ? p.estoque : '',
         Array.isArray(p.palavrasChave) ? p.palavrasChave.join(', ') : (p.palavrasChave || '')
@@ -2391,7 +2398,7 @@ document.getElementById('exportConfirm').addEventListener('click', () => {
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
 
     for (let r = 1; r <= rows.length; r++) {
-        const addr = XLSX.utils.encode_cell({ r, c: 5 });
+        const addr = XLSX.utils.encode_cell({ r, c: 6 });
         if (ws[addr]) {
             ws[addr].t = 's';
             ws[addr].z = '@';
@@ -2402,6 +2409,7 @@ document.getElementById('exportConfirm').addEventListener('click', () => {
         { wch: 15 },
         { wch: 45 },
         { wch: 10 },
+        { wch: 20 },
         { wch: 20 },
         { wch: 20 },
         { wch: 12 },
@@ -2538,14 +2546,15 @@ function parseAndValidateCSV(text, fileName) {
     }
 
     const header = parseCSVLine(lines[0]);
-    const expectedHeaders = ['Código', 'Descrição', 'Unidade', 'Marca', 'Categoria', 'Preço', 'Estoque', 'Palavras Chaves - (separar com virgula)'];
+    const mandatoryHeaders = ['Código', 'Descrição', 'Unidade', 'Marca', 'Categoria', 'Preço', 'Estoque', 'Palavras Chaves - (separar com virgula)'];
+    const expectedHeaders = ['Código', 'Descrição', 'Unidade', 'Marca', 'Categoria', 'Sub-Categoria', 'Preço', 'Estoque', 'Palavras Chaves - (separar com virgula)'];
 
     function normalizeStr(s) {
         return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
     }
 
     const normHeader = header.map(normalizeStr);
-    const normExpected = expectedHeaders.map(normalizeStr);
+    const normExpected = mandatoryHeaders.map(normalizeStr);
 
     const headerMatch = normExpected.every(h => normHeader.includes(h));
     if (!headerMatch) {
@@ -2568,7 +2577,10 @@ function parseAndValidateCSV(text, fileName) {
     existingProducts.forEach(p => { existingByCodigo[p.codigo] = p; });
     const cats = getCategories();
     const existingCatNames = new Set(cats.map(c => c.nome.toLowerCase()));
+    const subs = getSubcategories();
+    const existingSubKeys = new Set(subs.map(s => `${(s.categoria || '').toLowerCase()}|${s.nome.toLowerCase()}`));
     const missingCategories = new Set();
+    const missingSubcategories = new Set();
     const seenCodes = new Set();
     csvParsedData = [];
     let errorCount = 0;
@@ -2585,6 +2597,7 @@ function parseAndValidateCSV(text, fileName) {
             unidade: values[headerMap['Unidade']] || '',
             marca: values[headerMap['Marca']] || '',
             categoria: values[headerMap['Categoria']] || '',
+            subcategoria: values[headerMap['Sub-Categoria']] || '',
             preco: values[headerMap['Preço']] || '',
             estoque: values[headerMap['Estoque']] || '',
             palavrasChave: (values[headerMap['Palavras Chaves - (separar com virgula)']] || '').split(',').map(k => k.trim().toLowerCase()).filter(Boolean),
@@ -2594,7 +2607,7 @@ function parseAndValidateCSV(text, fileName) {
             isUpdate: false
         };
 
-        const allEmpty = !row.codigo && !row.nome && !row.unidade && !row.marca && !row.categoria && !row.preco && !row.estoque;
+        const allEmpty = !row.codigo && !row.nome && !row.unidade && !row.marca && !row.categoria && !row.subcategoria && !row.preco && !row.estoque;
         if (allEmpty) continue;
 
         if (!row.codigo) row.errors.push('Código vazio');
@@ -2606,6 +2619,14 @@ function parseAndValidateCSV(text, fileName) {
         if (row.categoria && !existingCatNames.has(row.categoria.toLowerCase())) {
             row.warnings.push('Categoria não cadastrada');
             missingCategories.add(row.categoria);
+        }
+
+        if (row.subcategoria) {
+            const subKey = `${row.categoria.toLowerCase()}|${row.subcategoria.toLowerCase()}`;
+            if (!existingSubKeys.has(subKey)) {
+                row.warnings.push('Sub-Categoria não cadastrada');
+                missingSubcategories.add(`${row.categoria}|${row.subcategoria}`);
+            }
         }
 
         const precoNum = parsePreco(row.preco);
@@ -2636,6 +2657,7 @@ function parseAndValidateCSV(text, fileName) {
             if (existing.nome !== row.nome) changeFields.push('Descrição');
             if (existing.marca !== row.marca) changeFields.push('Marca');
             if (existing.categoria !== row.categoria) changeFields.push('Categoria');
+            if ((existing.subcategoria || '') !== row.subcategoria) changeFields.push('Sub-Categoria');
             if (existing.unidade !== row.unidade) changeFields.push('Unidade');
 
             if (existing.preco !== precoNum) {
@@ -2663,6 +2685,7 @@ function parseAndValidateCSV(text, fileName) {
     }
 
     csvMissingCategories = [...missingCategories];
+    csvMissingSubcategories = [...missingSubcategories];
 
     if (csvParsedData.length === 0) {
         showToast('Nenhum produto encontrado no CSV');
@@ -2747,6 +2770,9 @@ function showCSVPreview(fileName, errorCount) {
     if (csvMissingCategories.length > 0) {
         statusHTML += `<span class="csv-status-badge error" style="background:rgba(255,165,2,0.1);color:#ffa502;"><i class="fas fa-exclamation-triangle"></i> ${csvMissingCategories.length} categoria(s) não cadastrada(s)</span>`;
     }
+    if (csvMissingSubcategories.length > 0) {
+        statusHTML += `<span class="csv-status-badge error" style="background:rgba(255,165,2,0.1);color:#ffa502;"><i class="fas fa-exclamation-triangle"></i> ${csvMissingSubcategories.length} sub-categoria(s) não cadastrada(s)</span>`;
+    }
     statusEl.innerHTML = statusHTML;
 
     const tbody = document.getElementById('csvPreviewBody');
@@ -2788,7 +2814,8 @@ function showCSVPreview(fileName, errorCount) {
             <td>${row.nome}</td>
             <td>${row.unidade}</td>
             <td>${row.marca}</td>
-            <td>${row.categoria}${row.warnings.some(w => w.includes('não cadastrada')) ? ' <span class="cat-badge-warn">nova</span>' : ''}</td>
+            <td>${row.categoria}${row.warnings.some(w => w.includes('não cadastrada') && w.includes('Categoria')) ? ' <span class="cat-badge-warn">nova</span>' : ''}</td>
+            <td>${row.subcategoria ? `${row.subcategoria}${row.warnings.some(w => w.includes('Sub-Categoria não cadastrada')) ? ' <span class="cat-badge-warn">nova</span>' : ''}` : '<span style="color:var(--text-muted)">—</span>'}</td>
             <td>${row.preco}</td>
             <td>${row.estoque}</td>
             <td>${row.palavrasChave.length > 0 ? row.palavrasChave.join(', ') : '<span style="color:var(--text-muted)">—</span>'}</td>
@@ -2832,6 +2859,29 @@ document.getElementById('csvConfirmImport').addEventListener('click', async () =
         showToast(`${csvMissingCategories.length} categoria(s) criada(s) automaticamente!`);
     }
 
+    if (csvMissingSubcategories.length > 0) {
+        let subs = getSubcategories();
+        const existingKeys = new Set(subs.map(s => `${(s.categoria || '').toLowerCase()}|${s.nome.toLowerCase()}`));
+        for (const key of csvMissingSubcategories) {
+            const sep = key.indexOf('|');
+            const catName = sep >= 0 ? key.slice(0, sep) : '';
+            const subName = sep >= 0 ? key.slice(sep + 1) : key;
+            if (subName && !existingKeys.has(`${catName.toLowerCase()}|${subName.toLowerCase()}`)) {
+                try {
+                    const { data } = await db
+                        .from(SUPABASE_SUBCATEGORIES_TABLE)
+                        .insert({ nome: subName, categoria: catName })
+                        .select();
+                    if (data && data[0]) subs.push(data[0]);
+                } catch(e) { console.error('Erro ao criar sub-categoria:', e); }
+            }
+        }
+        _subcategoriesCache = subs;
+        renderSubcategories();
+        updateSubcategorySelects();
+        showToast(`${csvMissingSubcategories.length} sub-categoria(s) criada(s) automaticamente!`);
+    }
+
     const rowsToInsert = [];
     const rowsToUpdate = [];
     let addedCount = 0;
@@ -2866,6 +2916,7 @@ document.getElementById('csvConfirmImport').addEventListener('click', async () =
                         unidade: row.unidade,
                         marca: row.marca,
                         categoria: row.categoria,
+                        subcategoria: row.subcategoria || '',
                         preco: row.precoNum,
                         estoque: row.estoqueNum,
                         palavraschave: [...row.palavrasChave]
@@ -2879,6 +2930,7 @@ document.getElementById('csvConfirmImport').addEventListener('click', async () =
                 unidade: row.unidade,
                 marca: row.marca,
                 categoria: row.categoria,
+                subcategoria: row.subcategoria || '',
                 preco: row.precoNum,
                 estoque: row.estoqueNum,
                 palavraschave: [...row.palavrasChave],
@@ -2926,20 +2978,20 @@ document.getElementById('csvConfirmImport').addEventListener('click', async () =
 });
 
 document.getElementById('csvDownloadTemplate').addEventListener('click', () => {
-    const headers = ['Código', 'Descrição', 'Unidade', 'Marca', 'Categoria', 'Preço', 'Estoque', 'Palavras Chaves - (separar com virgula)'];
+    const headers = ['Código', 'Descrição', 'Unidade', 'Marca', 'Categoria', 'Sub-Categoria', 'Preço', 'Estoque', 'Palavras Chaves - (separar com virgula)'];
     const sheetData = [
         headers,
-        ['P001', 'Furadeira Bosch GSB 20-2RE', 'UN', 'Bosch', 'Elétricas', '489,90', '48', 'furadeira, bosch, elétrica, parafusar']
+        ['P001', 'Furadeira Bosch GSB 20-2RE', 'UN', 'Bosch', 'Elétricas', 'Furadeiras', '489,90', '48', 'furadeira, bosch, elétrica, parafusar']
     ];
 
     for (let i = 0; i < 999; i++) {
-        sheetData.push(['', '', '', '', '', '', '', '']);
+        sheetData.push(['', '', '', '', '', '', '', '', '']);
     }
 
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
     for (let r = 1; r <= 1000; r++) {
-        const addr = XLSX.utils.encode_cell({ r, c: 5 });
+        const addr = XLSX.utils.encode_cell({ r, c: 6 });
         if (ws[addr]) {
             ws[addr].t = 's';
             ws[addr].z = '@';
@@ -2951,6 +3003,7 @@ document.getElementById('csvDownloadTemplate').addEventListener('click', () => {
         { wch: 40 },
         { wch: 10 },
         { wch: 15 },
+        { wch: 20 },
         { wch: 20 },
         { wch: 12 },
         { wch: 10 },
@@ -3103,6 +3156,12 @@ categoryForm.addEventListener('submit', async (e) => {
                 await updateProductDB(p.id, { categoria: name });
             }
             await loadProducts();
+            try {
+                await db.from(SUPABASE_SUBCATEGORIES_TABLE).update({ categoria: name }).eq('categoria', oldName);
+            } catch(e) { console.error(e); }
+            await loadSubcategories();
+            renderSubcategories();
+            updateSubcategorySelects();
         }
 
         showToast('Categoria atualizada!');
@@ -3171,9 +3230,16 @@ window.deleteCategory = async function(id) {
         await db.from(SUPABASE_CATEGORIES_TABLE).delete().eq('id', id);
     } catch(e) { console.error(e); }
 
+    try {
+        await db.from(SUPABASE_SUBCATEGORIES_TABLE).delete().eq('categoria', cat.nome);
+    } catch(e) { console.error(e); }
+
     await loadCategories();
     renderCategories();
     updateCategorySelects();
+    await loadSubcategories();
+    renderSubcategories();
+    updateSubcategorySelects();
     showToast('Categoria excluída!');
 };
 
@@ -3199,6 +3265,227 @@ renderCategories();
 updateCategorySelects();
 
 // ===========================
+// Sub-Category Management
+// ===========================
+let _subcategoriesCache = [];
+
+async function loadSubcategories() {
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db
+            .from(SUPABASE_SUBCATEGORIES_TABLE)
+            .select('id, nome, categoria')
+            .order('id', { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar sub-categorias:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+    }
+    _subcategoriesCache = all;
+    return _subcategoriesCache;
+}
+
+function getSubcategories() {
+    return _subcategoriesCache;
+}
+
+function countProductsBySubcategory(sub) {
+    const products = getProducts();
+    return products.filter(p => p.subcategoria === sub.nome && p.categoria === sub.categoria).length;
+}
+
+function renderSubcategories() {
+    const subs = [...getSubcategories()].sort((a, b) => {
+        const catCmp = (a.categoria || '').localeCompare(b.categoria || '', 'pt-BR');
+        return catCmp !== 0 ? catCmp : (a.nome || '').localeCompare(b.nome || '', 'pt-BR');
+    });
+    const tbody = document.getElementById('subcategoryTableBody');
+    const empty = document.getElementById('subcategoryListEmpty');
+    const table = tbody.closest('.table-container').querySelector('.data-table');
+
+    if (subs.length === 0) {
+        tbody.innerHTML = '';
+        table.style.display = 'none';
+        empty.style.display = '';
+        return;
+    }
+
+    table.style.display = '';
+    empty.style.display = 'none';
+
+    tbody.innerHTML = subs.map((s, i) => {
+        const count = countProductsBySubcategory(s);
+        return `
+        <tr data-id="${s.id}">
+            <td style="color: var(--text-muted); font-size: 0.8rem;">${i + 1}</td>
+            <td><span style="font-weight:500;">${s.categoria || ''}</span></td>
+            <td><span style="font-weight:500;">${s.nome}</span></td>
+            <td style="color: var(--text-muted); font-size: 0.85rem;">${count} produto${count !== 1 ? 's' : ''}</td>
+            <td>
+                <div style="display:flex; gap:6px;">
+                    <button class="action-btn edit-btn" onclick="editSubcategory(${s.id})" title="Editar"><i class="fas fa-pen"></i></button>
+                    <button class="action-btn delete-btn" onclick="deleteSubcategory(${s.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+const subcategoryForm = document.getElementById('subcategoryForm');
+const subcatIdInput = document.getElementById('subcatId');
+const subcatFormTitle = document.getElementById('subcatFormTitle');
+const subcatSubmitBtn = document.getElementById('subcatSubmitBtn');
+const subcatCancelBtn = document.getElementById('subcatCancelBtn');
+
+subcatCancelBtn.addEventListener('click', () => {
+    subcategoryForm.reset();
+    subcatIdInput.value = '';
+    subcatFormTitle.textContent = 'Nova Sub-Categoria';
+    subcatSubmitBtn.querySelector('span').textContent = 'Salvar';
+    subcatCancelBtn.style.display = 'none';
+});
+
+subcategoryForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('subcatName').value.trim();
+    const catName = document.getElementById('subcatCategoria').value;
+    if (!name || !catName) return;
+
+    const existingId = subcatIdInput.value;
+
+    if (existingId) {
+        const oldSub = getSubcategories().find(s => s.id === parseInt(existingId));
+        const oldName = oldSub ? oldSub.nome : '';
+        const oldCat = oldSub ? oldSub.categoria : '';
+
+        try {
+            await db
+                .from(SUPABASE_SUBCATEGORIES_TABLE)
+                .update({ nome: name, categoria: catName })
+                .eq('id', parseInt(existingId));
+        } catch(e) { console.error(e); }
+
+        if ((oldName && oldName !== name) || (oldCat && oldCat !== catName)) {
+            if (!_productsLoaded) await loadProducts();
+            const products = getProducts().filter(p => p.subcategoria === oldName && p.categoria === oldCat);
+            for (const p of products) {
+                await updateProductDB(p.id, { subcategoria: name });
+            }
+            await loadProducts();
+        }
+
+        showToast('Sub-categoria atualizada!');
+    } else {
+        if (getSubcategories().some(s => s.nome.toLowerCase() === name.toLowerCase() && s.categoria === catName)) {
+            showToast('Sub-categoria já existe nesta categoria!');
+            return;
+        }
+
+        try {
+            const { data } = await db
+                .from(SUPABASE_SUBCATEGORIES_TABLE)
+                .insert({ nome: name, categoria: catName })
+                .select();
+            if (data && data[0]) _subcategoriesCache.push(data[0]);
+        } catch(e) { console.error(e); }
+
+        showToast('Sub-categoria criada!');
+    }
+
+    await loadSubcategories();
+    renderSubcategories();
+    updateSubcategorySelects();
+    subcategoryForm.reset();
+    subcatIdInput.value = '';
+    subcatFormTitle.textContent = 'Nova Sub-Categoria';
+    subcatSubmitBtn.querySelector('span').textContent = 'Salvar';
+    subcatCancelBtn.style.display = 'none';
+});
+
+window.editSubcategory = function(id) {
+    const subs = getSubcategories();
+    const sub = subs.find(s => s.id === id);
+    if (!sub) return;
+
+    subcatIdInput.value = sub.id;
+    document.getElementById('subcatCategoria').value = sub.categoria;
+    document.getElementById('subcatName').value = sub.nome;
+    subcatFormTitle.textContent = 'Editar Sub-Categoria';
+    subcatSubmitBtn.querySelector('span').textContent = 'Atualizar';
+    subcatCancelBtn.style.display = '';
+    document.getElementById('subcatName').focus();
+};
+
+window.deleteSubcategory = async function(id) {
+    const subs = getSubcategories();
+    const sub = subs.find(s => s.id === id);
+    if (!sub) return;
+
+    const count = countProductsBySubcategory(sub);
+    const msg = count > 0
+        ? `"${sub.nome}" tem ${count} produto(s). Excluir vai desvincular os produtos. Continuar?`
+        : `Excluir sub-categoria "${sub.nome}"?`;
+
+    if (!confirm(msg)) return;
+
+    if (count > 0) {
+        if (!_productsLoaded) await loadProducts();
+        const products = getProducts().filter(p => p.subcategoria === sub.nome && p.categoria === sub.categoria);
+        for (const p of products) {
+            await updateProductDB(p.id, { subcategoria: '' });
+        }
+        await loadProducts();
+    }
+
+    try {
+        await db.from(SUPABASE_SUBCATEGORIES_TABLE).delete().eq('id', id);
+    } catch(e) { console.error(e); }
+
+    await loadSubcategories();
+    renderSubcategories();
+    updateSubcategorySelects();
+    showToast('Sub-categoria excluída!');
+};
+
+function updateSubcategorySelects() {
+    const cats = [...getCategories()].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+
+    const subcatCatSel = document.getElementById('subcatCategoria');
+    if (subcatCatSel) {
+        const current = subcatCatSel.value;
+        subcatCatSel.innerHTML = '<option value="">Selecione a categoria</option>' + cats.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+        subcatCatSel.value = current;
+    }
+
+    const prodCat = document.getElementById('prodCategoria');
+    const prodSub = document.getElementById('prodSubcategoria');
+    if (prodSub) {
+        const current = prodSub.value;
+        const parentCat = prodCat ? prodCat.value : '';
+        const subs = getSubcategories()
+            .filter(s => !parentCat || s.categoria === parentCat)
+            .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+        prodSub.innerHTML = '<option value="">Nenhuma</option>' + subs.map(s => `<option value="${s.nome}">${s.nome}</option>`).join('');
+        if (current && subs.some(s => s.nome === current)) {
+            prodSub.value = current;
+        }
+    }
+}
+
+document.getElementById('btnSyncSubcat').addEventListener('click', async () => {
+    await loadProducts();
+    renderProducts();
+    showToast(`${getProducts().length} produto(s) recarregado(s) do banco!`);
+});
+
+renderSubcategories();
+updateSubcategorySelects();
+
+// ===========================
 // Category Warning in Product Form
 // ===========================
 const catSelect = document.getElementById('prodCategoria');
@@ -3209,11 +3496,13 @@ catSelect.addEventListener('change', () => {
     const val = catSelect.value;
     if (!val) {
         catWarning.style.display = 'none';
+        updateSubcategorySelects();
         return;
     }
     const cats = getCategories();
     const exists = cats.some(c => c.nome.toLowerCase() === val.toLowerCase());
     catWarning.style.display = exists ? 'none' : 'flex';
+    updateSubcategorySelects();
 });
 
 btnCreateInline.addEventListener('click', async () => {
@@ -4394,14 +4683,16 @@ async function migrateImagesToR2() {
 // Init: Load from Supabase
 // ===========================
 (async function initDashboard() {
-    await Promise.all([loadProductCount(), loadCategories(), loadQuotes(), loadVisitors(), loadViews(), loadPopups()]);
+    await Promise.all([loadProductCount(), loadCategories(), loadSubcategories(), loadQuotes(), loadVisitors(), loadViews(), loadPopups()]);
     renderCategories();
+    renderSubcategories();
     renderQuotes();
     renderClients();
     renderMetrics();
     renderPopups();
     initPopupModal();
     updateCategorySelects();
+    updateSubcategorySelects();
     updateCharts('30d');
     const kpiRow = document.querySelector('.kpi-row');
     if (kpiRow) animateKPIs();

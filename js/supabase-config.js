@@ -5,6 +5,7 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const SUPABASE_PRODUCTS_TABLE = 'produtos';
 const SUPABASE_CATEGORIES_TABLE = 'categorias';
+const SUPABASE_SUBCATEGORIES_TABLE = 'subcategorias';
 const SUPABASE_QUOTES_TABLE = 'orcamentos';
 const SUPABASE_VISITORS_TABLE = 'visitantes';
 const SUPABASE_VIEWS_TABLE = 'visualizacoes_produto';
