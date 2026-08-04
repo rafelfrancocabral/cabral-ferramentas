@@ -388,12 +388,7 @@ function updateCharts(period) {
         const l2 = kpiCards[2].querySelector('.kpi-footer span');
         if (l2) l2.textContent = deliveryPct + '% no prazo';
 
-        const ft = totalRevenue >= 1000000
-            ? 'R$ ' + (totalRevenue / 1000000).toFixed(1) + ' mi'
-            : totalRevenue >= 1000
-                ? 'R$ ' + (totalRevenue / 1000).toFixed(0) + ' mil'
-                : formatPrice(totalRevenue);
-        kpiCards[3].querySelector('.kpi-value').textContent = ft;
+        kpiCards[3].querySelector('.kpi-value').textContent = formatPrice(totalRevenue);
         const tRev = kpiCards[3].querySelector('.kpi-trend');
         tRev.className = 'kpi-trend up';
         tRev.innerHTML = '<i class="fas fa-arrow-up"></i> 100%';
@@ -428,7 +423,8 @@ function updateCharts(period) {
             labels.push(dayNames[d.getDay()]);
             const dayStr = d.toISOString().slice(0, 10);
             const dayQ = quotes.filter(q => q.created_at.slice(0, 10) === dayStr);
-            salesData.push(dayQ.reduce((s, q) => s + (Number(q.total) || 0), 0));
+            const dayQd = dayQ.filter(q => q.status === 'entregue');
+            salesData.push(dayQd.reduce((s, q) => s + (Number(q.total) || 0), 0));
             quoteDataArr.push(dayQ.length);
         }
     } else if (period === '90d') {
@@ -439,7 +435,8 @@ function updateCharts(period) {
                 const qd = new Date(q.created_at);
                 return qd.getMonth() === d.getMonth() && qd.getFullYear() === d.getFullYear();
             });
-            salesData.push(mq.reduce((s, q) => s + (Number(q.total) || 0), 0));
+            const mqd = mq.filter(q => q.status === 'entregue');
+            salesData.push(mqd.reduce((s, q) => s + (Number(q.total) || 0), 0));
             quoteDataArr.push(mq.length);
         }
     } else if (period === '12m') {
@@ -451,7 +448,8 @@ function updateCharts(period) {
                 const qd = new Date(q.created_at);
                 return qd.getMonth() === d.getMonth() && qd.getFullYear() === d.getFullYear();
             });
-            salesData.push(mq.reduce((s, q) => s + (Number(q.total) || 0), 0));
+            const mqd = mq.filter(q => q.status === 'entregue');
+            salesData.push(mqd.reduce((s, q) => s + (Number(q.total) || 0), 0));
             quoteDataArr.push(mq.length);
         }
     } else {
@@ -463,7 +461,8 @@ function updateCharts(period) {
                 const qd = new Date(q.created_at);
                 return qd >= ws && qd < we;
             });
-            salesData.push(wq.reduce((s, q) => s + (Number(q.total) || 0), 0));
+            const wqd = wq.filter(q => q.status === 'entregue');
+            salesData.push(wqd.reduce((s, q) => s + (Number(q.total) || 0), 0));
             quoteDataArr.push(wq.length);
         }
     }
@@ -525,6 +524,7 @@ function animateKPIs() {
     const kpiValues = document.querySelectorAll('.kpi-value');
     kpiValues.forEach(el => {
         const text = el.textContent.trim();
+        if (text.includes('R$')) return;
         const match = text.match(/[\d.]+/);
         if (!match) return;
 
