@@ -1942,23 +1942,22 @@ async function migrateSupabaseUrlsToR2(urls) {
 }
 
 async function uploadAllImagesToStorage(imagens, codigo) {
-    const results = [];
-    for (let i = 0; i < imagens.length; i++) {
-        const img = imagens[i];
-        if (!img) continue;
+    const tasks = imagens.map((img) => (async () => {
+        if (!img) return null;
         if (img.startsWith('http://') || img.startsWith('https://')) {
             if (isSupabaseStorageUrl(img) && R2_WORKER_URL && R2_PUBLIC_BASE_URL) {
                 const urls = await migrateSupabaseUrlsToR2([img]);
-                if (urls.length > 0) results.push(urls[0]);
-            } else {
-                results.push({ main: img, thumb: img });
+                return urls.length > 0 ? urls[0] : null;
             }
-        } else if (img.startsWith('data:image')) {
-            const urls = await uploadImageToStorage(img.main || img, img.thumb || img, codigo, i);
-            if (urls) results.push(urls);
+            return { main: img, thumb: img };
         }
-    }
-    return results;
+        if (img.startsWith('data:image')) {
+            return await uploadImageToStorage(img.main || img, img.thumb || img, codigo);
+        }
+        return null;
+    }))();
+    const results = await Promise.all(tasks);
+    return results.filter(Boolean);
 }
 
 imgUploadZone.addEventListener('click', () => imgFileInput.click());
@@ -2251,18 +2250,32 @@ productForm.addEventListener('submit', async (e) => {
                 : 0
         };
 
+        let savedId = null;
         if (existingId) {
-            const existing = getProducts().find(p => p.id === parseInt(existingId));
+            const id = parseInt(existingId);
+            const existing = getProducts().find(p => p.id === id);
             productData.visivel = existing ? existing.visivel : true;
             delete productData.id;
-            await updateProductDB(parseInt(existingId), productData);
+            await updateProductDB(id, productData);
+            savedId = id;
             showToast('Produto atualizado com sucesso!');
         } else {
             delete productData.id;
             const inserted = await insertProduct(productData);
+            if (inserted && inserted.id) savedId = inserted.id;
             showToast('Produto cadastrado com sucesso!');
         }
-        await loadProducts();
+
+        if (savedId) {
+            const idx = _productsCache.findIndex(p => p.id === savedId);
+            if (idx >= 0) {
+                _productsCache[idx] = { ..._productsCache[idx], ...productData, id: savedId };
+            } else {
+                _productsCache.unshift({ ...productData, id: savedId, visivel: true });
+                _productsTotalCount += 1;
+            }
+        }
+
         renderProducts();
         closeProductModal();
     } catch(e) {
