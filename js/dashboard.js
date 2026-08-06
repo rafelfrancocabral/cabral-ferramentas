@@ -1267,7 +1267,7 @@ async function fetchAllProducts() {
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar produtos:', error); break; }
         if (!data || data.length === 0) break;
-        all = all.concat(data);
+        all = all.concat(data.map(p => ({ ...p, imagens: normalizeImagesField(p.imagens) })));
         if (data.length < PAGE_SIZE) break;
         from += PAGE_SIZE;
     }
@@ -1281,6 +1281,7 @@ async function fetchProductFull(id) {
         .eq('id', id)
         .single();
     if (error) { console.error('Erro ao carregar produto completo:', error); return null; }
+    if (data && data.imagens) data.imagens = normalizeImagesField(data.imagens);
     return data;
 }
 
@@ -1941,7 +1942,23 @@ async function migrateSupabaseUrlsToR2(urls) {
     return out;
 }
 
+function normalizeImagesField(v) {
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'string') {
+        const t = v.trim();
+        if (!t) return [];
+        try {
+            const parsed = JSON.parse(t);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+        return [t];
+    }
+    if (v && typeof v === 'object' && v.main) return [v.main];
+    return [];
+}
+
 async function uploadAllImagesToStorage(imagens, codigo) {
+    imagens = normalizeImagesField(imagens);
     const tasks = imagens.map((img) => (async () => {
         if (!img) return null;
         if (img.startsWith('http://') || img.startsWith('https://')) {
@@ -2215,14 +2232,14 @@ productForm.addEventListener('submit', async (e) => {
     const submitBtn = document.getElementById('productSubmit');
     const productCodigo = document.getElementById('prodCodigo').value.trim();
 
-    const rawImages = [
-        ...pendingUploadedImages.map(item => typeof item === 'string' ? item : item.main),
+    const rawImages = normalizeImagesField([
+        ...(Array.isArray(pendingUploadedImages) ? pendingUploadedImages : []).map(item => typeof item === 'string' ? item : item.main),
         document.getElementById('prodImg1').value.trim(),
         document.getElementById('prodImg2').value.trim(),
         document.getElementById('prodImg3').value.trim(),
         document.getElementById('prodImg4').value.trim(),
         document.getElementById('prodImg5').value.trim()
-    ].filter(Boolean).slice(0, 5);
+    ]).filter(Boolean).slice(0, 5);
 
     try {
         submitBtn.disabled = true;
