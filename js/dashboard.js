@@ -1,4 +1,4 @@
-console.log('[dashboard] v62');
+console.log('[dashboard] v63');
 // ===========================
 // Particles Background
 // ===========================
@@ -1959,26 +1959,36 @@ function normalizeImagesField(v) {
 }
 
 async function uploadAllImagesToStorage(imagens, codigo) {
-    if (!Array.isArray(imagens)) {
-        console.warn('[diagnostico] uploadAllImagesToStorage recebeu nao-array:', typeof imagens, imagens);
+    const list = normalizeImagesField(imagens);
+    if (!Array.isArray(list)) {
+        console.warn('[diagnostico] uploadAllImagesToStorage: nao virou array apos normalize:', typeof list, list);
+        return [];
     }
-    imagens = normalizeImagesField(imagens);
-    const tasks = imagens.map((img) => (async () => {
-        if (!img) return null;
-        if (img.startsWith('http://') || img.startsWith('https://')) {
-            if (isSupabaseStorageUrl(img) && R2_WORKER_URL && R2_PUBLIC_BASE_URL) {
-                const urls = await migrateSupabaseUrlsToR2([img]);
-                return urls.length > 0 ? urls[0] : null;
+    const results = [];
+    let firstError = null;
+    for (const item of list) {
+        try {
+            const img = item && typeof item === 'object' && item.main ? item.main : item;
+            if (!img) continue;
+            if (img.startsWith('http://') || img.startsWith('https://')) {
+                if (isSupabaseStorageUrl(img) && R2_WORKER_URL && R2_PUBLIC_BASE_URL) {
+                    const urls = await migrateSupabaseUrlsToR2([img]);
+                    if (urls.length > 0) results.push(urls[0]);
+                } else {
+                    results.push({ main: img, thumb: img });
+                }
+            } else if (img.startsWith('data:image')) {
+                const itemThumb = item && item.thumb ? item.thumb : img;
+                const up = await uploadImageToStorage(img, itemThumb, codigo);
+                if (up) results.push(up);
             }
-            return { main: img, thumb: img };
+        } catch (e) {
+            if (!firstError) firstError = e;
+            console.error('[diagnostico] erro em uploadAllImagesToStorage item:', e, item);
         }
-        if (img.startsWith('data:image')) {
-            return await uploadImageToStorage(img.main || img, img.thumb || img, codigo);
-        }
-        return null;
-    }))();
-    const results = await Promise.all(tasks);
-    return results.filter(Boolean);
+    }
+    if (results.length === 0 && firstError) throw firstError;
+    return results;
 }
 
 imgUploadZone.addEventListener('click', () => imgFileInput.click());
