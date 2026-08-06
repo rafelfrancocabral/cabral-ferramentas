@@ -1,3 +1,4 @@
+console.log('[dashboard] v62');
 // ===========================
 // Particles Background
 // ===========================
@@ -1958,6 +1959,9 @@ function normalizeImagesField(v) {
 }
 
 async function uploadAllImagesToStorage(imagens, codigo) {
+    if (!Array.isArray(imagens)) {
+        console.warn('[diagnostico] uploadAllImagesToStorage recebeu nao-array:', typeof imagens, imagens);
+    }
     imagens = normalizeImagesField(imagens);
     const tasks = imagens.map((img) => (async () => {
         if (!img) return null;
@@ -2296,6 +2300,8 @@ productForm.addEventListener('submit', async (e) => {
         renderProducts();
         closeProductModal();
     } catch(e) {
+        console.error('Erro ao salvar produto:', e);
+        console.warn('[diagnostico] rawImages:', Array.isArray(rawImages) ? 'array' : typeof rawImages, rawImages);
         showToast('Erro ao salvar: ' + e.message);
     } finally {
         submitBtn.disabled = false;
