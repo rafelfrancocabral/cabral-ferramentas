@@ -3148,6 +3148,26 @@ button { cursor: pointer; }
     color: var(--text-muted);
 }
 
+.table-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
+}
+
+.table-pagination .pagination-info {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.table-pagination .btn-secondary-sm:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .table-empty i {
     font-size: 3rem;
     margin-bottom: 16px;

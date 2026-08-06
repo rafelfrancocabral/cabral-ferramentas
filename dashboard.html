@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/dashboard.css?v=36">
+    <link rel="stylesheet" href="css/dashboard.css?v=37">
 </head>
 <body>
     <script>
@@ -401,6 +401,11 @@
                     <i class="fas fa-box-open"></i>
                     <p>Nenhum produto cadastrado</p>
                     <span>Adicione produtos manualmente ou importe um CSV</span>
+                </div>
+                <div class="table-pagination" id="productPagination" style="display:none;">
+                    <button class="btn-secondary-sm" id="btnProductsPrev"><i class="fas fa-chevron-left"></i> Anterior</button>
+                    <span class="pagination-info" id="productPageInfo"></span>
+                    <button class="btn-secondary-sm" id="btnProductsNext">Próxima <i class="fas fa-chevron-right"></i></button>
                 </div>
             </div>
         </div>
@@ -1481,6 +1486,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=2"></script>
     <script src="js/r2-config.js"></script>
-    <script src="js/dashboard.js?v=63"></script>
+    <script src="js/dashboard.js?v=64"></script>
 </body>
 </html>

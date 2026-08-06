@@ -1,4 +1,4 @@
-console.log('[dashboard] v63');
+console.log('[dashboard] v64');
 // ===========================
 // Particles Background
 // ===========================
@@ -1395,21 +1395,31 @@ async function filterProducts(query) {
         });
     }
 
+    if (query !== _productLastQuery) {
+        _productLastQuery = query;
+        _productPage = 1;
+    }
+    _productFilteredTotal = filtered.length;
+    const pageCount = Math.max(1, Math.ceil(_productFilteredTotal / _productPageSize));
+    if (_productPage > pageCount) _productPage = pageCount;
+    const pageItems = filtered.slice((_productPage - 1) * _productPageSize, _productPage * _productPageSize);
+
     if (filtered.length === 0) {
         table.style.display = '';
         empty.style.display = 'none';
         tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted);">Nenhum produto encontrado</td></tr>`;
+        updatePaginationUI();
         return;
     }
 
     table.style.display = '';
     empty.style.display = 'none';
 
-    tbody.innerHTML = filtered.map(p => {
+    tbody.innerHTML = pageItems.map(p => {
         const estoqueClass = p.estoque > 20 ? 'high' : p.estoque > 5 ? 'medium' : 'low';
         const img = (p.imagens && p.imagens.length > 0) ? p.imagens[0].replace('.webp', '_thumb.webp') : '';
         const thumb = img
-            ? `<img src="${img}" class="product-thumb product-thumb-click" onclick="editProduct(${p.id})" title="Clique para editar" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">`
+            ? `<img src="${img}" class="product-thumb product-thumb-click" loading="lazy" onclick="editProduct(${p.id})" title="Clique para editar" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">`
             : `<div class="product-thumb product-thumb-empty product-thumb-click" onclick="editProduct(${p.id})" title="Clique para adicionar foto"><i class="fas fa-image"></i></div>`;
         const isVisivel = p.visivel !== false;
         const eyeIcon = isVisivel ? 'fa-eye' : 'fa-eye-slash';
@@ -1438,8 +1448,40 @@ async function filterProducts(query) {
         </tr>`;
     }).join('');
 
+    updatePaginationUI();
     syncCheckAllState();
 }
+
+function updatePaginationUI() {
+    const pag = document.getElementById('productPagination');
+    const info = document.getElementById('productPageInfo');
+    const prev = document.getElementById('btnProductsPrev');
+    const next = document.getElementById('btnProductsNext');
+    if (!pag || !info || !prev || !next) return;
+    if (_productFilteredTotal <= _productPageSize) {
+        pag.style.display = 'none';
+        return;
+    }
+    pag.style.display = 'flex';
+    const pageCount = Math.max(1, Math.ceil(_productFilteredTotal / _productPageSize));
+    const start = (_productPage - 1) * _productPageSize + 1;
+    const end = Math.min(_productFilteredTotal, _productPage * _productPageSize);
+    info.textContent = `${start}–${end} de ${_productFilteredTotal} (página ${_productPage}/${pageCount})`;
+    prev.disabled = _productPage <= 1;
+    next.disabled = _productPage >= pageCount;
+}
+
+function changeProductsPage(delta) {
+    const pageCount = Math.max(1, Math.ceil(_productFilteredTotal / _productPageSize));
+    const next = Math.min(pageCount, Math.max(1, _productPage + delta));
+    if (next !== _productPage) {
+        _productPage = next;
+        renderProducts();
+    }
+}
+
+document.getElementById('btnProductsPrev')?.addEventListener('click', () => changeProductsPage(-1));
+document.getElementById('btnProductsNext')?.addEventListener('click', () => changeProductsPage(1));
 
 function getCurrentSearchQuery() {
     const el = document.getElementById('productSearch');
@@ -1455,6 +1497,10 @@ function renderProducts() {
 // ===========================
 let _productSortKey = null;
 let _productSortDir = 1;
+let _productPage = 1;
+let _productPageSize = 50;
+let _productFilteredTotal = 0;
+let _productLastQuery = null;
 const _productSelection = new Set();
 
 function sortProductsBy(key) {
@@ -4766,34 +4812,35 @@ function updateQuoteBadges() {
     }
 }
 
-// Poll for new quotes every 5s
+// Poll for new quotes every 5s (lightweight count query)
 let _lastQuoteCount = 0;
 setInterval(async () => {
     try {
-        const { data } = await db.from(SUPABASE_QUOTES_TABLE).select('id, status').order('created_at', { ascending: false }).range(0, 9999);
-        if (data) {
-            const pending = data.filter(q => q.status !== 'entregue' && q.status !== 'cancelado').length;
-            const sidebarBadge = document.getElementById('sidebarQuoteBadge');
-            if (sidebarBadge) {
-                sidebarBadge.textContent = pending;
-                sidebarBadge.style.display = pending > 0 ? 'flex' : 'none';
-            }
-            const notifBadge = document.getElementById('notifBadge');
-            if (notifBadge) {
-                notifBadge.textContent = pending;
-                notifBadge.style.display = pending > 0 ? 'flex' : 'none';
-            }
-            // Detect new quotes
-            if (_lastQuoteCount > 0 && data.length > _lastQuoteCount) {
-                const diff = data.length - _lastQuoteCount;
-                await loadQuotes();
-                showToast(`${diff} novo(s) orçamento(s) recebido(s)!`);
-                const orcPage = document.getElementById('orcamentosPage');
-                if (orcPage && !orcPage.classList.contains('hidden')) {
-                    renderQuotes(document.getElementById('statusFilter')?.value || 'all');
-                }
-            }
-            _lastQuoteCount = data.length;
+        const { count } = await db
+            .from(SUPABASE_QUOTES_TABLE)
+            .select('id', { count: 'exact', head: true })
+            .not('status', 'in', '("entregue","cancelado")');
+        const pending = count || 0;
+        const sidebarBadge = document.getElementById('sidebarQuoteBadge');
+        if (sidebarBadge) {
+            sidebarBadge.textContent = pending;
+            sidebarBadge.style.display = pending > 0 ? 'flex' : 'none';
         }
+        const notifBadge = document.getElementById('notifBadge');
+        if (notifBadge) {
+            notifBadge.textContent = pending;
+            notifBadge.style.display = pending > 0 ? 'flex' : 'none';
+        }
+        // Detect new quotes
+        if (_lastQuoteCount > 0 && pending > _lastQuoteCount) {
+            const diff = pending - _lastQuoteCount;
+            await loadQuotes();
+            showToast(`${diff} novo(s) orçamento(s) recebido(s)!`);
+            const orcPage = document.getElementById('orcamentosPage');
+            if (orcPage && !orcPage.classList.contains('hidden')) {
+                renderQuotes(document.getElementById('statusFilter')?.value || 'all');
+            }
+        }
+        _lastQuoteCount = pending;
     } catch(e) {}
 }, 5000);
