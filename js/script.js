@@ -450,18 +450,47 @@ function performAiSearch(terms, category) {
     addAiMsg('Buscando no catálogo...');
     setTimeout(async () => {
         try {
-            const results = await searchCatalog(query, category);
-            if (results.length > 0) {
-                addAiMsg(`Encontrei <strong>${results.length}</strong> produto(s) para "<strong>${escapeHtml(query)}</strong>":`);
-                renderAiResults(results);
+            const { products, matchedQuery } = await aiProgressiveSearch(query, category);
+            if (products.length > 0) {
+                if (matchedQuery === query) {
+                    addAiMsg(`Encontrei <strong>${products.length}</strong> produto(s) para "<strong>${escapeHtml(query)}</strong>":`);
+                } else {
+                    addAiMsg(`Não achei resultado exato para "<strong>${escapeHtml(query)}</strong>".<br>Estas são as opções mais próximas, com "<strong>${escapeHtml(matchedQuery)}</strong>":`);
+                }
+                renderAiResults(products);
             } else {
-                addAiMsg(`Não encontrei nada para "<strong>${escapeHtml(query)}</strong>".<br><br>Pode reformular? Tente o nome do produto, a marca ou descreva o uso que você quer dar.`);
+                const msg = addAiMsg(`Não encontrei nada para "<strong>${escapeHtml(query)}</strong>" no catálogo.<br><br>Você pode reformular a busca com outros termos, ou navegar pelo catálogo completo abaixo.`);
+                const bubble = msg.querySelector('.ai-msg-bubble');
+                const btn = document.createElement('button');
+                btn.className = 'ai-results-catalog-btn';
+                btn.innerHTML = '<i class="fas fa-th-large"></i> Ver catálogo completo';
+                btn.onclick = () => window.scrollToProduct();
+                bubble.appendChild(btn);
+                aiMessages.scrollTop = aiMessages.scrollHeight;
             }
         } catch (e) {
             console.error('Erro na busca do assistente:', e);
             addAiMsg('Ocorreu um erro na busca. Pode tentar novamente?');
         }
     }, 800);
+}
+
+async function aiProgressiveSearch(query, category) {
+    const index = await getAiIndex();
+    const keywords = AiSearch.extractKeywords(query);
+    if (keywords.length === 0) return { products: [], matchedQuery: query };
+
+    const full = await searchCatalog(query, category);
+    if (full.length > 0) return { products: full, matchedQuery: query };
+
+    // Relaxa: remove os termos mais raros primeiro, mantendo os mais comuns
+    const sorted = keywords.slice().sort((a, b) => AiSearch.termFrequency(index, b) - AiSearch.termFrequency(index, a));
+    for (let keep = sorted.length - 1; keep >= 1; keep--) {
+        const relaxed = sorted.slice(0, keep).join(' ');
+        const res = await searchCatalog(relaxed, category);
+        if (res.length > 0) return { products: res, matchedQuery: relaxed };
+    }
+    return { products: [], matchedQuery: query };
 }
 
 function escapeHtml(s) {

@@ -223,6 +223,11 @@
         return scored.slice(0, limit).map(s => s.p);
     }
 
+    function termFrequency(index, token) {
+        const m = index.tokenIndex.get(token);
+        return m ? m.size : 0;
+    }
+
     const AiSearch = {
         normalize,
         stemWord,
@@ -231,6 +236,7 @@
         extractKeywords,
         buildSearchIndex,
         searchIndex,
+        termFrequency,
         SYNONYMS,
         STOP_WORDS
     };
