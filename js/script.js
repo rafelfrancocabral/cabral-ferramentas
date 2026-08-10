@@ -213,7 +213,7 @@ let aiDetectedCategory = null;
 // ===========================
 const AI_RESULT_LIMIT = 8;
 const AI_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const AI_LOCAL_CACHE_KEY = 'cabral_ai_search_v1';
+const AI_LOCAL_CACHE_KEY = 'cabral_ai_search_v2';
 
 let _catalogSearchPool = null;
 const _aiFieldsCache = new Map();
@@ -223,11 +223,28 @@ function stemWord(w) {
     return w;
 }
 
+function expandToken(w) {
+    const out = [];
+    const m = w.match(/^(\d+(?:[.,]\d+)?)([a-z]+)$/);
+    if (m) {
+        const num = m[1];
+        const frac = num.match(/^(\d+)[.,](\d+)$/);
+        if (frac) out.push(frac[1].replace(/^0+(?=\d)/, ''));
+        else out.push(num.replace(/^0+(?=\d)/, ''));
+    } else if (/^\d+[.,]\d+$/.test(w)) {
+        out.push(w.split(/[.,]/)[0].replace(/^0+(?=\d)/, ''));
+    } else if (/^\d+$/.test(w)) {
+        out.push(w.replace(/^0+(?=\d)/, ''));
+    }
+    return out;
+}
+
 function tokenizeField(str) {
     const set = new Set();
     for (const w of (normalize(str) || '').split(/\s+/)) {
         if (w.length < 2) continue;
         set.add(stemWord(w));
+        for (const e of expandToken(w)) set.add(e);
     }
     return set;
 }
@@ -332,7 +349,10 @@ function rankAiProducts(pool, terms, category) {
     const required = terms.filter(t => !orphan.has(t));
     if (required.length === 0) return [];
 
-    // Exige correspondência REAL em todos os termos restantes
+    // Âncora: termo mais específico (o mais longo) — garante precisão
+    const anchor = required.reduce((a, b) => (b.length > a.length ? b : a));
+    const need = Math.max(1, Math.ceil(required.length / 2));
+
     const scored = [];
     for (const p of scoped) {
         const f = getAiProductFields(p);
@@ -342,10 +362,12 @@ function rankAiProducts(pool, terms, category) {
             const w = aiMatchWeight(f, t);
             if (w > 0) { matched++; score += w; }
         }
-        if (matched === required.length) scored.push({ p, score });
+        if (matched < need) continue;
+        if (aiMatchWeight(f, anchor) === 0) continue;
+        scored.push({ p, score, ratio: matched / required.length });
     }
 
-    scored.sort((a, b) => b.score - a.score || a.p.nome.localeCompare(b.p.nome, 'pt-BR'));
+    scored.sort((a, b) => b.ratio - a.ratio || b.score - a.score || a.p.nome.localeCompare(b.p.nome, 'pt-BR'));
     return scored.slice(0, AI_RESULT_LIMIT).map(s => s.p);
 }
 
@@ -420,7 +442,8 @@ async function searchCatalog(query, category) {
     const cacheKey = buildSearchCacheKey(q, category);
     const pool = await ensureCatalogSearchPool();
     const rawTerms = extractKeywords(q).map(stemWord).filter(w => w.length >= 2);
-    if (rawTerms.length === 0) return [];
+    const terms = [...new Set(rawTerms.flatMap(t => [t, ...expandToken(t)]))];
+    if (terms.length === 0) return [];
 
     // 1) Cache local (instantâneo no navegador)
     const localCache = getAiLocalCache();
@@ -445,7 +468,7 @@ async function searchCatalog(query, category) {
     }
 
     // 3) Busca refinada
-    const results = rankAiProducts(pool, rawTerms, category);
+    const results = rankAiProducts(pool, terms, category);
     const codigos = results.map(p => p.codigo).filter(Boolean);
     localCache[cacheKey] = { codigos, ts: Date.now() };
     saveAiLocalCache(localCache);
