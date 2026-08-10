@@ -208,50 +208,249 @@ function normalize(s) {
 
 let aiDetectedCategory = null;
 
-function searchCatalog(query, category) {
-    const products = getCatalogProducts();
-    const q = normalize(query);
-    const words = q.split(/\s+/).filter(w => w.length >= 2);
-    if (words.length === 0) return [];
+// ===========================
+// Motor de busca do assistente (refinado)
+// ===========================
+const AI_RESULT_LIMIT = 8;
+const AI_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const AI_LOCAL_CACHE_KEY = 'cabral_ai_search_v1';
 
-    let pool = products;
+let _catalogSearchPool = null;
+const _aiFieldsCache = new Map();
 
-    if (category && category.startsWith('_')) category = category.slice(1);
-    if (category) {
-        const catNorm = normalize(category);
-        const catProducts = pool.filter(p => {
-            const cat = normalize(p.categoria || '');
-            const nome = normalize(p.nome || '');
-            const desc = normalize(p.descricao || '');
-            const kw = (p.palavraschave || p.palavrasChave || []).map(k => normalize(k)).join(' ');
-            return cat.includes(catNorm) || nome.includes(catNorm) || desc.includes(catNorm) || kw.includes(catNorm);
+function stemWord(w) {
+    if (w.length > 3 && w.endsWith('s')) return w.slice(0, -1);
+    return w;
+}
+
+function tokenizeField(str) {
+    const set = new Set();
+    for (const w of (normalize(str) || '').split(/\s+/)) {
+        if (w.length < 2) continue;
+        set.add(stemWord(w));
+    }
+    return set;
+}
+
+async function ensureCatalogSearchPool() {
+    if (_catalogSearchPool) return _catalogSearchPool;
+    const PAGE_SIZE = 1000;
+    const fields = 'id, codigo, nome, marca, categoria, subcategoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional';
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db
+            .from(SUPABASE_PRODUCTS_TABLE)
+            .select(fields)
+            .eq('visivel', true)
+            .order('id', { ascending: true })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar pool de busca:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+    }
+    _catalogSearchPool = all;
+    return _catalogSearchPool;
+}
+
+function getAiProductFields(p) {
+    let f = _aiFieldsCache.get(p.id);
+    if (!f) {
+        f = {
+            nome: tokenizeField(p.nome),
+            kw: tokenizeField((p.palavraschave || p.palavrasChave || []).join(' ')),
+            subcat: tokenizeField(p.subcategoria),
+            marca: tokenizeField(p.marca),
+            cat: tokenizeField(p.categoria)
+        };
+        _aiFieldsCache.set(p.id, f);
+    }
+    return f;
+}
+
+function aiMatchWeight(f, t) {
+    const best = Math.max(
+        f.nome.has(t) ? 5 : 0,
+        f.kw.has(t) ? 4 : 0,
+        f.subcat.has(t) ? 3 : 0,
+        f.marca.has(t) ? 3 : 0,
+        f.cat.has(t) ? 2 : 0
+    );
+    if (best > 0) return best;
+    if (t.length >= 4) {
+        let pbest = 0;
+        for (const w of f.nome) if (w.startsWith(t)) pbest = Math.max(pbest, 5);
+        for (const w of f.kw) if (w.startsWith(t)) pbest = Math.max(pbest, 4);
+        return pbest / 2;
+    }
+    return 0;
+}
+
+function matchesCategoryFilter(p, catNorm) {
+    const cat = normalize(p.categoria || '');
+    const sub = normalize(p.subcategoria || '');
+    const kw = normalize((p.palavraschave || p.palavrasChave || []).join(' '));
+    const nome = normalize(p.nome || '');
+    return cat.includes(catNorm) || sub.includes(catNorm) || kw.includes(catNorm) || nome.includes(catNorm);
+}
+
+function rankAiProducts(pool, terms, category) {
+    let catNorm = category ? normalize(category) : '';
+    if (catNorm.startsWith('_')) catNorm = catNorm.slice(1);
+    let scoped = catNorm ? pool.filter(p => matchesCategoryFilter(p, catNorm)) : pool;
+
+    // Detecta marcas citadas e aplica filtro rígido
+    const brandWords = new Map();
+    for (const p of scoped) {
+        const b = (p.marca || '').trim();
+        if (!b) continue;
+        for (const w of tokenizeField(b)) brandWords.set(w, b);
+    }
+    let brandFilter = null;
+    for (const t of terms) {
+        if (brandWords.has(t)) { brandFilter = brandWords.get(t); break; }
+    }
+    if (brandFilter) {
+        const bf = normalize(brandFilter);
+        scoped = scoped.filter(p => {
+            const b = normalize(p.marca || '');
+            return b === bf || b.includes(bf);
         });
-        if (catProducts.length > 0) pool = catProducts;
     }
 
-    const scored = pool.map(p => {
-        const kw = p.palavraschave || p.palavrasChave || [];
-        const keywords = kw.join(' ');
-        const nome = p.nome || '';
-        const desc = p.descricao || '';
-        const searchStr = normalize(`${nome} ${desc} ${keywords}`);
-        let score = 0;
-        let matchedWords = 0;
-        for (const w of words) {
-            const nomeNorm = normalize(nome);
-            if (nomeNorm.includes(w)) { score += 3; matchedWords++; continue; }
-            if (searchStr.includes(w)) { score += 1; matchedWords++; }
+    // Remove termos órfãos (não existem em nenhum produto) para não bloquear a busca
+    const orphan = new Set();
+    for (const t of terms) {
+        let any = false;
+        for (const p of scoped) {
+            if (aiMatchWeight(getAiProductFields(p), t) > 0) { any = true; break; }
         }
-        if (matchedWords === 0) return null;
-        if (matchedWords < words.length * 0.3) return null;
-        const matchRatio = matchedWords / words.length;
-        if (matchRatio < 0.3 && words.length >= 2) return null;
-        return { product: p, score, matchRatio };
-    }).filter(Boolean);
+        if (!any) orphan.add(t);
+    }
+    const required = terms.filter(t => !orphan.has(t));
+    if (required.length === 0) return [];
 
-    scored.sort((a, b) => b.score - a.score || b.matchRatio - a.matchRatio);
+    // Exige correspondência REAL em todos os termos restantes
+    const scored = [];
+    for (const p of scoped) {
+        const f = getAiProductFields(p);
+        let score = 0;
+        let matched = 0;
+        for (const t of required) {
+            const w = aiMatchWeight(f, t);
+            if (w > 0) { matched++; score += w; }
+        }
+        if (matched === required.length) scored.push({ p, score });
+    }
 
-    return scored.map(s => s.product);
+    scored.sort((a, b) => b.score - a.score || a.p.nome.localeCompare(b.p.nome, 'pt-BR'));
+    return scored.slice(0, AI_RESULT_LIMIT).map(s => s.p);
+}
+
+// ---- Cache híbrido (localStorage + Supabase) ----
+function buildSearchCacheKey(query, category) {
+    return (normalize(query) || '') + '|' + (category ? normalize(category) : '');
+}
+
+function getAiLocalCache() {
+    try { return JSON.parse(localStorage.getItem(AI_LOCAL_CACHE_KEY)) || {}; } catch (e) { return {}; }
+}
+
+function saveAiLocalCache(cache) {
+    try {
+        const keys = Object.keys(cache);
+        if (keys.length > 300) {
+            const sorted = keys.slice().sort((a, b) => (cache[b].ts || 0) - (cache[a].ts || 0)).slice(0, 300);
+            const trimmed = {};
+            for (const k of sorted) trimmed[k] = cache[k];
+            cache = trimmed;
+        }
+        localStorage.setItem(AI_LOCAL_CACHE_KEY, JSON.stringify(cache));
+    } catch (e) {}
+}
+
+async function fetchSearchCacheRow(key) {
+    try {
+        const { data, error } = await db
+            .from(SUPABASE_SEARCH_CACHE_TABLE)
+            .select('query_normalized, result_codigos, total, hits')
+            .eq('query_normalized', key)
+            .limit(1);
+        if (error || !data || data.length === 0) return null;
+        return data[0];
+    } catch (e) { return null; }
+}
+
+async function saveSearchCacheRow(key, terms, codigos) {
+    try {
+        await db.from(SUPABASE_SEARCH_CACHE_TABLE).upsert({
+            query_normalized: key,
+            termos: (terms || []).join(' '),
+            result_codigos: JSON.stringify(codigos),
+            total: codigos.length,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'query_normalized' });
+    } catch (e) {}
+}
+
+async function bumpSearchCacheHits(key, hits) {
+    try {
+        await db.from(SUPABASE_SEARCH_CACHE_TABLE)
+            .update({ hits: (hits || 0) + 1, updated_at: new Date().toISOString() })
+            .eq('query_normalized', key);
+    } catch (e) {}
+}
+
+function resolveCachedAiProducts(codigos, pool) {
+    if (!Array.isArray(codigos)) return [];
+    const byCode = new Map(pool.map(p => [p.codigo, p]));
+    const out = [];
+    for (const c of codigos) {
+        const p = byCode.get(c);
+        if (p) out.push(p);
+        if (out.length >= AI_RESULT_LIMIT) break;
+    }
+    return out;
+}
+
+async function searchCatalog(query, category) {
+    const q = normalize(query);
+    const cacheKey = buildSearchCacheKey(q, category);
+    const pool = await ensureCatalogSearchPool();
+    const rawTerms = extractKeywords(q).map(stemWord).filter(w => w.length >= 2);
+    if (rawTerms.length === 0) return [];
+
+    // 1) Cache local (instantâneo no navegador)
+    const localCache = getAiLocalCache();
+    const cached = localCache[cacheKey];
+    if (cached && Array.isArray(cached.codigos) && Date.now() - (cached.ts || 0) < AI_CACHE_TTL_MS) {
+        const resolved = resolveCachedAiProducts(cached.codigos, pool);
+        if (resolved.length > 0) return resolved;
+    }
+
+    // 2) Cache compartilhado (Supabase — aprende com todos os clientes)
+    const row = await fetchSearchCacheRow(cacheKey);
+    if (row) {
+        let codigos = [];
+        try { codigos = JSON.parse(row.result_codigos || '[]'); } catch (e) {}
+        const resolved = resolveCachedAiProducts(codigos, pool);
+        if (resolved.length > 0) {
+            localCache[cacheKey] = { codigos, ts: Date.now() };
+            saveAiLocalCache(localCache);
+            bumpSearchCacheHits(cacheKey, row.hits || 0);
+            return resolved;
+        }
+    }
+
+    // 3) Busca refinada
+    const results = rankAiProducts(pool, rawTerms, category);
+    const codigos = results.map(p => p.codigo).filter(Boolean);
+    localCache[cacheKey] = { codigos, ts: Date.now() };
+    saveAiLocalCache(localCache);
+    if (codigos.length > 0) saveSearchCacheRow(cacheKey, rawTerms, codigos);
+    return results;
 }
 
 function extractKeywords(text) {
@@ -372,13 +571,19 @@ function performAiSearch(terms) {
     const cat = aiDetectedCategory;
     aiDetectedCategory = null;
     addAiMsg('Efetuando busca em nosso catálogo...');
-    setTimeout(() => {
-        const results = searchCatalog(query, cat);
-        if (results.length > 0) {
-            addAiMsg(`Encontramos <strong>${results.length}</strong> produto(s) relacionado(s) a sua busca. Redirecionando para o catálogo...`);
-            setTimeout(() => { renderSearchResults(results); aiSearchTerms = []; }, 1500);
-        } else {
-            addAiMsg(`Nenhum produto encontrado para "<strong>${query}</strong>".<br><br>Pode reformular sua busca? Tente usar palavras-chave diferentes.`);
+    setTimeout(async () => {
+        try {
+            const results = await searchCatalog(query, cat);
+            if (results.length > 0) {
+                addAiMsg(`Encontramos <strong>${results.length}</strong> produto(s) relacionado(s) a sua busca. Redirecionando para o catálogo...`);
+                setTimeout(() => { renderSearchResults(results); aiSearchTerms = []; }, 1500);
+            } else {
+                addAiMsg(`Nenhum produto encontrado para "<strong>${query}</strong>".<br><br>Pode reformular sua busca? Tente usar palavras-chave diferentes.`);
+                aiSearchTerms = [];
+            }
+        } catch (e) {
+            console.error('Erro na busca do assistente:', e);
+            addAiMsg('Ocorreu um erro na busca. Pode tentar novamente?');
             aiSearchTerms = [];
         }
     }, 1200);
@@ -495,7 +700,7 @@ async function fetchCatalogProducts(initial = false) {
     if (_catalogAllLoaded && !initial) return _catalogProducts;
 
     if (initial) {
-        const selectFields = 'id, codigo, nome, marca, categoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional';
+        const selectFields = 'id, codigo, nome, marca, categoria, subcategoria, preco, unidade, imagens, palavraschave, visivel, estoque, isdestaque, ispromocao, precopromocional';
 
         // 1) All destaque + promo
         const { data: promoData } = await db
@@ -665,8 +870,8 @@ function saveCart(cart) {
     updateCartBadge();
 renderCartSidebar();
 
-window.debugSearch = function(q) {
-    const products = getCatalogProducts();
+window.debugSearch = async function(q) {
+    const products = await ensureCatalogSearchPool();
     console.log('Total produtos:', products.length);
     products.forEach(p => {
         const kw = p.palavraschave || p.palavrasChave || [];
@@ -676,7 +881,7 @@ window.debugSearch = function(q) {
     });
     if (q) {
         console.log('--- Busca: "' + q + '" ---');
-        const results = searchCatalog(q);
+        const results = await searchCatalog(q);
         results.forEach(p => console.log('  ✓', p.nome));
         if (results.length === 0) console.log('  ✗ Nenhum resultado');
     }

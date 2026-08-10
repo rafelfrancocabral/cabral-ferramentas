@@ -11,6 +11,7 @@ const SUPABASE_VISITORS_TABLE = 'visitantes';
 const SUPABASE_VIEWS_TABLE = 'visualizacoes_produto';
 const SUPABASE_STORAGE_BUCKET = 'produtos';
 const SUPABASE_POPUPS_TABLE = 'popups';
+const SUPABASE_SEARCH_CACHE_TABLE = 'busca_cache';
 
 // Visitors cache
 let _visitorsCache = [];
