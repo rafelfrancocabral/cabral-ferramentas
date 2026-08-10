@@ -259,11 +259,11 @@ function getAiProductFields(p) {
     let f = _aiFieldsCache.get(p.id);
     if (!f) {
         f = {
-            nome: tokenizeField(p.nome),
+            nome: tokenizeField(p.nome || ''),
             kw: tokenizeField((p.palavraschave || p.palavrasChave || []).join(' ')),
-            subcat: tokenizeField(p.subcategoria),
-            marca: tokenizeField(p.marca),
-            cat: tokenizeField(p.categoria)
+            subcat: tokenizeField(p.subcategoria || ''),
+            marca: tokenizeField(p.marca || ''),
+            cat: tokenizeField(p.categoria || '')
         };
         _aiFieldsCache.set(p.id, f);
     }
