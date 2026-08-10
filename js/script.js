@@ -174,8 +174,7 @@ const RELATED_PRODUCTS_MAP = {
     'mecanico': ['chave catraca', 'soquete', 'desengripante', 'jogo de chaves']
 };
 
-let aiState = 'idle';
-let aiSearchTerms = [];
+let aiSearchContext = null;
 
 function addAiMsg(text, isUser = false) {
     const div = document.createElement('div');
@@ -206,47 +205,26 @@ function normalize(s) {
     return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
-let aiDetectedCategory = null;
-
 // ===========================
-// Motor de busca do assistente (refinado)
+// Motor de busca do assistente (indexado via AiSearch)
 // ===========================
 const AI_RESULT_LIMIT = 8;
 const AI_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const AI_LOCAL_CACHE_KEY = 'cabral_ai_search_v2';
+const AI_LOCAL_CACHE_KEY = 'cabral_ai_search_v3';
 
 let _catalogSearchPool = null;
-const _aiFieldsCache = new Map();
+let _aiIndex = null;
 
-function stemWord(w) {
-    if (w.length > 3 && w.endsWith('s')) return w.slice(0, -1);
-    return w;
+async function getAiIndex() {
+    if (!_aiIndex) {
+        const pool = await ensureCatalogSearchPool();
+        _aiIndex = AiSearch.buildSearchIndex(pool);
+    }
+    return _aiIndex;
 }
 
-function expandToken(w) {
-    const out = [];
-    const m = w.match(/^(\d+(?:[.,]\d+)?)([a-z]+)$/);
-    if (m) {
-        const num = m[1];
-        const frac = num.match(/^(\d+)[.,](\d+)$/);
-        if (frac) out.push(frac[1].replace(/^0+(?=\d)/, ''));
-        else out.push(num.replace(/^0+(?=\d)/, ''));
-    } else if (/^\d+[.,]\d+$/.test(w)) {
-        out.push(w.split(/[.,]/)[0].replace(/^0+(?=\d)/, ''));
-    } else if (/^\d+$/.test(w)) {
-        out.push(w.replace(/^0+(?=\d)/, ''));
-    }
-    return out;
-}
-
-function tokenizeField(str) {
-    const set = new Set();
-    for (const w of (normalize(str) || '').split(/\s+/)) {
-        if (w.length < 2) continue;
-        set.add(stemWord(w));
-        for (const e of expandToken(w)) set.add(e);
-    }
-    return set;
+function buildSearchCacheKey(query) {
+    return AiSearch.normalize(query);
 }
 
 async function ensureCatalogSearchPool() {
@@ -272,110 +250,7 @@ async function ensureCatalogSearchPool() {
     return _catalogSearchPool;
 }
 
-function getAiProductFields(p) {
-    let f = _aiFieldsCache.get(p.id);
-    if (!f) {
-        f = {
-            nome: tokenizeField(p.nome || ''),
-            kw: tokenizeField((p.palavraschave || p.palavrasChave || []).join(' ')),
-            subcat: tokenizeField(p.subcategoria || ''),
-            marca: tokenizeField(p.marca || ''),
-            cat: tokenizeField(p.categoria || '')
-        };
-        _aiFieldsCache.set(p.id, f);
-    }
-    return f;
-}
-
-function aiMatchWeight(f, t) {
-    const best = Math.max(
-        f.nome.has(t) ? 5 : 0,
-        f.kw.has(t) ? 4 : 0,
-        f.subcat.has(t) ? 3 : 0,
-        f.marca.has(t) ? 3 : 0,
-        f.cat.has(t) ? 2 : 0
-    );
-    if (best > 0) return best;
-    if (t.length >= 4) {
-        let pbest = 0;
-        for (const w of f.nome) if (w.startsWith(t)) pbest = Math.max(pbest, 5);
-        for (const w of f.kw) if (w.startsWith(t)) pbest = Math.max(pbest, 4);
-        return pbest / 2;
-    }
-    return 0;
-}
-
-function matchesCategoryFilter(p, catNorm) {
-    const cat = normalize(p.categoria || '');
-    const sub = normalize(p.subcategoria || '');
-    const kw = normalize((p.palavraschave || p.palavrasChave || []).join(' '));
-    const nome = normalize(p.nome || '');
-    return cat.includes(catNorm) || sub.includes(catNorm) || kw.includes(catNorm) || nome.includes(catNorm);
-}
-
-function rankAiProducts(pool, terms, category) {
-    let catNorm = category ? normalize(category) : '';
-    if (catNorm.startsWith('_')) catNorm = catNorm.slice(1);
-    let scoped = catNorm ? pool.filter(p => matchesCategoryFilter(p, catNorm)) : pool;
-
-    // Detecta marcas citadas e aplica filtro rígido
-    const brandWords = new Map();
-    for (const p of scoped) {
-        const b = (p.marca || '').trim();
-        if (!b) continue;
-        for (const w of tokenizeField(b)) brandWords.set(w, b);
-    }
-    let brandFilter = null;
-    for (const t of terms) {
-        if (brandWords.has(t)) { brandFilter = brandWords.get(t); break; }
-    }
-    if (brandFilter) {
-        const bf = normalize(brandFilter);
-        scoped = scoped.filter(p => {
-            const b = normalize(p.marca || '');
-            return b === bf || b.includes(bf);
-        });
-    }
-
-    // Remove termos órfãos (não existem em nenhum produto) para não bloquear a busca
-    const orphan = new Set();
-    for (const t of terms) {
-        let any = false;
-        for (const p of scoped) {
-            if (aiMatchWeight(getAiProductFields(p), t) > 0) { any = true; break; }
-        }
-        if (!any) orphan.add(t);
-    }
-    const required = terms.filter(t => !orphan.has(t));
-    if (required.length === 0) return [];
-
-    // Âncora: termo mais específico (o mais longo) — garante precisão
-    const anchor = required.reduce((a, b) => (b.length > a.length ? b : a));
-    const need = Math.max(1, Math.ceil(required.length / 2));
-
-    const scored = [];
-    for (const p of scoped) {
-        const f = getAiProductFields(p);
-        let score = 0;
-        let matched = 0;
-        for (const t of required) {
-            const w = aiMatchWeight(f, t);
-            if (w > 0) { matched++; score += w; }
-        }
-        if (matched < need) continue;
-        if (aiMatchWeight(f, anchor) === 0) continue;
-        scored.push({ p, score, ratio: matched / required.length });
-    }
-
-    scored.sort((a, b) => b.ratio - a.ratio || b.score - a.score || a.p.nome.localeCompare(b.p.nome, 'pt-BR'));
-    return scored.slice(0, AI_RESULT_LIMIT).map(s => s.p);
-}
-
 // ---- Cache híbrido (localStorage + Supabase) ----
-function buildSearchCacheKey(query, category) {
-    return (normalize(query) || '') + '|' + (category ? normalize(category) : '');
-}
-
 function getAiLocalCache() {
     try { return JSON.parse(localStorage.getItem(AI_LOCAL_CACHE_KEY)) || {}; } catch (e) { return {}; }
 }
@@ -425,12 +300,11 @@ async function bumpSearchCacheHits(key, hits) {
     } catch (e) {}
 }
 
-function resolveCachedAiProducts(codigos, pool) {
+function resolveCachedAiProducts(codigos, index) {
     if (!Array.isArray(codigos)) return [];
-    const byCode = new Map(pool.map(p => [p.codigo, p]));
     const out = [];
     for (const c of codigos) {
-        const p = byCode.get(c);
+        const p = index.byCode.get(c);
         if (p) out.push(p);
         if (out.length >= AI_RESULT_LIMIT) break;
     }
@@ -438,18 +312,17 @@ function resolveCachedAiProducts(codigos, pool) {
 }
 
 async function searchCatalog(query, category) {
-    const q = normalize(query);
-    const cacheKey = buildSearchCacheKey(q, category);
-    const pool = await ensureCatalogSearchPool();
-    const rawTerms = extractKeywords(q).map(stemWord).filter(w => w.length >= 2);
-    const terms = [...new Set(rawTerms.flatMap(t => [t, ...expandToken(t)]))];
-    if (terms.length === 0) return [];
+    const q = AiSearch.normalize(query);
+    const cacheKey = buildSearchCacheKey(q);
+    const index = await getAiIndex();
+    const rawTerms = AiSearch.extractKeywords(q);
+    if (rawTerms.length === 0) return [];
 
     // 1) Cache local (instantâneo no navegador)
     const localCache = getAiLocalCache();
     const cached = localCache[cacheKey];
     if (cached && Array.isArray(cached.codigos) && Date.now() - (cached.ts || 0) < AI_CACHE_TTL_MS) {
-        const resolved = resolveCachedAiProducts(cached.codigos, pool);
+        const resolved = resolveCachedAiProducts(cached.codigos, index);
         if (resolved.length > 0) return resolved;
     }
 
@@ -458,7 +331,7 @@ async function searchCatalog(query, category) {
     if (row) {
         let codigos = [];
         try { codigos = JSON.parse(row.result_codigos || '[]'); } catch (e) {}
-        const resolved = resolveCachedAiProducts(codigos, pool);
+        const resolved = resolveCachedAiProducts(codigos, index);
         if (resolved.length > 0) {
             localCache[cacheKey] = { codigos, ts: Date.now() };
             saveAiLocalCache(localCache);
@@ -467,8 +340,8 @@ async function searchCatalog(query, category) {
         }
     }
 
-    // 3) Busca refinada
-    const results = rankAiProducts(pool, terms, category);
+    // 3) Busca indexada (exato + prefixo + fuzzy + sinônimos)
+    const results = AiSearch.searchIndex(index, q, category, AI_RESULT_LIMIT);
     const codigos = results.map(p => p.codigo).filter(Boolean);
     localCache[cacheKey] = { codigos, ts: Date.now() };
     saveAiLocalCache(localCache);
@@ -477,9 +350,7 @@ async function searchCatalog(query, category) {
 }
 
 function extractKeywords(text) {
-    const stopWords = ['ola', 'bom', 'boa', 'dia', 'noite', 'tarde', 'preciso', 'quero', 'gostaria', 'pode', 'me', 'meu', 'minha', 'um', 'uma', 'para', 'pra', 'com', 'sem', 'que', 'tem', 'tenho', 'estou', 'voce', 'voces', 'poderia', 'ajuda', 'ajudar', 'obrigado', 'obrigada', 'por', 'favor', 'isso', 'entao', 'mais', 'bem', 'muito', 'qual', 'onde', 'como', 'ja', 'ainda', 'sempre', 'talvez', 'precisar', 'buscar', 'procurar', 'saber', 'achar', 'encontrar', 'produto', 'produtos', 'coisa', 'algo', 'kit', 'cabral', 'ferramentas', 'vcs', 'vc', 'tb', 'tbm', 'ai', 'ei', 'ta', 'to', 'nos', 'aqui', 'ali', 'la', 'neles', 'delas', 'deles', 'ate', 'desde', 'entre', 'apos', 'contra', 'sob', 'sobre', 'nao', 'num', 'numa', 'sao', 'todo', 'toda', 'esse', 'essa', 'esses', 'essas', 'este', 'esta', 'aquele', 'aquela', 'lhe', 'lhes', 'se', 'si', 'consigo', 'convosco', 'perante', 'tras'];
-    const normalized = normalize(text).replace(/[^\w\s]/g, '');
-    return normalized.split(/\s+/).filter(w => w.length >= 2 && !stopWords.includes(w));
+    return AiSearch.extractKeywords(text);
 }
 
 function detectCategory(text) {
@@ -503,26 +374,31 @@ function detectCategory(text) {
     return null;
 }
 
-const followUpQuestions = {
-    tinta: 'Qual superfície você vai pintar? (parede, madeira, metal, etc.)',
-    broca: 'Qual tipo de superfície quer perfurar? (concreto, madeira, metal, alvenaria...)',
-    eletrica: 'O que precisa exatamente? (fios, disjuntores, tomadas, iluminação...)',
-    hidraulica: 'Qual o problema ou necessidade? (vazamento, nova instalação, troca de registro...)',
-    ferro: 'Vai cortar, soldar ou desbastar?',
-    madeira: 'Qual trabalho vai fazer? (corte, lixamento, montagem...)',
-    concreto: 'É para construção, reparo ou acabamento?',
-    porcelanato: 'Vai instalar ou precisa de material de assentamento?',
-    _epi: 'Qual tipo de EPI precisa? (capacete, luvas, óculos...)',
-    jardim: 'O que precisa para o jardim?',
-    limpeza: 'Qual tipo de produto de limpeza procura?'
+const aiVagueKeywords = {
+    'kit': 'Temos vários kits. Qual tipo? (chaves, brocas, ferramentas em geral...)',
+    'rolo': 'Que tipo de rolo? (tinta, lã de carneiro, espuma, textura...)',
+    'broca': 'Qual tipo de broca? (concreto, madeira, metal, vídea, aço rápido...)',
+    'chave': 'Qual chave? (fenda, philips, sextavado, allen, combinada, soquete...)',
+    'serra': 'Qual serra? (mármore, circular, sabre, copo, tico-tico...)',
+    'lixa': 'Qual lixa? (grão baixo ou alto, tela, ferro, madeira...)',
+    'tinta': 'Qual tipo de tinta? (látex, acrílica, esmalte, spray...)',
+    'parafuso': 'Qual parafuso? (madeira, máquina, chipboard, bucha...)',
+    'martelo': 'Qual tipo? (unha, borracha, marreta...)',
+    'pincel': 'Qual pincel? (cerda, trincha, pincel para pintura...)',
+    'ferramenta': 'Temos muitas ferramentas. Pode dizer qual? (furadeira, parafusadeira, serra, chave...)',
+    'ferramentas': 'Temos muitas ferramentas. Pode dizer qual? (furadeira, parafusadeira, serra, chave...)',
+    'disco': 'Qual disco? (corte, desbaste, diamantado, serra...)'
 };
+
+function aiVagueMatch(keywords) {
+    for (const kw of keywords) {
+        if (aiVagueKeywords[kw]) return kw;
+    }
+    return null;
+}
 
 function hasGreeting(text) {
     return /^(ola|bom dia|boa noite|boa tarde|hello|hi|fala|eai|e ai|salve)/.test(normalize(text));
-}
-
-function detectSearchTerms(text) {
-    return { keywords: extractKeywords(text), category: detectCategory(text) };
 }
 
 function handleAiInput() {
@@ -536,80 +412,97 @@ function handleAiInput() {
 
     setTimeout(() => {
         removeTyping();
-        const detected = detectSearchTerms(val);
+
+        const keywords = AiSearch.extractKeywords(val);
+        const category = detectCategory(val);
         const hasGreet = hasGreeting(val);
+        const context = (aiSearchContext && (Date.now() - aiSearchContext.ts) < 180000) ? aiSearchContext : null;
 
-        // Already gathering — accumulate info
-        if (aiState === 'gathering') {
-            if (detected.keywords.length > 0) aiSearchTerms.push(...detected.keywords);
-            if (detected.category) aiDetectedCategory = detected.category;
-            const uniqueTerms = [...new Set(aiSearchTerms)];
-            if (uniqueTerms.length >= 2) { performAiSearch(uniqueTerms); return; }
-            const cat = detected.category || detectCategory(aiSearchTerms.join(' '));
-            if (cat && followUpQuestions[cat]) {
-                addAiMsg(followUpQuestions[cat]);
+        if (keywords.length === 0) {
+            if (hasGreet) {
+                addAiMsg('Olá! Seja bem-vindo à <strong>Cabral Ferramentas</strong>. 😊<br><br>Sou o assistente virtual do nosso catálogo. Descreva o que precisa que eu busco para você.');
             } else {
-                addAiMsg('Pode me dar mais detalhes? Por exemplo: <strong>nome do produto</strong>, <strong>uso</strong> ou <strong>marca</strong> que procura.');
+                addAiMsg('Para te ajudar melhor, pode me dizer <strong>qual produto</strong> precisa? Pode ser o nome, o uso ou até uma descrição.<br><br><em>Exemplo: "furadeira Bosch", "tinta para parede", "kit de chaves"</em>');
             }
             return;
         }
 
-        // Has product keywords — go to funnel or search
-        if (detected.keywords.length >= 2) {
-            aiState = 'gathering';
-            aiSearchTerms = [...detected.keywords];
-            aiDetectedCategory = detected.category;
-            if (detected.category && followUpQuestions[detected.category]) {
-                addAiMsg(`Entendi! Você procura algo na área de <strong>${detected.category}</strong>.<br><br>${followUpQuestions[detected.category]}`);
-            } else {
-                performAiSearch([...new Set(aiSearchTerms)]);
-            }
+        // Busca direta: 1+ palavras específicas. Só abre funil se for termo único e vago.
+        const vague = keywords.length === 1 ? aiVagueMatch(keywords) : null;
+        if (vague && !context) {
+            aiSearchContext = { terms: keywords, category, ts: Date.now() };
+            addAiMsg(aiVagueKeywords[vague]);
             return;
         }
 
-        // Greeting + keywords — go to funnel
-        if (hasGreet && detected.keywords.length > 0) {
-            aiState = 'gathering';
-            aiSearchTerms = [...detected.keywords];
-            addAiMsg('Claro! Sobre o que você precisa? Pode me dar mais detalhes para eu buscar no catálogo.');
+        if (context) {
+            aiSearchContext = null;
+            performAiSearch([...new Set([...context.terms, ...keywords])], context.category || category);
             return;
         }
 
-        // Greeting only — welcome
-        if (hasGreet) {
-            addAiMsg('Olá! Seja bem-vindo à <strong>Cabral Ferramentas</strong>. 😊<br><br>Sou o assistente virtual do nosso catálogo. Posso te ajudar a encontrar ferramentas, materiais e produtos para sua obra ou projeto.<br><br>Descreva o que precisa que eu busco no nosso catálogo.');
-            return;
-        }
-
-        // No keywords — ask what they need
-        aiState = 'gathering';
-        aiSearchTerms = [...detected.keywords];
-        addAiMsg('Para te ajudar melhor, pode me dizer <strong>qual produto</strong> precisa? Pode ser o nome, o uso ou até uma descrição do que procura.<br><br><em>Exemplo: "furadeira Bosch", "tinta para parede", "kit de chaves"</em>');
+        performAiSearch(keywords, category);
     }, 900);
 }
 
-function performAiSearch(terms) {
+function performAiSearch(terms, category) {
     const query = terms.join(' ');
-    aiState = 'idle';
-    const cat = aiDetectedCategory;
-    aiDetectedCategory = null;
-    addAiMsg('Efetuando busca em nosso catálogo...');
+    addAiMsg('Buscando no catálogo...');
     setTimeout(async () => {
         try {
-            const results = await searchCatalog(query, cat);
+            const results = await searchCatalog(query, category);
             if (results.length > 0) {
-                addAiMsg(`Encontramos <strong>${results.length}</strong> produto(s) relacionado(s) a sua busca. Redirecionando para o catálogo...`);
-                setTimeout(() => { renderSearchResults(results); aiSearchTerms = []; }, 1500);
+                addAiMsg(`Encontrei <strong>${results.length}</strong> produto(s) para "<strong>${escapeHtml(query)}</strong>":`);
+                renderAiResults(results);
             } else {
-                addAiMsg(`Nenhum produto encontrado para "<strong>${query}</strong>".<br><br>Pode reformular sua busca? Tente usar palavras-chave diferentes.`);
-                aiSearchTerms = [];
+                addAiMsg(`Não encontrei nada para "<strong>${escapeHtml(query)}</strong>".<br><br>Pode reformular? Tente o nome do produto, a marca ou descreva o uso que você quer dar.`);
             }
         } catch (e) {
             console.error('Erro na busca do assistente:', e);
             addAiMsg('Ocorreu um erro na busca. Pode tentar novamente?');
-            aiSearchTerms = [];
         }
-    }, 1200);
+    }, 800);
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderAiResults(products) {
+    const msg = addAiMsg('');
+    const bubble = msg.querySelector('.ai-msg-bubble');
+    bubble.innerHTML = '';
+    const list = document.createElement('div');
+    list.className = 'ai-results';
+    products.forEach(rawProduct => {
+        const p = normalizeProduct(rawProduct);
+        const hasPromo = p.isPromocao && p.precoPromocional > 0;
+        const price = hasPromo ? p.precoPromocional : p.preco;
+        const img = (p.imagens && p.imagens.length > 0) ? p.imagens[0].replace('.webp', '_thumb.webp') : '';
+        const item = document.createElement('a');
+        item.className = 'ai-result-card';
+        item.href = `produto.html?id=${p.id}`;
+        item.innerHTML = `
+            <div class="ai-result-img">${img ? `<img src="${img}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${p.imagens[0]}'">` : '<i class="fas fa-box"></i>'}</div>
+            <div class="ai-result-info">
+                <span class="ai-result-name">${escapeHtml(p.nome)}</span>
+                <span class="ai-result-brand">${escapeHtml(p.marca || '')} ${p.codigo ? '· CÓD ' + escapeHtml(p.codigo) : ''}</span>
+                <span class="ai-result-price">${formatPrice(price)} ${hasPromo ? `<s>${formatPrice(p.preco)}</s>` : ''}</span>
+            </div>
+            <span class="ai-result-go"><i class="fas fa-chevron-right"></i></span>
+        `;
+        list.appendChild(item);
+    });
+    const btn = document.createElement('button');
+    btn.className = 'ai-results-catalog-btn';
+    btn.innerHTML = '<i class="fas fa-th-large"></i> Ver todos no catálogo';
+    btn.onclick = () => {
+        window.scrollToProduct();
+        renderSearchResults(products);
+    };
+    list.appendChild(btn);
+    bubble.appendChild(list);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
 }
 
 function renderSearchResults(products) {
