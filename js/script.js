@@ -175,6 +175,7 @@ const RELATED_PRODUCTS_MAP = {
 };
 
 let aiSearchContext = null;
+let _aiLastSearch = null;
 
 function addAiMsg(text, isUser = false) {
     const div = document.createElement('div');
@@ -209,6 +210,7 @@ function normalize(s) {
 // Motor de busca do assistente (indexado via AiSearch)
 // ===========================
 const AI_RESULT_LIMIT = 8;
+const AI_CATALOG_LIMIT = 2000;
 const AI_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const AI_LOCAL_CACHE_KEY = 'cabral_ai_search_v3';
 
@@ -311,12 +313,18 @@ function resolveCachedAiProducts(codigos, index) {
     return out;
 }
 
-async function searchCatalog(query, category) {
+async function searchCatalog(query, category, limit) {
+    limit = limit || AI_RESULT_LIMIT;
     const q = AiSearch.normalize(query);
     const cacheKey = buildSearchCacheKey(q);
     const index = await getAiIndex();
     const rawTerms = AiSearch.extractKeywords(q);
     if (rawTerms.length === 0) return [];
+
+    // Buscas completas (ex.: "ver todos no catálogo") não usam cache — pegam o conjunto inteiro
+    if (limit !== AI_RESULT_LIMIT) {
+        return AiSearch.searchIndex(index, q, category, limit);
+    }
 
     // 1) Cache local (instantâneo no navegador)
     const localCache = getAiLocalCache();
@@ -341,7 +349,7 @@ async function searchCatalog(query, category) {
     }
 
     // 3) Busca indexada (exato + prefixo + fuzzy + sinônimos)
-    const results = AiSearch.searchIndex(index, q, category, AI_RESULT_LIMIT);
+    const results = AiSearch.searchIndex(index, q, category, limit);
     const codigos = results.map(p => p.codigo).filter(Boolean);
     localCache[cacheKey] = { codigos, ts: Date.now() };
     saveAiLocalCache(localCache);
@@ -447,13 +455,18 @@ function handleAiInput() {
 
 function performAiSearch(terms, category) {
     const query = terms.join(' ');
+    _aiLastSearch = { query, category };
     addAiMsg('Buscando no catálogo...');
     setTimeout(async () => {
         try {
-            const { products, matchedQuery } = await aiProgressiveSearch(query, category);
+            const { products, matchedQuery, total } = await aiProgressiveSearch(query, category);
             if (products.length > 0) {
                 if (matchedQuery === query) {
-                    addAiMsg(`Encontrei <strong>${products.length}</strong> produto(s) para "<strong>${escapeHtml(query)}</strong>":`);
+                    if (total > products.length) {
+                        addAiMsg(`Encontrei <strong>${total}</strong> produto(s) para "<strong>${escapeHtml(query)}</strong>". Mostrando os <strong>${products.length}</strong> mais relevantes:`);
+                    } else {
+                        addAiMsg(`Encontrei <strong>${products.length}</strong> produto(s) para "<strong>${escapeHtml(query)}</strong>":`);
+                    }
                 } else {
                     addAiMsg(`Não achei resultado exato para "<strong>${escapeHtml(query)}</strong>".<br>Estas são as opções mais próximas, com "<strong>${escapeHtml(matchedQuery)}</strong>":`);
                 }
@@ -475,22 +488,29 @@ function performAiSearch(terms, category) {
     }, 800);
 }
 
-async function aiProgressiveSearch(query, category) {
+async function aiProgressiveSearch(query, category, limit) {
+    limit = limit || AI_RESULT_LIMIT;
     const index = await getAiIndex();
     const keywords = AiSearch.extractKeywords(query);
-    if (keywords.length === 0) return { products: [], matchedQuery: query };
+    if (keywords.length === 0) return { products: [], matchedQuery: query, total: 0 };
 
-    const full = await searchCatalog(query, category);
-    if (full.length > 0) return { products: full, matchedQuery: query };
+    const full = await searchCatalog(query, category, limit);
+    if (full.length > 0) {
+        const total = limit === AI_RESULT_LIMIT ? AiSearch.searchIndex(index, query, category, index.products.length).length : full.length;
+        return { products: full, matchedQuery: query, total };
+    }
 
     // Relaxa: remove os termos mais raros primeiro, mantendo os mais comuns
     const sorted = keywords.slice().sort((a, b) => AiSearch.termFrequency(index, b) - AiSearch.termFrequency(index, a));
     for (let keep = sorted.length - 1; keep >= 1; keep--) {
         const relaxed = sorted.slice(0, keep).join(' ');
-        const res = await searchCatalog(relaxed, category);
-        if (res.length > 0) return { products: res, matchedQuery: relaxed };
+        const res = await searchCatalog(relaxed, category, limit);
+        if (res.length > 0) {
+            const total = limit === AI_RESULT_LIMIT ? AiSearch.searchIndex(index, relaxed, category, index.products.length).length : res.length;
+            return { products: res, matchedQuery: relaxed, total };
+        }
     }
-    return { products: [], matchedQuery: query };
+    return { products: [], matchedQuery: query, total: 0 };
 }
 
 function escapeHtml(s) {
@@ -525,9 +545,17 @@ function renderAiResults(products) {
     const btn = document.createElement('button');
     btn.className = 'ai-results-catalog-btn';
     btn.innerHTML = '<i class="fas fa-th-large"></i> Ver todos no catálogo';
-    btn.onclick = () => {
+    btn.onclick = async () => {
         window.scrollToProduct();
-        renderSearchResults(products);
+        try {
+            const last = _aiLastSearch;
+            const { products: all } = last
+                ? await aiProgressiveSearch(last.query, last.category, AI_CATALOG_LIMIT)
+                : { products };
+            renderSearchResults(all);
+        } catch (e) {
+            renderSearchResults(products);
+        }
     };
     list.appendChild(btn);
     bubble.appendChild(list);
