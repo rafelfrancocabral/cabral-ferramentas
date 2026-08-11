@@ -461,25 +461,28 @@ function performAiSearch(terms, category) {
         try {
             const { products, matchedQuery, total } = await aiProgressiveSearch(query, category);
             if (products.length > 0) {
+                let text;
                 if (matchedQuery === query) {
-                    if (total > products.length) {
-                        addAiMsg(`Encontrei <strong>${total}</strong> produto(s) para "<strong>${escapeHtml(query)}</strong>". Mostrando os <strong>${products.length}</strong> mais relevantes:`);
-                    } else {
-                        addAiMsg(`Encontrei <strong>${products.length}</strong> produto(s) para "<strong>${escapeHtml(query)}</strong>":`);
-                    }
+                    text = `Encontrei <strong>${total}</strong> produto(s) para "<strong>${escapeHtml(query)}</strong>".`;
                 } else {
-                    addAiMsg(`Não achei resultado exato para "<strong>${escapeHtml(query)}</strong>".<br>Estas são as opções mais próximas, com "<strong>${escapeHtml(matchedQuery)}</strong>":`);
+                    text = `Não achei resultado exato para "<strong>${escapeHtml(query)}</strong>".<br>Encontrei <strong>${total}</strong> opção(ões) para "<strong>${escapeHtml(matchedQuery)}</strong>".`;
                 }
-                renderAiResults(products);
+                const msg = addAiMsg(text);
+                appendAiCatalogButton(msg, '<i class="fas fa-th-large"></i> Ver todos no catálogo', async () => {
+                    window.scrollToProduct();
+                    try {
+                        const last = _aiLastSearch;
+                        const { products: all } = last
+                            ? await aiProgressiveSearch(last.query, last.category, AI_CATALOG_LIMIT)
+                            : { products: [] };
+                        renderSearchResults(all);
+                    } catch (e) {
+                        addAiMsg('Ocorreu um erro ao abrir o catálogo. Tente novamente.');
+                    }
+                });
             } else {
                 const msg = addAiMsg(`Não encontrei nada para "<strong>${escapeHtml(query)}</strong>" no catálogo.<br><br>Você pode reformular a busca com outros termos, ou navegar pelo catálogo completo abaixo.`);
-                const bubble = msg.querySelector('.ai-msg-bubble');
-                const btn = document.createElement('button');
-                btn.className = 'ai-results-catalog-btn';
-                btn.innerHTML = '<i class="fas fa-th-large"></i> Ver catálogo completo';
-                btn.onclick = () => window.scrollToProduct();
-                bubble.appendChild(btn);
-                aiMessages.scrollTop = aiMessages.scrollHeight;
+                appendAiCatalogButton(msg, '<i class="fas fa-th-large"></i> Ver catálogo completo', () => window.scrollToProduct());
             }
         } catch (e) {
             console.error('Erro na busca do assistente:', e);
@@ -517,48 +520,13 @@ function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function renderAiResults(products) {
-    const msg = addAiMsg('');
+function appendAiCatalogButton(msg, html, onClick) {
     const bubble = msg.querySelector('.ai-msg-bubble');
-    bubble.innerHTML = '';
-    const list = document.createElement('div');
-    list.className = 'ai-results';
-    products.forEach(rawProduct => {
-        const p = normalizeProduct(rawProduct);
-        const hasPromo = p.isPromocao && p.precoPromocional > 0;
-        const price = hasPromo ? p.precoPromocional : p.preco;
-        const img = (p.imagens && p.imagens.length > 0) ? p.imagens[0].replace('.webp', '_thumb.webp') : '';
-        const item = document.createElement('a');
-        item.className = 'ai-result-card';
-        item.href = `produto.html?id=${p.id}`;
-        item.innerHTML = `
-            <div class="ai-result-img">${img ? `<img src="${img}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${p.imagens[0]}'">` : '<i class="fas fa-box"></i>'}</div>
-            <div class="ai-result-info">
-                <span class="ai-result-name">${escapeHtml(p.nome)}</span>
-                <span class="ai-result-brand">${escapeHtml(p.marca || '')} ${p.codigo ? '· CÓD ' + escapeHtml(p.codigo) : ''}</span>
-                <span class="ai-result-price">${formatPrice(price)} ${hasPromo ? `<s>${formatPrice(p.preco)}</s>` : ''}</span>
-            </div>
-            <span class="ai-result-go"><i class="fas fa-chevron-right"></i></span>
-        `;
-        list.appendChild(item);
-    });
     const btn = document.createElement('button');
     btn.className = 'ai-results-catalog-btn';
-    btn.innerHTML = '<i class="fas fa-th-large"></i> Ver todos no catálogo';
-    btn.onclick = async () => {
-        window.scrollToProduct();
-        try {
-            const last = _aiLastSearch;
-            const { products: all } = last
-                ? await aiProgressiveSearch(last.query, last.category, AI_CATALOG_LIMIT)
-                : { products };
-            renderSearchResults(all);
-        } catch (e) {
-            renderSearchResults(products);
-        }
-    };
-    list.appendChild(btn);
-    bubble.appendChild(list);
+    btn.innerHTML = html;
+    btn.onclick = onClick;
+    bubble.appendChild(btn);
     aiMessages.scrollTop = aiMessages.scrollHeight;
 }
 
