@@ -182,7 +182,7 @@ function addAiMsg(text, isUser = false) {
     div.className = `ai-msg ${isUser ? 'ai-msg-user' : 'ai-msg-bot'}`;
     const avatar = isUser
         ? '<div class="ai-msg-avatar"><i class="fas fa-user"></i></div>'
-        : '<div class="ai-msg-avatar"><i class="fas fa-robot"></i></div>';
+        : '<div class="ai-msg-avatar"><i class="fas fa-compass"></i></div>';
     div.innerHTML = `${avatar}<div class="ai-msg-bubble">${text}</div>`;
     aiMessages.appendChild(div);
     aiMessages.scrollTop = aiMessages.scrollHeight;
@@ -193,7 +193,7 @@ function showTyping() {
     const div = document.createElement('div');
     div.className = 'ai-msg ai-msg-bot';
     div.id = 'aiTyping';
-    div.innerHTML = '<div class="ai-msg-avatar"><i class="fas fa-robot"></i></div><div class="ai-typing"><span></span><span></span><span></span></div>';
+    div.innerHTML = '<div class="ai-msg-avatar"><i class="fas fa-compass"></i></div><div class="ai-typing"><span></span><span></span><span></span></div>';
     aiMessages.appendChild(div);
     aiMessages.scrollTop = aiMessages.scrollHeight;
 }
