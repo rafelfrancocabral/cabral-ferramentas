@@ -1274,6 +1274,10 @@ function generateClientCode(telefone) {
     return 'C-' + String(code).padStart(4, '0');
 }
 
+function generatePickupCode() {
+    return String(Math.floor(1000 + Math.random() * 9000));
+}
+
 async function checkPhoneRegistered(phone) {
     const phoneMsg = document.getElementById('checkoutPhoneMsg');
     const nameInput = document.getElementById('checkoutName');
@@ -1382,9 +1386,13 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
     }
 
     const code = checkoutClientCode || generateClientCode(phone);
+    const pickupCode = generatePickupCode();
 
     const msg =
         `*Orçamento - Cabral Ferramentas*\n` +
+        `........................................\n\n` +
+        `  *codigo de retirada: ${pickupCode}*\n` +
+        `  _Confirme este codigo na retirada em loja._\n\n` +
         `........................................\n\n` +
         `  *cliente:* _${name}_\n` +
         `  *codigo:* _${code}_\n` +
@@ -1408,6 +1416,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
             nome_cliente: name,
             telefone: phone,
             codigo_cliente: code,
+            codigo_retirada: pickupCode,
             itens: itens,
             total: finalTotal,
             status: 'recebido',
@@ -1415,7 +1424,13 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
         };
         if (checkoutCouponCode) quoteData.cupom = checkoutCouponCode;
         if (checkoutDiscount > 0) quoteData.desconto = checkoutDiscount;
-        await db.from(SUPABASE_QUOTES_TABLE).insert(quoteData);
+        try {
+            await db.from(SUPABASE_QUOTES_TABLE).insert(quoteData);
+        } catch (errCol) {
+            // Coluna codigo_retirada pode ainda nao existir no banco: salva sem ela
+            const { codigo_retirada, ...baseData } = quoteData;
+            await db.from(SUPABASE_QUOTES_TABLE).insert(baseData);
+        }
 
         // Update coupon usage count
         if (checkoutCouponCode && checkoutDiscount > 0) {
