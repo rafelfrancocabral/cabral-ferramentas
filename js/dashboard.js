@@ -1362,6 +1362,11 @@ async function filterProducts(query) {
     const badge = document.getElementById('productCountBadge');
 
     const totalCount = getProductCount() || products.length;
+    const photosBadge = document.getElementById('productPhotosBadge');
+    if (photosBadge) {
+        const photoCount = products.filter(p => p.imagens && p.imagens.length > 0).length;
+        photosBadge.textContent = `${photoCount} com foto`;
+    }
     if (!query) {
         if (badge) badge.textContent = `${totalCount} produto${totalCount !== 1 ? 's' : ''}`;
         if (totalCount === 0) {
