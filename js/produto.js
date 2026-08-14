@@ -12,6 +12,11 @@
         return 'R$ ' + parseFloat(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    function unitLabel(unit) {
+        const u = (unit || '').trim();
+        return u ? '/' + u.toLowerCase() : '';
+    }
+
     function normalize(p) {
         return {
             ...p,
@@ -66,6 +71,7 @@
                 <div class="pp-pricing">
                     ${hasPromo ? `<span class="pp-price-old">${formatPrice(product.preco)}</span>` : ''}
                     <span class="pp-price ${hasPromo ? '' : 'no-promo'}">${formatPrice(price)}</span>
+                    <span class="pp-unit">${unitLabel(product.unidade)}</span>
                 </div>
                 <div class="pp-qty-row">
                     <label>Quantidade</label>
@@ -161,7 +167,7 @@
             <a href="produto.html?id=${rp.id}" class="pp-related-card">
                 ${img ? `<img src="${img}" alt="${rp.nome}" loading="lazy" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">` : '<div style="height:140px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);"><i class="fas fa-image"></i></div>'}
                 <div class="pp-related-name">${rp.nome}</div>
-                <div class="pp-related-price">${formatPrice(rPrice)}</div>
+                <div class="pp-related-price">${formatPrice(rPrice)}<span class="pp-unit pp-unit-sm">${unitLabel(rNorm.unidade)}</span></div>
             </a>`;
         }).join('');
     }

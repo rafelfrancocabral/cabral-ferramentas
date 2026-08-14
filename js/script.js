@@ -843,6 +843,11 @@ function formatPrice(v) {
     return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function unitLabel(unit) {
+    const u = (unit || '').trim();
+    return u ? '/' + u.toLowerCase() : '';
+}
+
 function shuffleArray(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -985,6 +990,7 @@ function renderProductGrid(products, container, append = false) {
                 <div class="catalog-card-pricing">
                     ${hasPromo ? `<span class="catalog-card-price-old">${formatPrice(product.preco)}</span>` : ''}
                     <span class="catalog-card-price ${hasPromo ? '' : 'no-promo'}">${formatPrice(price)}</span>
+                    <span class="catalog-card-unit">${unitLabel(product.unidade)}</span>
                 </div>
                 <div class="catalog-card-actions" onclick="event.stopPropagation()">
                     <div class="catalog-qty">

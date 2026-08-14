@@ -1780,6 +1780,13 @@ ul { list-style: none; }
     color: var(--text-primary);
 }
 
+.catalog-card-unit {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: lowercase;
+}
+
 /* Card Actions */
 .catalog-card-actions {
     display: flex;
