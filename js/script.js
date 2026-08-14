@@ -182,7 +182,7 @@ function addAiMsg(text, isUser = false) {
     div.className = `ai-msg ${isUser ? 'ai-msg-user' : 'ai-msg-bot'}`;
     const avatar = isUser
         ? '<div class="ai-msg-avatar"><i class="fas fa-user"></i></div>'
-        : '<div class="ai-msg-avatar"><svg viewBox="0 0 64 64" fill="currentColor" aria-hidden="true" focusable="false"><path d="M31.5 1.5h3v10h-3z"/><path d="M27 3.5h12v3H27z"/><rect x="31.5" y="7" width="3" height="37" rx="1.2"/><rect x="46.5" y="20" width="2.5" height="24" rx="1.2"/><path d="M34.5 10C48 12 56 21 55 32C49 33.5 42 35.5 35 37.5C35.8 28 35 19 34.5 10Z"/><path d="M47 22C53 23.5 58 28 57.5 35C53.5 35.8 50 37 47 37.5C47.5 31 47 26 47 22Z"/><path d="M51 45L63 41.5L53 49Z"/><path d="M9 46.5C16 42 46 42 55 47.5L51 55.5C40 50.5 23 50.5 13 55.5Z"/></svg></div>';
+        : '<div class="ai-msg-avatar"><i class="fas fa-compass"></i></div>';
     div.innerHTML = `${avatar}<div class="ai-msg-bubble">${text}</div>`;
     aiMessages.appendChild(div);
     aiMessages.scrollTop = aiMessages.scrollHeight;
@@ -193,7 +193,7 @@ function showTyping() {
     const div = document.createElement('div');
     div.className = 'ai-msg ai-msg-bot';
     div.id = 'aiTyping';
-    div.innerHTML = '<div class="ai-msg-avatar"><svg viewBox="0 0 64 64" fill="currentColor" aria-hidden="true" focusable="false"><path d="M31.5 1.5h3v10h-3z"/><path d="M27 3.5h12v3H27z"/><rect x="31.5" y="7" width="3" height="37" rx="1.2"/><rect x="46.5" y="20" width="2.5" height="24" rx="1.2"/><path d="M34.5 10C48 12 56 21 55 32C49 33.5 42 35.5 35 37.5C35.8 28 35 19 34.5 10Z"/><path d="M47 22C53 23.5 58 28 57.5 35C53.5 35.8 50 37 47 37.5C47.5 31 47 26 47 22Z"/><path d="M51 45L63 41.5L53 49Z"/><path d="M9 46.5C16 42 46 42 55 47.5L51 55.5C40 50.5 23 50.5 13 55.5Z"/></svg></div><div class="ai-typing"><span></span><span></span><span></span></div>';
+    div.innerHTML = '<div class="ai-msg-avatar"><i class="fas fa-compass"></i></div><div class="ai-typing"><span></span><span></span><span></span></div>';
     aiMessages.appendChild(div);
     aiMessages.scrollTop = aiMessages.scrollHeight;
 }
