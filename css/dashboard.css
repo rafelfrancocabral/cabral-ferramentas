@@ -1209,6 +1209,12 @@ button { cursor: pointer; }
     flex-shrink: 0;
 }
 
+.settings-section-icon svg {
+    width: 1em;
+    height: 1em;
+    display: block;
+}
+
 .settings-section-icon.whatsapp { background: rgba(37,211,102,0.12); color: #25d366; }
 .settings-section-icon.ia { background: rgba(139,92,246,0.12); color: #8b5cf6; }
 .settings-section-icon.palette { background: rgba(255,165,2,0.12); color: #ffa502; }

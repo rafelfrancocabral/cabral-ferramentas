@@ -869,6 +869,13 @@ ul { list-style: none; }
     flex-shrink: 0;
 }
 
+.ai-avatar-icon svg,
+.ai-msg-avatar svg {
+    width: 1em;
+    height: 1em;
+    display: block;
+}
+
 .ai-chat-header h3 {
     font-family: 'Rajdhani', sans-serif;
     font-size: 1rem;
