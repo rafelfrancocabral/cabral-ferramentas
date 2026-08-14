@@ -1037,6 +1037,7 @@ window.addToCart = function(productId, btnEl) {
             id: product.id,
             codigo: product.codigo || '',
             nome: product.nome,
+            categoria: product.categoria || '',
             preco: hasPromo ? product.precoPromocional : product.preco,
             imagem: img,
             qty: qty,
@@ -1368,6 +1369,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
         return {
             codigo: item.codigo || '',
             nome: item.nome,
+            categoria: item.categoria || '',
             quantidade: item.qty,
             preco: item.preco,
             subtotal: subtotal

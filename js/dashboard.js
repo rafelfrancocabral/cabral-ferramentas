@@ -223,7 +223,6 @@ function createSalesChart() {
                 {
                     label: 'Vendas (R$)',
                     data: [],
-                    yAxisID: 'y',
                     borderColor: '#0099cc',
                     backgroundColor: 'rgba(0, 153, 204, 0.1)',
                     fill: true,
@@ -234,22 +233,6 @@ function createSalesChart() {
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
                     pointHoverRadius: 6
-                },
-                {
-                    label: 'Orçamentos',
-                    data: [],
-                    yAxisID: 'y1',
-                    borderColor: '#7b3fbf',
-                    backgroundColor: 'rgba(123, 63, 191, 0.05)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 3,
-                    pointBackgroundColor: '#7b3fbf',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointHoverRadius: 5
                 }
             ]
         },
@@ -257,16 +240,7 @@ function createSalesChart() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        pointStyleWidth: 10,
-                        boxPadding: 8,
-                        font: { size: 11, family: "'Inter', sans-serif" }
-                    }
-                },
+                legend: { display: false },
                 tooltip: {
                     backgroundColor: '#ffffff',
                     titleColor: '#1a1a2e',
@@ -277,12 +251,7 @@ function createSalesChart() {
                     cornerRadius: 10,
                     titleFont: { family: "'Rajdhani', sans-serif", weight: 600 },
                     callbacks: {
-                        label: (ctx) => {
-                            if (ctx.dataset.yAxisID === 'y') {
-                                return ` Vendas: ${formatPrice(ctx.parsed.y)}`;
-                            }
-                            return ` Orçamentos: ${ctx.parsed.y}`;
-                        }
+                        label: (ctx) => ` Vendas: ${formatPrice(ctx.parsed.y)}`
                     }
                 }
             },
@@ -292,7 +261,6 @@ function createSalesChart() {
                     ticks: { font: { size: 11 } }
                 },
                 y: {
-                    position: 'left',
                     beginAtZero: true,
                     grid: { color: 'rgba(26, 26, 46, 0.5)' },
                     ticks: {
@@ -301,16 +269,6 @@ function createSalesChart() {
                             if (v >= 1000) return 'R$ ' + (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k';
                             return 'R$ ' + Math.round(v);
                         }
-                    }
-                },
-                y1: {
-                    position: 'right',
-                    beginAtZero: true,
-                    grid: { drawOnChartArea: false },
-                    ticks: {
-                        font: { size: 11 },
-                        stepSize: 1,
-                        precision: 0
                     }
                 }
             },
@@ -326,16 +284,18 @@ function createSalesChart() {
 const categoryCtx = document.getElementById('categoryChart');
 let categoryChart;
 
+const CHART_COLORS = ['#0099cc', '#7b3fbf', '#2ed573', '#ffa502', '#ff4757', '#a4b0be', '#f368e0', '#57606f', '#3ae374', '#18dcff'];
+
 function createCategoryChart() {
     if (categoryChart) categoryChart.destroy();
 
     categoryChart = new Chart(categoryCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Elétricas', 'Manuais', 'Hidráulica', 'Elétrica', 'EPI', 'Construção'],
+            labels: [],
             datasets: [{
-                data: [35, 25, 15, 12, 8, 5],
-                backgroundColor: ['#0099cc', '#7b3fbf', '#2ed573', '#ffa502', '#ff4757', '#a4b0be'],
+                data: [],
+                backgroundColor: CHART_COLORS,
                 borderColor: '#ffffff',
                 borderWidth: 3,
                 hoverBorderColor: '#ffffff',
@@ -365,7 +325,11 @@ function createCategoryChart() {
                     padding: 12,
                     cornerRadius: 10,
                     callbacks: {
-                        label: (ctx) => ` ${ctx.label}: ${ctx.parsed}%`
+                        label: (ctx) => {
+                            const total = ctx.dataset.data.reduce((s, v) => s + v, 0);
+                            const pct = total > 0 ? Math.round((ctx.parsed / total) * 100) : 0;
+                            return ` ${ctx.label}: ${ctx.parsed} vendido${ctx.parsed !== 1 ? 's' : ''} (${pct}%)`;
+                        }
                     }
                 }
             }
@@ -377,8 +341,20 @@ function createCategoryChart() {
 createSalesChart();
 createCategoryChart();
 
+let _productCatMap = null;
+async function getProductCategoryMap() {
+    if (_productCatMap) return _productCatMap;
+    try {
+        const { data } = await db.from(SUPABASE_PRODUCTS_TABLE).select('codigo, categoria');
+        _productCatMap = new Map((data || []).map(p => [String(p.codigo), p.categoria || '']));
+    } catch (e) {
+        _productCatMap = new Map();
+    }
+    return _productCatMap;
+}
+
 // Update charts + KPIs based on period (real data from Supabase)
-function updateCharts(period) {
+async function updateCharts(period) {
     const now = new Date();
     let cutoff;
     if (period === '7d') cutoff = new Date(now - 7 * 86400000);
@@ -442,7 +418,6 @@ function updateCharts(period) {
     // Build chart data grouped by period
     const labels = [];
     const salesData = [];
-    const quoteDataArr = [];
 
     if (period === '7d') {
         const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -453,7 +428,6 @@ function updateCharts(period) {
             const dayQ = quotes.filter(q => q.created_at.slice(0, 10) === dayStr);
             const dayQd = dayQ.filter(q => q.status === 'entregue');
             salesData.push(dayQd.reduce((s, q) => s + (Number(q.total) || 0), 0));
-            quoteDataArr.push(dayQ.length);
         }
     } else if (period === '90d') {
         for (let i = 2; i >= 0; i--) {
@@ -465,7 +439,6 @@ function updateCharts(period) {
             });
             const mqd = mq.filter(q => q.status === 'entregue');
             salesData.push(mqd.reduce((s, q) => s + (Number(q.total) || 0), 0));
-            quoteDataArr.push(mq.length);
         }
     } else if (period === '12m') {
         const mn = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -478,7 +451,6 @@ function updateCharts(period) {
             });
             const mqd = mq.filter(q => q.status === 'entregue');
             salesData.push(mqd.reduce((s, q) => s + (Number(q.total) || 0), 0));
-            quoteDataArr.push(mq.length);
         }
     } else {
         for (let i = 3; i >= 0; i--) {
@@ -491,31 +463,34 @@ function updateCharts(period) {
             });
             const wqd = wq.filter(q => q.status === 'entregue');
             salesData.push(wqd.reduce((s, q) => s + (Number(q.total) || 0), 0));
-            quoteDataArr.push(wq.length);
         }
     }
 
     salesChart.data.labels = labels;
     salesChart.data.datasets[0].data = salesData;
-    salesChart.data.datasets[1].data = quoteDataArr;
     salesChart.update('active');
 
-    // Category chart from items
+    // Category chart: top 10 categorias com mais vendas (orçamentos entregues)
+    const catMap = await getProductCategoryMap();
     const catCounts = {};
     quotes.forEach(q => {
+        if (q.status !== 'entregue') return;
         if (!Array.isArray(q.itens)) return;
         q.itens.forEach(item => {
-            const cat = item.categoria || 'Geral';
-            catCounts[cat] = (catCounts[cat] || 0) + 1;
+            const cat = item.categoria || catMap.get(String(item.codigo)) || 'Geral';
+            const qty = Number(item.quantidade) || 1;
+            catCounts[cat] = (catCounts[cat] || 0) + qty;
         });
     });
-    const sorted = Object.entries(catCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const sorted = Object.entries(catCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
     if (sorted.length > 0) {
         categoryChart.data.labels = sorted.map(c => c[0]);
         categoryChart.data.datasets[0].data = sorted.map(c => c[1]);
+        categoryChart.data.datasets[0].backgroundColor = sorted.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
     } else {
         categoryChart.data.labels = ['Sem dados'];
         categoryChart.data.datasets[0].data = [1];
+        categoryChart.data.datasets[0].backgroundColor = ['#a4b0be'];
     }
     categoryChart.update('active');
 

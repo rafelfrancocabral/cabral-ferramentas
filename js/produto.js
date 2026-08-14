@@ -202,6 +202,7 @@
                 id: product.id,
                 codigo: product.codigo || '',
                 nome: product.nome,
+                categoria: product.categoria || '',
                 preco: price,
                 imagem: images[0] || '',
                 qty: qty,
