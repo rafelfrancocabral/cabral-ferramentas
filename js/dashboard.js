@@ -215,18 +215,15 @@ let salesChart;
 function createSalesChart() {
     if (salesChart) salesChart.destroy();
 
-    const labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    const salesData = [42, 55, 48, 61, 58, 72, 85, 78, 92, 88, 95, 102];
-    const quoteData = [38, 48, 42, 55, 52, 65, 78, 70, 85, 80, 88, 95];
-
     salesChart = new Chart(salesCtx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: [],
             datasets: [
                 {
-                    label: 'Vendas (mil)',
-                    data: salesData,
+                    label: 'Vendas (R$)',
+                    data: [],
+                    yAxisID: 'y',
                     borderColor: '#0099cc',
                     backgroundColor: 'rgba(0, 153, 204, 0.1)',
                     fill: true,
@@ -240,7 +237,8 @@ function createSalesChart() {
                 },
                 {
                     label: 'Orçamentos',
-                    data: quoteData,
+                    data: [],
+                    yAxisID: 'y1',
                     borderColor: '#7b3fbf',
                     backgroundColor: 'rgba(123, 63, 191, 0.05)',
                     fill: true,
@@ -259,7 +257,16 @@ function createSalesChart() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyleWidth: 10,
+                        boxPadding: 8,
+                        font: { size: 11, family: "'Inter', sans-serif" }
+                    }
+                },
                 tooltip: {
                     backgroundColor: '#ffffff',
                     titleColor: '#1a1a2e',
@@ -270,7 +277,12 @@ function createSalesChart() {
                     cornerRadius: 10,
                     titleFont: { family: "'Rajdhani', sans-serif", weight: 600 },
                     callbacks: {
-                        label: (ctx) => `${ctx.dataset.label}: R$ ${ctx.parsed.y} mil`
+                        label: (ctx) => {
+                            if (ctx.dataset.yAxisID === 'y') {
+                                return ` Vendas: ${formatPrice(ctx.parsed.y)}`;
+                            }
+                            return ` Orçamentos: ${ctx.parsed.y}`;
+                        }
                     }
                 }
             },
@@ -280,10 +292,25 @@ function createSalesChart() {
                     ticks: { font: { size: 11 } }
                 },
                 y: {
+                    position: 'left',
+                    beginAtZero: true,
                     grid: { color: 'rgba(26, 26, 46, 0.5)' },
                     ticks: {
                         font: { size: 11 },
-                        callback: (v) => `R$ ${v}k`
+                        callback: (v) => {
+                            if (v >= 1000) return 'R$ ' + (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k';
+                            return 'R$ ' + Math.round(v);
+                        }
+                    }
+                },
+                y1: {
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    ticks: {
+                        font: { size: 11 },
+                        stepSize: 1,
+                        precision: 0
                     }
                 }
             },
