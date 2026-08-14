@@ -428,7 +428,7 @@ function handleAiInput() {
 
         if (keywords.length === 0) {
             if (hasGreet) {
-                addAiMsg('Olá! Seja bem-vindo à <strong>Cabral Ferramentas</strong>. 😊<br><br>Sou o assistente virtual do nosso catálogo. Descreva o que precisa que eu busco para você.');
+                addAiMsg('Olá, sou o Cabral. Nosso catálogo tem centenas de itens. Diga o que precisa e eu faço a busca por você — descrição, marca, categoria ou palavras‑chave.');
             } else {
                 addAiMsg('Para te ajudar melhor, pode me dizer <strong>qual produto</strong> precisa? Pode ser o nome, o uso ou até uma descrição.<br><br><em>Exemplo: "furadeira Bosch", "tinta para parede", "kit de chaves"</em>');
             }
