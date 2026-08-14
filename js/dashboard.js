@@ -1394,8 +1394,13 @@ async function filterProducts(query) {
         const key = _productSortKey;
         const dir = _productSortDir;
         filtered.sort((a, b) => {
-            const sa = a[key] == null ? '' : String(a[key]);
-            const sb = b[key] == null ? '' : String(b[key]);
+            const va = a[key];
+            const vb = b[key];
+            if (typeof va === 'number' && typeof vb === 'number') {
+                return (va - vb) * dir;
+            }
+            const sa = va == null ? '' : String(va);
+            const sb = vb == null ? '' : String(vb);
             return sa.localeCompare(sb, 'pt-BR', { numeric: true, sensitivity: 'base' }) * dir;
         });
     }
@@ -1520,7 +1525,7 @@ function sortProductsBy(key) {
 }
 
 function updateSortIndicators() {
-    const map = { codigo: 'thSortCodigo', nome: 'thSortNome' };
+    const map = { codigo: 'thSortCodigo', nome: 'thSortNome', preco: 'thSortPreco' };
     for (const [key, id] of Object.entries(map)) {
         const th = document.getElementById(id);
         if (!th) continue;
@@ -1569,6 +1574,7 @@ async function deleteProductsDB(ids) {
 
 document.getElementById('thSortCodigo')?.addEventListener('click', () => sortProductsBy('codigo'));
 document.getElementById('thSortNome')?.addEventListener('click', () => sortProductsBy('nome'));
+document.getElementById('thSortPreco')?.addEventListener('click', () => sortProductsBy('preco'));
 
 document.getElementById('checkAllProducts')?.addEventListener('change', (e) => {
     const checked = e.target.checked;
