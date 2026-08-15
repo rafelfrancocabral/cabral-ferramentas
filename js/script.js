@@ -1016,8 +1016,10 @@ window.catalogQtyChange = function(btn, delta) {
 };
 
 window.addToCart = function(productId, btnEl) {
-    const products = getCatalogProducts();
-    const rawProduct = products.find(p => p.id === productId);
+    let rawProduct = (getCatalogProducts() || []).find(p => p.id === productId);
+    if (!rawProduct && Array.isArray(_catalogSearchPool)) {
+        rawProduct = _catalogSearchPool.find(p => p.id === productId);
+    }
     if (!rawProduct || rawProduct.estoque <= 0) return;
     const product = normalizeProduct(rawProduct);
 
