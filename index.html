@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=24">
+    <link rel="stylesheet" href="css/style.css?v=25">
 </head>
 <body>
     <!-- Particles Background -->
@@ -560,11 +560,22 @@
         </div>
     </div>
 
+    <!-- Cookie Consent (LGPD) -->
+    <div class="cookie-banner" id="cookieBanner" style="display:none;">
+        <div class="cookie-banner-content">
+            <p>Usamos cookies para melhorar sua navegação, medir audiência e lembrar suas preferências. Ao continuar usando o site, você concorda com nossa <a href="javascript:void(0)" id="cookiePrivacyLink">Política de Privacidade</a>.</p>
+            <div class="cookie-banner-actions">
+                <button class="cookie-btn cookie-btn-decline" id="cookieDecline">Recusar</button>
+                <button class="cookie-btn cookie-btn-accept" id="cookieAccept">Aceitar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Supabase JS Client -->
     <script>try { localStorage.removeItem('cabral_categories'); } catch(e) {}</script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=3"></script>
     <script src="js/ai-search.js?v=2"></script>
-    <script src="js/script.js?v=45"></script>
+    <script src="js/script.js?v=46"></script>
 </body>
 </html>

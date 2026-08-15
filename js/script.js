@@ -1158,6 +1158,39 @@ if (privacyLink && privacyOverlay) {
     privacyOverlay.addEventListener('click', (e) => { if (e.target === privacyOverlay) privacyOverlay.style.display = 'none'; });
 }
 
+// Cookie Consent (LGPD)
+function initCookieBanner() {
+    const banner = document.getElementById('cookieBanner');
+    if (!banner) return;
+    let consent = null;
+    try { consent = localStorage.getItem('cabral_cookie_consent'); } catch (e) {}
+    if (consent) return;
+
+    const accept = document.getElementById('cookieAccept');
+    const decline = document.getElementById('cookieDecline');
+    const privacy = document.getElementById('cookiePrivacyLink');
+    if (privacy && privacyOverlay) {
+        privacy.addEventListener('click', (e) => {
+            e.preventDefault();
+            privacyOverlay.style.display = 'flex';
+        });
+    }
+    if (accept) {
+        accept.addEventListener('click', () => {
+            try { localStorage.setItem('cabral_cookie_consent', 'accepted'); } catch (e) {}
+            banner.style.display = 'none';
+        });
+    }
+    if (decline) {
+        decline.addEventListener('click', () => {
+            try { localStorage.setItem('cabral_cookie_consent', 'declined'); } catch (e) {}
+            banner.style.display = 'none';
+        });
+    }
+    setTimeout(() => { banner.style.display = 'block'; }, 1200);
+}
+initCookieBanner();
+
 // WhatsApp checkout
 let checkoutSubtotal = 0;
 let checkoutDiscount = 0;

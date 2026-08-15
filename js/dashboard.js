@@ -1520,7 +1520,7 @@ function sortProductsBy(key) {
         _productSortDir *= -1;
     } else {
         _productSortKey = key;
-        _productSortDir = 1;
+        _productSortDir = key === 'preco' ? -1 : 1;
     }
     updateSortIndicators();
     renderProducts();
