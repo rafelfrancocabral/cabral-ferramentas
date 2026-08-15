@@ -77,7 +77,7 @@
                     <label>Quantidade</label>
                     <div class="pp-qty-control">
                         <button class="pp-qty-btn" onclick="ppQtyChange(-1)"><i class="fas fa-minus"></i></button>
-                        <input class="pp-qty-input" type="number" id="ppQty" value="1" min="1" max="${product.estoque || 99}">
+                        <input class="pp-qty-input" type="number" id="ppQty" value="1" min="1" max="999">
                         <button class="pp-qty-btn" onclick="ppQtyChange(1)"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
@@ -196,7 +196,7 @@
 
         const existing = cart.find(item => item.id === product.id);
         if (existing) {
-            existing.qty = Math.min(existing.qty + qty, product.estoque || 99);
+            existing.qty += qty;
         } else {
             cart.push({
                 id: product.id,

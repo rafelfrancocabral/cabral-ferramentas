@@ -995,10 +995,10 @@ function renderProductGrid(products, container, append = false) {
                 <div class="catalog-card-actions" onclick="event.stopPropagation()">
                     <div class="catalog-qty">
                         <button onclick="event.stopPropagation();catalogQtyChange(this, -1)"><i class="fas fa-minus"></i></button>
-                        <input type="number" value="1" min="1" max="${product.estoque || 99}" data-pid="${product.id}">
+                        <input type="number" value="1" min="1" max="999" data-pid="${product.id}">
                         <button onclick="event.stopPropagation();catalogQtyChange(this, 1)"><i class="fas fa-plus"></i></button>
                     </div>
-                    <button class="btn-add-cart" onclick="event.stopPropagation();addToCart(${product.id}, this)" ${product.estoque <= 0 ? 'disabled style="opacity:0.4;pointer-events:none;"' : ''}>
+                    <button class="btn-add-cart" onclick="event.stopPropagation();addToCart(${product.id}, this)">
                         <i class="fas fa-cart-plus"></i> Adicionar
                     </button>
                 </div>
@@ -1020,7 +1020,7 @@ window.addToCart = function(productId, btnEl) {
     if (!rawProduct && Array.isArray(_catalogSearchPool)) {
         rawProduct = _catalogSearchPool.find(p => p.id === productId);
     }
-    if (!rawProduct || rawProduct.estoque <= 0) return;
+    if (!rawProduct) return;
     const product = normalizeProduct(rawProduct);
 
     const card = btnEl.closest('.catalog-card');
@@ -1031,7 +1031,7 @@ window.addToCart = function(productId, btnEl) {
     const existing = cart.find(item => item.id === productId);
 
     if (existing) {
-        existing.qty = Math.min(existing.qty + qty, product.estoque);
+        existing.qty += qty;
     } else {
         const img = (product.imagens && product.imagens.length > 0) ? product.imagens[0].replace('.webp', '_thumb.webp') : '';
         const hasPromo = product.isPromocao && product.precoPromocional;
@@ -1092,7 +1092,7 @@ function renderCartSidebar() {
                 <div class="cart-item-controls">
                     <div class="catalog-qty">
                         <button onclick="cartQtyChange(${item.id}, -1)"><i class="fas fa-minus"></i></button>
-                        <input type="number" value="${item.qty}" min="1" max="${item.estoque}" readonly>
+                        <input type="number" value="${item.qty}" min="1" max="999" readonly>
                         <button onclick="cartQtyChange(${item.id}, 1)"><i class="fas fa-plus"></i></button>
                     </div>
                     <button class="cart-item-remove" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button>
@@ -1108,7 +1108,7 @@ window.cartQtyChange = function(id, delta) {
     const cart = getCart();
     const item = cart.find(i => i.id === id);
     if (!item) return;
-    item.qty = Math.max(1, Math.min(item.estoque || 99, item.qty + delta));
+    item.qty = Math.max(1, item.qty + delta);
     saveCart(cart);
 };
 

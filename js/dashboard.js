@@ -2296,7 +2296,7 @@ productForm.addEventListener('submit', async (e) => {
     }
 
     const estoque = parseInt(document.getElementById('prodEstoque').value);
-    if (isNaN(estoque) || estoque < 0) {
+    if (isNaN(estoque)) {
         showToast('Estoque inválido!');
         return;
     }
@@ -2742,7 +2742,7 @@ function parseAndValidateCSV(text, fileName) {
         }
 
         const estoqueNum = parseInt(row.estoque);
-        if (isNaN(estoqueNum) || estoqueNum < 0) {
+        if (isNaN(estoqueNum)) {
             row.errors.push('Estoque inválido');
         } else {
             row.estoqueNum = estoqueNum;
