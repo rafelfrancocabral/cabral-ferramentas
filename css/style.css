@@ -3069,6 +3069,27 @@ ul { list-style: none; }
         font-size: 2rem;
     }
 
+    .hero {
+        padding: 110px 20px 40px;
+        gap: 36px;
+    }
+
+    .hero-stats {
+        gap: 28px;
+    }
+
+    .ai-search-section {
+        margin-top: 0;
+    }
+
+    .section {
+        padding: 64px 16px;
+    }
+
+    .section-header {
+        margin-bottom: 40px;
+    }
+
     .section-title {
         font-size: 1.6rem;
     }
@@ -3218,9 +3239,31 @@ ul { list-style: none; }
 }
 
 @media (max-width: 480px) {
+    .hero {
+        padding: 100px 16px 32px;
+        gap: 28px;
+    }
+
     .hero-stats {
         flex-wrap: wrap;
         gap: 24px;
+    }
+
+    .hex-container {
+        width: 200px;
+        height: 200px;
+    }
+
+    .hex {
+        width: 52px;
+        height: 52px;
+        font-size: 1.1rem;
+    }
+
+    .hex-center {
+        width: 64px;
+        height: 64px;
+        font-size: 1.3rem;
     }
 
     .checkout-items-header {
