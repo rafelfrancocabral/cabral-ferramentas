@@ -1765,14 +1765,18 @@ button { cursor: pointer; }
     .period-filter {
         display: flex !important;
         position: fixed;
-        bottom: 0;
         left: 0;
         right: 0;
-        background: var(--bg-primary);
-        border-top: 1px solid var(--border);
-        padding: 10px 16px;
+        bottom: auto;
+        top: calc(100vh - 52px);
+        top: calc(100dvh - 52px);
+        height: 52px;
+        align-items: center;
         justify-content: center;
         gap: 6px;
+        background: var(--bg-primary);
+        border-top: 1px solid var(--border);
+        padding: 0 16px;
         z-index: 100;
     }
 
@@ -1819,7 +1823,10 @@ button { cursor: pointer; }
     }
 
     .period-filter {
-        padding: 8px 10px;
+        top: calc(100vh - 48px);
+        top: calc(100dvh - 48px);
+        height: 48px;
+        padding: 0 10px;
     }
 
     .period-filter .filter-btn {
