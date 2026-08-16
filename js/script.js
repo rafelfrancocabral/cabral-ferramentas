@@ -176,6 +176,7 @@ const RELATED_PRODUCTS_MAP = {
 
 let aiSearchContext = null;
 let _aiLastSearch = null;
+let _searchResultsActive = false;
 
 function addAiMsg(text, isUser = false) {
     const div = document.createElement('div');
@@ -540,6 +541,12 @@ function renderSearchResults(products) {
     secDestaques.style.display = 'none';
     secPromos.style.display = 'none';
     secAll.style.display = '';
+    _searchResultsActive = products.length > 0;
+    if (_searchResultsActive && _aiLastSearch) {
+        try {
+            sessionStorage.setItem('cabral_search_state', JSON.stringify({ query: _aiLastSearch.query, category: _aiLastSearch.category || null }));
+        } catch (e) {}
+    }
     if (products.length === 0) {
         allGrid.innerHTML = '';
         empty.style.display = '';
@@ -872,6 +879,8 @@ async function renderCatalog(filter = 'all') {
     const empty = document.getElementById('catalogEmpty');
 
     if (!dropdownList || !allGrid) return;
+
+    _searchResultsActive = false;
 
     const catCounts = _categoryCounts;
     const totalProducts = Object.values(catCounts).reduce((s, c) => s + c, 0);
@@ -1506,7 +1515,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
 
 // Product Modal
 function openProductModal(productId) {
-    window.location.href = `produto.html?id=${productId}`;
+    window.location.href = _searchResultsActive ? `produto.html?id=${productId}&from=search` : `produto.html?id=${productId}`;
 }
 
 window.switchModalImage = function(src, thumbEl) {
@@ -1582,7 +1591,23 @@ document.addEventListener('keydown', (e) => {
     console.log(`Catálogo: ${Object.values(_categoryCounts).reduce((s,c)=>s+c,0)} produtos, ${_catalogCategories.length} categorias`);
     trackVisitor();
     initPromoPopup();
+    restoreAiSearchResults();
 })();
+
+async function restoreAiSearchResults() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('restoreSearch') !== '1') return;
+    let state = null;
+    try { state = JSON.parse(sessionStorage.getItem('cabral_search_state') || 'null'); } catch (e) {}
+    if (!state || !state.query) return;
+    _aiLastSearch = { query: state.query, category: state.category || null };
+    try {
+        const { products } = await aiProgressiveSearch(state.query, state.category || null, AI_CATALOG_LIMIT);
+        renderSearchResults(products);
+    } catch (e) {
+        console.error('Erro ao restaurar resultados da busca:', e);
+    }
+}
 
 // Infinite scroll
 let _loadingMore = false;

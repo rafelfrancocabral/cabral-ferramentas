@@ -1,10 +1,12 @@
 (() => {
     const params = new URLSearchParams(window.location.search);
     const productId = parseInt(params.get('id'));
+    const isFromSearch = params.get('from') === 'search';
+    const backHref = isFromSearch ? 'index.html?restoreSearch=1#produtos' : 'index.html#produtos';
     const content = document.getElementById('ppContent');
 
     if (!productId) {
-        content.innerHTML = `<div class="pp-not-found"><i class="fas fa-exclamation-triangle"></i><p>Produto não encontrado</p><a href="index.html#produtos" class="pp-back"><i class="fas fa-arrow-left"></i> Voltar aos produtos</a></div>`;
+        content.innerHTML = `<div class="pp-not-found"><i class="fas fa-exclamation-triangle"></i><p>Produto não encontrado</p><a href="${backHref}" class="pp-back"><i class="fas fa-arrow-left"></i> Voltar aos produtos</a></div>`;
         return;
     }
 
@@ -30,7 +32,7 @@
     async function loadProduct() {
         const { data, error } = await db.from('produtos').select('*').eq('id', productId).eq('visivel', true).single();
         if (error || !data) {
-            content.innerHTML = `<div class="pp-not-found"><i class="fas fa-exclamation-triangle"></i><p>Produto não encontrado</p><a href="index.html#produtos" class="pp-back"><i class="fas fa-arrow-left"></i> Voltar aos produtos</a></div>`;
+            content.innerHTML = `<div class="pp-not-found"><i class="fas fa-exclamation-triangle"></i><p>Produto não encontrado</p><a href="${backHref}" class="pp-back"><i class="fas fa-arrow-left"></i> Voltar aos produtos</a></div>`;
             return;
         }
 
@@ -55,7 +57,7 @@
         content.innerHTML = `
         <div class="product-page-inner">
             <div class="pp-gallery">
-                <a href="index.html#produtos" class="pp-back"><i class="fas fa-arrow-left"></i> Voltar aos produtos</a>
+                <a href="${backHref}" class="pp-back"><i class="fas fa-arrow-left"></i> Voltar aos produtos</a>
                 <img class="pp-main-img" id="ppMainImg" src="${images[0]}" alt="${product.nome}">
                 <div class="pp-thumbs" id="ppThumbs">
                     ${images.map((img, i) => `<img class="pp-thumb ${i === 0 ? 'active' : ''}" src="${img}" alt="${product.nome}" onclick="ppSwitchImg('${img}', this)">`).join('')}
