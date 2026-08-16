@@ -1695,7 +1695,22 @@ button { cursor: pointer; }
     }
 
     .topbar {
-        padding: 0 16px 0 60px;
+        padding: 0 60px;
+    }
+
+    .topbar-left {
+        position: absolute;
+        left: 60px;
+        right: 148px;
+        top: 50%;
+        transform: translateY(-50%);
+        align-items: center;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .topbar-right {
+        margin-left: auto;
     }
 
     .period-filter {
@@ -1722,7 +1737,8 @@ button { cursor: pointer; }
 
     .page-header-row {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        text-align: center;
         gap: 12px;
     }
 
@@ -1787,6 +1803,12 @@ button { cursor: pointer; }
     }
 }
 
+@media (max-width: 340px) {
+    .page-subtitle {
+        display: none;
+    }
+}
+
 @media (max-width: 480px) {
     .dashboard-content,
     .page-content {
@@ -1795,7 +1817,11 @@ button { cursor: pointer; }
     }
 
     .topbar {
-        padding: 0 12px 0 56px;
+        padding: 0 56px;
+    }
+
+    .topbar-left {
+        left: 56px;
     }
 
     .page-title {
