@@ -357,7 +357,8 @@ async function getProductCategoryMap() {
 async function updateCharts(period) {
     const now = new Date();
     let cutoff;
-    if (period === '7d') cutoff = new Date(now - 7 * 86400000);
+    if (period === 'today') { cutoff = new Date(now); cutoff.setHours(0, 0, 0, 0); }
+    else if (period === '7d') cutoff = new Date(now - 7 * 86400000);
     else if (period === '90d') cutoff = new Date(now - 90 * 86400000);
     else if (period === '12m') cutoff = new Date(now - 365 * 86400000);
     else cutoff = new Date(now - 30 * 86400000);
@@ -419,7 +420,19 @@ async function updateCharts(period) {
     const labels = [];
     const salesData = [];
 
-    if (period === '7d') {
+    if (period === 'today') {
+        for (let h = 0; h < 24; h++) {
+            const hs = new Date(now);
+            hs.setHours(h, 0, 0, 0);
+            labels.push(String(h).padStart(2, '0') + 'h');
+            const hq = quotes.filter(q => {
+                const qd = new Date(q.created_at);
+                return qd.getFullYear() === hs.getFullYear() && qd.getMonth() === hs.getMonth() && qd.getDate() === hs.getDate() && qd.getHours() === h;
+            });
+            const hqd = hq.filter(q => q.status === 'entregue');
+            salesData.push(hqd.reduce((s, q) => s + (Number(q.total) || 0), 0));
+        }
+    } else if (period === '7d') {
         const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         for (let i = 6; i >= 0; i--) {
             const d = new Date(now - i * 86400000);
