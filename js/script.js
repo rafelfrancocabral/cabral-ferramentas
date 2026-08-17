@@ -1385,17 +1385,37 @@ document.getElementById('checkoutName')?.addEventListener('input', () => {
 });
 
 function sendQuoteNotification(clientName, total) {
-    fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            access_key: '2a3a89f7-5ae1-49c7-b5f0-bf5b4a8dfcb1',
-            subject: `Novo orçamento — ${clientName} — ${formatPrice(total)}`,
-            from_name: 'Cabral Ferramentas',
-            email: 'rafaelfrancocabral@gmail.com',
-            message: `Novo orçamento recebido!\n\nCliente: ${clientName}\nValor: ${formatPrice(total)}\n\nAcesse o dashboard para mais detalhes:\nhttps://www.cabralferramentas.com.br/dashboard.html`
-        })
-    }).catch(() => {});
+    const iframeName = 'notif_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.action = 'https://api.web3forms.com/submit';
+    form.method = 'POST';
+    form.target = iframeName;
+    form.style.display = 'none';
+
+    const fields = {
+        access_key: '2a3a89f7-5ae1-49c7-b5f0-bf5b4a8dfcb1',
+        subject: `Novo orçamento — ${clientName} — ${formatPrice(total)}`,
+        from_name: 'Cabral Ferramentas',
+        email: 'rafaelfrancocabral@gmail.com',
+        message: `Novo orçamento recebido!\n\nCliente: ${clientName}\nValor: ${formatPrice(total)}\n\nAcesse o dashboard para mais detalhes:\nhttps://www.cabralferramentas.com.br/dashboard.html`
+    };
+
+    for (const [key, value] of Object.entries(fields)) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(() => { form.remove(); iframe.remove(); }, 5000);
 }
 
 document.getElementById('checkoutForm')?.addEventListener('submit', async (e) => {
