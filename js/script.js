@@ -1443,19 +1443,19 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
     const msg =
         `*Orçamento - Cabral Ferramentas*\n` +
         `........................................\n\n` +
-        `  *codigo de retirada: ${pickupCode}*\n` +
-        `  _Confirme este codigo na retirada em loja._\n\n` +
+        `  *Código de retirada: ${pickupCode}*\n` +
+        `  _Confirme este código na retirada em loja._\n\n` +
         `........................................\n\n` +
-        `  *cliente:* _${name}_\n` +
-        `  *codigo:* _${code}_\n` +
-        `  *telefone:* _${phone}_\n` +
-        `  *data:* _${dateStr} | ${timeStr}_\n\n` +
+        `  *Cliente:* _${name}_\n` +
+        `  *Código:* _${code}_\n` +
+        `  *Telefone:* _${phone}_\n` +
+        `  *Data:* _${dateStr} | ${timeStr}_\n\n` +
         `........................................\n\n` +
-        `  *itens*\n\n` +
+        `  *Itens*\n\n` +
         itemsMsg + `\n` +
         `........................................\n` +
         couponMsg +
-        `\n  *total: ${formatPrice(finalTotal)}*\n\n` +
+        `\n  *Total: ${formatPrice(finalTotal)}*\n\n` +
         `........................................\n\n` +
         `_Por favor confirmar disponibilidade do produto e formas de pagamento._`;
 
