@@ -1384,14 +1384,6 @@ document.getElementById('checkoutName')?.addEventListener('input', () => {
     }
 });
 
-function sendQuoteNotification(clientName, total) {
-    fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientName, total })
-    }).catch(() => {});
-}
-
 document.getElementById('checkoutForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -1491,8 +1483,6 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
             const { codigo_retirada, ...baseData } = quoteData;
             await db.from(SUPABASE_QUOTES_TABLE).insert(baseData);
         }
-
-        sendQuoteNotification(name, finalTotal);
 
         // Update coupon usage count
         if (checkoutCouponCode && checkoutDiscount > 0) {
