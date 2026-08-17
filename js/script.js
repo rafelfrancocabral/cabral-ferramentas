@@ -1384,6 +1384,20 @@ document.getElementById('checkoutName')?.addEventListener('input', () => {
     }
 });
 
+function sendQuoteNotification(clientName, total) {
+    fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            access_key: '2a3a89f7-5ae1-49c7-b5f0-bf5b4a8dfcb1',
+            subject: `Novo orçamento — ${clientName} — ${formatPrice(total)}`,
+            from_name: 'Cabral Ferramentas',
+            email: 'rafaelfrancocabral@gmail.com',
+            message: `Novo orçamento recebido!\n\nCliente: ${clientName}\nValor: ${formatPrice(total)}\n\nAcesse o dashboard para mais detalhes:\nhttps://www.cabralferramentas.com.br/dashboard.html`
+        })
+    }).catch(() => {});
+}
+
 document.getElementById('checkoutForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -1483,6 +1497,8 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
             const { codigo_retirada, ...baseData } = quoteData;
             await db.from(SUPABASE_QUOTES_TABLE).insert(baseData);
         }
+
+        sendQuoteNotification(name, finalTotal);
 
         // Update coupon usage count
         if (checkoutCouponCode && checkoutDiscount > 0) {
