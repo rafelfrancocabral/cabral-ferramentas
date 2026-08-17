@@ -1,0 +1,6 @@
+{
+    "name": "cabral-ferramentas",
+    "engines": {
+        "node": "18.x"
+    }
+}
