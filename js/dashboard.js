@@ -4961,3 +4961,105 @@ setInterval(async () => {
         _lastQuoteCount = pending;
     } catch(e) {}
 }, 5000);
+
+// ===========================
+// AI Search Notifications (green toast)
+// ===========================
+let _lastAiSearchCount = null;
+let _aiSearchBadgeCount = 0;
+
+function showAiSearchToast(diff, primeiro) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'toast ai-search-toast';
+    const msg = primeiro
+        ? `${diff} nova(s) busca(s) registrada(s) no Assistente IA`
+        : `${diff} nova(s) busca(s) feita(s) no Assistente IA!`;
+    toast.innerHTML = `<i class="fas fa-magnifying-glass-chart"></i> ${msg}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #25d366;
+        border: 1px solid #1ebe58;
+        color: #fff;
+        padding: 14px 22px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 3100;
+        box-shadow: 0 8px 30px rgba(37, 211, 102, 0.4);
+        animation: slideInRight 0.3s ease-out;
+        max-width: 90vw;
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(20px)';
+        toast.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Keyframes for slideInRight (fallback inject)
+const _styleEl = document.createElement('style');
+_styleEl.textContent = `@keyframes slideInRight { from { opacity:0; transform: translateX(30px);} to { opacity:1; transform: translateX(0);} }`;
+document.head.appendChild(_styleEl);
+
+async function pollAiSearchCount() {
+    try {
+        const { count } = await db
+            .from(SUPABASE_AI_SEARCHES_TABLE)
+            .select('id', { count: 'exact', head: true });
+        const current = count || 0;
+
+        const sidebarBadge = document.getElementById('sidebarAiBadge');
+
+        // Set baseline on first run
+        if (_lastAiSearchCount === null) {
+            _lastAiSearchCount = current;
+            if (sidebarBadge) { sidebarBadge.style.display = 'none'; sidebarBadge.textContent = '0'; }
+            _aiSearchBadgeCount = 0;
+            return;
+        }
+
+        if (current > _lastAiSearchCount) {
+            const diff = current - _lastAiSearchCount;
+            _lastAiSearchCount = current;
+            _aiSearchBadgeCount += diff;
+
+            // Show green toast if the page is visible and user is on dashboard
+            showAiSearchToast(diff);
+
+            // Update sidebar badge
+            if (sidebarBadge) {
+                sidebarBadge.textContent = _aiSearchBadgeCount;
+                sidebarBadge.style.display = _aiSearchBadgeCount > 0 ? 'flex' : 'none';
+            }
+        }
+    } catch (e) {}
+}
+
+// Poll every 7s
+setInterval(pollAiSearchCount, 7000);
+
+// Reset badge when visiting Buscas IA page
+document.addEventListener('click', (e) => {
+    const link = e.target.closest('.sidebar-link[data-page="buscasia"]');
+    if (!link) return;
+    if (_aiSearchLogLoaded) {
+        setTimeout(() => loadAiSearchLog(), 0);
+    }
+    _aiSearchBadgeCount = 0;
+    const sidebarBadge = document.getElementById('sidebarAiBadge');
+    if (sidebarBadge) { sidebarBadge.style.display = 'none'; sidebarBadge.textContent = '0'; }
+});
+
+// Start polling after initial load
+setTimeout(pollAiSearchCount, 10000);

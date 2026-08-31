@@ -431,6 +431,23 @@ button { cursor: pointer; }
     line-height: 1;
 }
 
+.sidebar-ai-badge {
+    margin-left: auto;
+    background: #25d366;
+    color: #fff;
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'Rajdhani', sans-serif;
+    padding: 0 6px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
 @keyframes pulse-status {
     0%, 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
     50% { box-shadow: 0 0 0 4px rgba(255, 71, 87, 0); }
