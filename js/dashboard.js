@@ -4413,6 +4413,81 @@ if (btnClearAiSearchLog) btnClearAiSearchLog.addEventListener('click', async () 
     }
 });
 
+const btnAiSearchPdf = document.getElementById('btnAiSearchPdf');
+if (btnAiSearchPdf) btnAiSearchPdf.addEventListener('click', generateAiSearchPdf);
+
+function generateAiSearchPdf() {
+    if (typeof window.jspdf === 'undefined') {
+        showToast('Biblioteca de PDF não carregada. Tente novamente.');
+        return;
+    }
+
+    const search = aiSearchLogSearch?.value || '';
+    let rows = _aiSearchLog;
+    if (search) {
+        const term = search.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        rows = rows.filter(r => String(r.termo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term));
+    }
+
+    if (rows.length === 0) {
+        showToast('Nenhuma busca para gerar PDF');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const now = new Date();
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(0, 153, 204);
+    doc.text('Log de Buscas do Assistente IA', 14, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 14, 27);
+    doc.text(`Total de registros: ${rows.length}`, 14, 33);
+    if (search) {
+        doc.text(`Filtro: "${search}"`, 14, 39);
+    }
+
+    // Table headers
+    let y = 45;
+    const lineHeight = 7;
+    doc.setFontSize(10);
+    doc.setFillColor(0, 153, 204);
+    doc.setTextColor(255);
+    doc.setFont('helvetica', 'bold');
+    doc.rect(14, y - 5, 182, 7, 'F');
+    doc.text('Data', 16, y);
+    doc.text('Hora', 42, y);
+    doc.text('Termo Digitado', 62, y);
+    doc.text('Resultado', 130, y);
+    y += lineHeight;
+
+    doc.setTextColor(60);
+    doc.setFont('helvetica', 'normal');
+
+    rows.forEach(r => {
+        if (y > 282) {
+            doc.addPage();
+            y = 18;
+        }
+        const dt = new Date(r.created_at);
+        const dateStr = dt.toLocaleDateString('pt-BR');
+        const timeStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        doc.text(String(dateStr), 16, y);
+        doc.text(String(timeStr), 42, y);
+        doc.text(String(r.termo || ''), 62, y);
+        doc.text(String(r.resultado || ''), 130, y);
+        y += lineHeight;
+    });
+
+    doc.save(`log-buscas-ia-${now.toISOString().slice(0, 10)}.pdf`);
+    showToast('PDF gerado com sucesso!');
+}
+
 // Open client quotes modal
 window.openClientQuotes = function(nome, telefone) {
     const quotes = getQuotes().filter(q => q.nome_cliente === nome && q.telefone === telefone);

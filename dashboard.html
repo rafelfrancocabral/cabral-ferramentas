@@ -1070,6 +1070,7 @@
                 <h2>Buscas do Assistente IA</h2>
                 <div class="page-actions">
                     <input type="text" class="search-input" id="aiSearchLogSearch" placeholder="Buscar por termo..." style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:0.85rem;width:220px;">
+                    <button class="btn-primary-sm" id="btnAiSearchPdf" title="Converter log em PDF"><i class="fas fa-file-pdf"></i> Gerar PDF</button>
                     <button class="btn-primary-sm" id="btnClearAiSearchLog" style="background:#ff4757;border-color:#ff4757;"><i class="fas fa-trash"></i> Limpar Log</button>
                 </div>
             </div>
@@ -1517,10 +1518,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- SheetJS for XLSX generation -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js?v=4"></script>
     <script src="js/r2-config.js"></script>
-    <script src="js/dashboard.js?v=75"></script>
+    <script src="js/dashboard.js?v=76"></script>
 </body>
 </html>
