@@ -4346,7 +4346,7 @@ async function loadAiSearchLog() {
     let from = 0;
     while (true) {
         const { data, error } = await db.from(SUPABASE_AI_SEARCHES_TABLE)
-            .select('id, termo, categoria, resultado, total, created_at')
+            .select('id, termo, categoria, resultado, created_at')
             .order('created_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar buscas IA:', error); break; }
@@ -4382,14 +4382,12 @@ function renderAiSearchLog(search = '') {
         const dt = new Date(r.created_at);
         const dateStr = dt.toLocaleDateString('pt-BR');
         const timeStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const cat = r.categoria ? '<span style="color:var(--accent);">' + r.categoria + '</span>' : '<span style="color:var(--text-muted);">—</span>';
         return `
         <tr>
             <td>${dateStr}</td>
             <td>${timeStr}</td>
             <td><strong>${escapeHtml4(r.termo || '')}</strong></td>
             <td>${escapeHtml4(r.resultado || '')}</td>
-            <td>${r.total != null ? r.total : '—'}</td>
         </tr>`;
     }).join('');
 }
