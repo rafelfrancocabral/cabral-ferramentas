@@ -5038,19 +5038,16 @@ setInterval(async () => {
 // ===========================
 // AI Search Notifications (green toast)
 // ===========================
-let _lastAiSearchCount = null;
 let _aiSearchBadgeCount = 0;
+let _lastAiSearchCount = parseInt(localStorage.getItem('cabral_ai_last_seen') || '0', 10) || 0;
 
-function showAiSearchToast(diff, primeiro) {
-    const existing = document.querySelector('.toast');
-    if (existing) existing.remove();
+function showAiSearchToast() {
+    const existing = document.querySelector('.ai-search-toast');
+    if (existing) return;
 
     const toast = document.createElement('div');
     toast.className = 'toast ai-search-toast';
-    const msg = primeiro
-        ? `${diff} nova(s) busca(s) registrada(s) no Assistente IA`
-        : `${diff} nova(s) busca(s) feita(s) no Assistente IA!`;
-    toast.innerHTML = `<i class="fas fa-magnifying-glass-chart"></i> ${msg}`;
+    toast.innerHTML = `<i class="fas fa-magnifying-glass-chart"></i> Há novas buscas no Assistente IA. <span style="text-decoration:underline;font-weight:700;margin-left:2px;">Ver Buscas IA</span>`;
     toast.style.cssText = `
         position: fixed;
         top: 20px;
@@ -5069,15 +5066,25 @@ function showAiSearchToast(diff, primeiro) {
         box-shadow: 0 8px 30px rgba(37, 211, 102, 0.4);
         animation: slideInRight 0.3s ease-out;
         max-width: 90vw;
+        cursor: pointer;
     `;
+    toast.addEventListener('click', goToAiSearchPage);
     document.body.appendChild(toast);
+}
 
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(20px)';
-        toast.style.transition = 'all 0.3s ease-out';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+function hideAiSearchToast() {
+    const toast = document.querySelector('.ai-search-toast');
+    if (toast) toast.remove();
+}
+
+function goToAiSearchPage() {
+    hideAiSearchToast();
+    _aiSearchBadgeCount = 0;
+    localStorage.setItem('cabral_ai_last_seen', String(_lastAiSearchCount));
+    const sidebarBadge = document.getElementById('sidebarAiBadge');
+    if (sidebarBadge) { sidebarBadge.style.display = 'none'; sidebarBadge.textContent = '0'; }
+    const link = document.querySelector('.sidebar-link[data-page="buscasia"]');
+    if (link) link.click();
 }
 
 // Keyframes for slideInRight (fallback inject)
@@ -5091,31 +5098,26 @@ async function pollAiSearchCount() {
             .from(SUPABASE_AI_SEARCHES_TABLE)
             .select('id', { count: 'exact', head: true });
         const current = count || 0;
+        const lastSeen = parseInt(localStorage.getItem('cabral_ai_last_seen') || '0', 10) || 0;
 
         const sidebarBadge = document.getElementById('sidebarAiBadge');
 
-        // Set baseline on first run
-        if (_lastAiSearchCount === null) {
-            _lastAiSearchCount = current;
-            if (sidebarBadge) { sidebarBadge.style.display = 'none'; sidebarBadge.textContent = '0'; }
-            _aiSearchBadgeCount = 0;
-            return;
-        }
-
-        if (current > _lastAiSearchCount) {
-            const diff = current - _lastAiSearchCount;
-            _lastAiSearchCount = current;
-            _aiSearchBadgeCount += diff;
-
-            // Show green toast if the page is visible and user is on dashboard
-            showAiSearchToast(diff);
-
-            // Update sidebar badge
+        // Any unread searches? Show persistent toast + badge
+        if (current > lastSeen) {
+            const diff = current - lastSeen;
+            _aiSearchBadgeCount = diff;
+            showAiSearchToast();
             if (sidebarBadge) {
-                sidebarBadge.textContent = _aiSearchBadgeCount;
-                sidebarBadge.style.display = _aiSearchBadgeCount > 0 ? 'flex' : 'none';
+                sidebarBadge.textContent = diff;
+                sidebarBadge.style.display = 'flex';
             }
+        } else {
+            _aiSearchBadgeCount = 0;
+            hideAiSearchToast();
+            if (sidebarBadge) { sidebarBadge.style.display = 'none'; sidebarBadge.textContent = '0'; }
         }
+
+        _lastAiSearchCount = current;
     } catch (e) {}
 }
 
@@ -5129,7 +5131,9 @@ document.addEventListener('click', (e) => {
     if (_aiSearchLogLoaded) {
         setTimeout(() => loadAiSearchLog(), 0);
     }
+    hideAiSearchToast();
     _aiSearchBadgeCount = 0;
+    localStorage.setItem('cabral_ai_last_seen', String(_lastAiSearchCount));
     const sidebarBadge = document.getElementById('sidebarAiBadge');
     if (sidebarBadge) { sidebarBadge.style.display = 'none'; sidebarBadge.textContent = '0'; }
 });
