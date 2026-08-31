@@ -454,6 +454,19 @@ function handleAiInput() {
     }, 900);
 }
 
+function logAiSearch(termo, categoria, resultado, total) {
+    try {
+        db.from(SUPABASE_AI_SEARCHES_TABLE).insert({
+            termo: termo,
+            categoria: categoria || '',
+            resultado: resultado || '',
+            total: total || 0
+        }).then(() => {}).catch(e => console.error('Erro ao salvar busca IA:', e));
+    } catch (e) {
+        console.error('Erro ao salvar busca IA:', e);
+    }
+}
+
 function performAiSearch(terms, category) {
     const query = terms.join(' ');
     _aiLastSearch = { query, category };
@@ -461,6 +474,7 @@ function performAiSearch(terms, category) {
     setTimeout(async () => {
         try {
             const { products, matchedQuery, total } = await aiProgressiveSearch(query, category);
+            logAiSearch(query, category, matchedQuery, total);
             if (products.length > 0) {
                 let text;
                 if (matchedQuery === query) {

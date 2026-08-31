@@ -116,6 +116,7 @@ const pageNames = {
     entregas: { title: 'Entregas', subtitle: 'Configurar taxas de entrega' },
     clientes: { title: 'Clientes', subtitle: 'Clientes que enviaram orçamentos' },
     cupons: { title: 'Cupons', subtitle: 'Cupons e promoções' },
+    buscasia: { title: 'Buscas IA', subtitle: 'Log de pesquisas feitas no agente' },
     popups: { title: 'Popups', subtitle: 'Popups de promoção e avisos' },
     config: { title: 'Configurações', subtitle: 'Personalizar o sistema' }
 };
@@ -165,6 +166,11 @@ sidebarLinks.forEach(link => {
                 renderQuotes();
     updateQuoteBadges();
     _lastQuoteCount = getQuotes().length;
+            }
+
+            // Load AI search log lazily
+            if (page === 'buscasia' && !_aiSearchLogLoaded) {
+                await loadAiSearchLog();
             }
         }
 
@@ -4323,6 +4329,91 @@ function updateClientList() {
 
 if (clientFilter) clientFilter.addEventListener('change', updateClientList);
 if (clientSearch) clientSearch.addEventListener('input', updateClientList);
+
+// ===========================
+// AI Search Log
+// ===========================
+let _aiSearchLog = [];
+let _aiSearchLogLoaded = false;
+
+async function loadAiSearchLog() {
+    const tbody = document.getElementById('aiSearchLogBody');
+    const empty = document.getElementById('aiSearchLogEmpty');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>Carregando buscas...</td></tr>';
+
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await db.from(SUPABASE_AI_SEARCHES_TABLE)
+            .select('id, termo, categoria, resultado, total, created_at')
+            .order('created_at', { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
+        if (error) { console.error('Erro ao carregar buscas IA:', error); break; }
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+    }
+    _aiSearchLog = all;
+    _aiSearchLogLoaded = true;
+    renderAiSearchLog();
+}
+
+function renderAiSearchLog(search = '') {
+    const tbody = document.getElementById('aiSearchLogBody');
+    const empty = document.getElementById('aiSearchLogEmpty');
+    if (!tbody) return;
+
+    let rows = _aiSearchLog;
+    if (search) {
+        const term = search.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        rows = rows.filter(r => String(r.termo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term));
+    }
+
+    if (rows.length === 0) {
+        tbody.innerHTML = '';
+        if (empty) empty.style.display = '';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    tbody.innerHTML = rows.map(r => {
+        const dt = new Date(r.created_at);
+        const dateStr = dt.toLocaleDateString('pt-BR');
+        const timeStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const cat = r.categoria ? '<span style="color:var(--accent);">' + r.categoria + '</span>' : '<span style="color:var(--text-muted);">—</span>';
+        return `
+        <tr>
+            <td>${dateStr}</td>
+            <td>${timeStr}</td>
+            <td><strong>${escapeHtml4(r.termo || '')}</strong></td>
+            <td>${escapeHtml4(r.resultado || '')}</td>
+            <td>${r.total != null ? r.total : '—'}</td>
+        </tr>`;
+    }).join('');
+}
+
+function escapeHtml4(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+const aiSearchLogSearch = document.getElementById('aiSearchLogSearch');
+if (aiSearchLogSearch) aiSearchLogSearch.addEventListener('input', () => renderAiSearchLog(aiSearchLogSearch.value));
+
+const btnClearAiSearchLog = document.getElementById('btnClearAiSearchLog');
+if (btnClearAiSearchLog) btnClearAiSearchLog.addEventListener('click', async () => {
+    if (!confirm('Limpar todo o log de buscas IA? Esta ação não pode ser desfeita.')) return;
+    try {
+        await db.from(SUPABASE_AI_SEARCHES_TABLE).delete().gte('id', 0);
+        _aiSearchLog = [];
+        renderAiSearchLog();
+        showToast('Log de buscas IA limpo');
+    } catch (e) {
+        console.error('Erro ao limpar buscas IA:', e);
+        showToast('Erro ao limpar log');
+    }
+});
 
 // Open client quotes modal
 window.openClientQuotes = function(nome, telefone) {
