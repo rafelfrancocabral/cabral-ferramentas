@@ -895,7 +895,7 @@ document.addEventListener('click', (e) => {
 });
 
 // Close modal
-modalClose.addEventListener('click', closeModal);
+modalClose.addEventListener('click', () => closeModal());
 quoteModal.addEventListener('click', (e) => {
     if (e.target === quoteModal) closeModal();
 });
