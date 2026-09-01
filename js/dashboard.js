@@ -3791,15 +3791,72 @@ loadDeliveryConfig();
 // Coupon Management
 // ===========================
 const COUPONS_STORAGE_KEY = 'cabral_coupons';
+let _couponsCache = null;
 
 function getCoupons() {
+    if (_couponsCache) return _couponsCache;
     const data = localStorage.getItem(COUPONS_STORAGE_KEY);
     if (data) return JSON.parse(data);
     return [];
 }
 
-function saveCoupons(coupons) {
+function writeCouponsLocal(coupons) {
+    _couponsCache = coupons;
     localStorage.setItem(COUPONS_STORAGE_KEY, JSON.stringify(coupons));
+}
+
+function toDbCoupon(c) {
+    const { id, minPurchase, maxUses, currentUses, ...rest } = c;
+    return { ...rest, id, min_purchase: minPurchase || 0, max_uses: maxUses || 0, current_uses: currentUses || 0 };
+}
+
+function fromDbCoupon(r) {
+    return {
+        id: r.id,
+        code: r.code,
+        desc: r.desc,
+        type: r.type,
+        value: Number(r.value) || 0,
+        minPurchase: Number(r.min_purchase) || 0,
+        expiry: r.expiry,
+        maxUses: Number(r.max_uses) || 0,
+        currentUses: Number(r.current_uses) || 0,
+        active: r.active
+    };
+}
+
+async function loadCoupons() {
+    try {
+        const { data, error } = await db
+            .from(SUPABASE_COUPONS_TABLE)
+            .select('*')
+            .order('id', { ascending: true });
+        if (error) throw error;
+        const coupons = (data || []).map(fromDbCoupon);
+        writeCouponsLocal(coupons);
+        return coupons;
+    } catch (e) {
+        console.error('Erro ao carregar cupons do Supabase:', e);
+        return getCoupons();
+    }
+}
+
+async function saveCoupons(coupons) {
+    writeCouponsLocal(coupons);
+    try {
+        const rows = coupons.map(toDbCoupon);
+        const { error } = await db.from(SUPABASE_COUPONS_TABLE).upsert(rows, { onConflict: 'id' });
+        if (error) throw error;
+        return true;
+    } catch (e) {
+        console.error('Erro ao salvar cupons no Supabase:', e);
+        return false;
+    }
+}
+
+async function deleteCouponDB(id) {
+    const { error } = await db.from(SUPABASE_COUPONS_TABLE).delete().eq('id', id);
+    if (error) throw error;
 }
 
 function getNextCouponId() {
@@ -3879,9 +3936,8 @@ document.getElementById('btnCancelCoupon').addEventListener('click', () => {
     couponForm.reset();
 });
 
-couponForm.addEventListener('submit', (e) => {
+couponForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const coupons = getCoupons();
     const id = couponIdInput.value ? parseInt(couponIdInput.value) : null;
     const code = document.getElementById('couponCode').value.trim().toUpperCase();
@@ -3911,7 +3967,7 @@ couponForm.addEventListener('submit', (e) => {
         coupons.push(coupon);
     }
 
-    saveCoupons(coupons);
+    await saveCoupons(coupons);
     renderCoupons();
     couponFormCard.classList.add('hidden');
     couponForm.reset();
@@ -3940,15 +3996,26 @@ window.editCoupon = function(id) {
     couponFormCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
 
-window.deleteCoupon = function(id) {
+window.deleteCoupon = async function(id) {
     if (!confirm('Excluir este cupom?')) return;
+    try {
+        await deleteCouponDB(id);
+    } catch (e) {
+        console.error('Erro ao excluir cupom no Supabase:', e);
+        showToast('Erro ao excluir cupom');
+        return;
+    }
     const coupons = getCoupons().filter(c => c.id !== id);
-    saveCoupons(coupons);
+    writeCouponsLocal(coupons);
     renderCoupons();
     showToast('Cupom excluído');
 };
 
 renderCoupons();
+(async () => {
+    await loadCoupons();
+    renderCoupons();
+})();
 
 // ===========================
 // Configurações / Settings

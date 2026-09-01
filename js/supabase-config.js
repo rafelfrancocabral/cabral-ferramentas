@@ -13,6 +13,7 @@ const SUPABASE_STORAGE_BUCKET = 'produtos';
 const SUPABASE_POPUPS_TABLE = 'popups';
 const SUPABASE_SEARCH_CACHE_TABLE = 'busca_cache';
 const SUPABASE_AI_SEARCHES_TABLE = 'buscas_ia';
+const SUPABASE_COUPONS_TABLE = 'cupons';
 
 // Visitors cache
 let _visitorsCache = [];

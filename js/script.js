@@ -1506,6 +1506,17 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
                 coupons[idx].currentUses = (coupons[idx].currentUses || 0) + 1;
                 localStorage.setItem('cabral_coupons', JSON.stringify(coupons));
             }
+            // Sync usage count to Supabase (shared across devices)
+            try {
+                const target = coupons[idx];
+                if (target) {
+                    await db.from(SUPABASE_COUPONS_TABLE)
+                        .update({ current_uses: target.currentUses })
+                        .eq('id', target.id);
+                }
+            } catch (e) {
+                console.error('Erro ao sincronizar uso do cupom:', e);
+            }
         }
     } catch (err) {
         console.error('Erro ao salvar orçamento:', err);
@@ -1594,8 +1605,25 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Init
+async function loadCouponsAsync() {
+    try {
+        const { data, error } = await db.from(SUPABASE_COUPONS_TABLE).select('*').order('id', { ascending: true });
+        if (error) throw error;
+        const coupons = (data || []).map(r => ({
+            id: r.id, code: r.code, desc: r.desc, type: r.type,
+            value: Number(r.value) || 0, minPurchase: Number(r.min_purchase) || 0,
+            expiry: r.expiry, maxUses: Number(r.max_uses) || 0,
+            currentUses: Number(r.current_uses) || 0, active: r.active
+        }));
+        localStorage.setItem('cabral_coupons', JSON.stringify(coupons));
+        return coupons;
+    } catch (e) {
+        console.error('Erro ao carregar cupons:', e);
+    }
+}
+
 (async function initCatalog() {
-    await Promise.all([fetchCatalogProducts(true), fetchCatalogCategories(), fetchCategoryCounts()]);
+    await Promise.all([fetchCatalogProducts(true), fetchCatalogCategories(), fetchCategoryCounts(), loadCouponsAsync()]);
     renderCatalog();
     renderFooterCategories();
     updateCartBadge();
