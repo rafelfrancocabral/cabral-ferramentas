@@ -3806,15 +3806,25 @@ function writeCouponsLocal(coupons) {
 }
 
 function toDbCoupon(c) {
-    const { id, minPurchase, maxUses, currentUses, ...rest } = c;
-    return { ...rest, id, min_purchase: minPurchase || 0, max_uses: maxUses || 0, current_uses: currentUses || 0 };
+    return {
+        id: c.id,
+        code: c.code,
+        descricao: c.desc,
+        type: c.type,
+        value: c.value || 0,
+        expiry: c.expiry || null,
+        active: c.active,
+        min_purchase: c.minPurchase || 0,
+        max_uses: c.maxUses || 0,
+        current_uses: c.currentUses || 0
+    };
 }
 
 function fromDbCoupon(r) {
     return {
         id: r.id,
         code: r.code,
-        desc: r.desc,
+        desc: r.descricao,
         type: r.type,
         value: Number(r.value) || 0,
         minPurchase: Number(r.min_purchase) || 0,

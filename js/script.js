@@ -1610,7 +1610,7 @@ async function loadCouponsAsync() {
         const { data, error } = await db.from(SUPABASE_COUPONS_TABLE).select('*').order('id', { ascending: true });
         if (error) throw error;
         const coupons = (data || []).map(r => ({
-            id: r.id, code: r.code, desc: r.desc, type: r.type,
+            id: r.id, code: r.code, desc: r.descricao, type: r.type,
             value: Number(r.value) || 0, minPurchase: Number(r.min_purchase) || 0,
             expiry: r.expiry, maxUses: Number(r.max_uses) || 0,
             currentUses: Number(r.current_uses) || 0, active: r.active
