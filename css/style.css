@@ -1836,14 +1836,28 @@ ul { list-style: none; }
 }
 
 .catalog-card-price {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #2ed573;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #0099d6;
+    text-shadow: 0 0 14px rgba(0, 153, 214, 0.45);
+    background: linear-gradient(135deg, #00a8e8, #0066b3);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .catalog-card-price.no-promo {
-    color: var(--text-primary);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #0099d6;
+    text-shadow: 0 0 14px rgba(0, 153, 214, 0.45);
+    background: linear-gradient(135deg, #00a8e8, #0066b3);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .catalog-card-unit {
@@ -2169,10 +2183,16 @@ ul { list-style: none; }
 }
 
 .modal-price {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #2ed573;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #0099d6;
+    text-shadow: 0 0 18px rgba(0, 153, 214, 0.5);
+    background: linear-gradient(135deg, #00a8e8, #0066b3);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .modal-qty-row {
