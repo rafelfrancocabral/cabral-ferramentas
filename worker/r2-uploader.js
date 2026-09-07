@@ -105,18 +105,40 @@ async function authorize(request, env) {
 }
 
 // ------------------------------------------------------------
-// Rate limiting (binding "LOGIN_RL" do Cloudflare, opcional)
-// limit() atira RateLimitError quando o IP estoura a janela.
-// Retorna true se deixou passar, false/falha se bloqueado.
+// Rate limiting em memória (sem binding, sem wrangler)
+// Conta tentativas por IP; reseta após a janela expirar.
 // ------------------------------------------------------------
-async function checkRateLimit(env, key) {
-    if (!env || !env.LOGIN_RL) return { ok: true };
-    try {
-        env.LOGIN_RL.limit({ key });
-        return { ok: true };
-    } catch (e) {
-        return { ok: false, error: 'rate_limited', retryAfter: (e && e.retryAfter) || 60 };
+const _rl = new Map();
+const RL_WINDOW = 60_000;          // 60s
+const RL_LOGIN_MAX  = 5;           // 5 tentativas falhas / 60s → lockout 5min
+const RL_ADMIN_MAX  = 30;          // 30 requests / 60s (admin é autenticado)
+const RL_LOCKOUT    = 300_000;     // 5min de bloqueio
+
+function rlCheck(ip, max) {
+    const now = Date.now();
+    const entry = _rl.get(ip);
+    if (entry && now > entry.unlockAt) _rl.delete(ip);
+    if (entry && now <= entry.unlockAt) return { ok: false, retryAfter: Math.ceil((entry.unlockAt - now) / 1000) };
+    if (entry && entry.count >= max && now <= entry.resetAt) return { ok: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
+    return { ok: true };
+}
+function rlHit(ip, max, lockout) {
+    const now = Date.now();
+    let entry = _rl.get(ip);
+    if (!entry || now > entry.resetAt) {
+        entry = { count: 0, resetAt: now + RL_WINDOW, unlockAt: 0 };
+        _rl.set(ip, entry);
     }
+    entry.count++;
+    if (entry.count >= max) entry.unlockAt = now + (lockout || RL_LOCKOUT);
+}
+
+// Limpa entradas expiradas a cada 100 chamadas (evita memory leak).
+let _rlCalls = 0;
+function rlCleanup() {
+    if (++_rlCalls % 100 !== 0) return;
+    const now = Date.now();
+    for (const [k, v] of _rl) { if (now > v.unlockAt && now > v.resetAt) _rl.delete(k); }
 }
 
 // ------------------------------------------------------------
@@ -128,9 +150,10 @@ async function handleLogin(request, env) {
 
     // Rate limit por IP para conter brute-force.
     const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('x-real-ip') || 'unknown';
-    const rl = await checkRateLimit(env, `login:${ip}`);
+    rlCleanup();
+    const rl = rlCheck(ip, RL_LOGIN_MAX);
     if (!rl.ok) {
-        return json({ ok: false, error: 'rate_limited' }, 429);
+        return json({ ok: false, error: 'rate_limited', retryAfter: rl.retryAfter }, 429);
     }
 
     let body;
@@ -160,8 +183,12 @@ async function handleLogin(request, env) {
     // Pequeno atraso para reduzir velocidade de brute force.
     await new Promise(r => setTimeout(r, 300));
 
-    if (!valid) return json({ ok: false, error: 'invalid_credentials' }, 401);
+    if (!valid) {
+        rlHit(ip, RL_LOGIN_MAX);
+        return json({ ok: false, error: 'invalid_credentials' }, 401);
+    }
 
+    _rl.delete(ip); // login ok → reseta contador
     const token = await signSession(user, env.SESSION_SECRET);
     if (!token) return json({ ok: false, error: 'session_error' }, 500);
     return json({ ok: true, token, expiresIn: 86400 });
@@ -183,7 +210,8 @@ function validColumnsList(cols) {
 async function handleAdmin(request, env) {
     // Rate limit por IP no endpoint admin (ajuda a conter varredura/abuso).
     const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('x-real-ip') || 'unknown';
-    const rl = await checkRateLimit(env, `admin:${ip}`);
+    rlCleanup();
+    const rl = rlCheck(ip, RL_ADMIN_MAX);
     if (!rl.ok) {
         return json({ error: 'rate_limited' }, 429);
     }
