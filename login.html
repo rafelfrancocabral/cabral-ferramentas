@@ -400,7 +400,14 @@
                 });
                 if (resp.status === 200) {
                     const data = await resp.json();
-                    return !!(data && data.ok);
+                    if (data && data.ok && data.token) {
+                        // guarda o token de sessao (usado pelo dashboard e uploads)
+                        try {
+                            localStorage.setItem('cabral_session', data.token);
+                        } catch (e) {}
+                        return true;
+                    }
+                    return false;
                 }
                 return false;
             } catch (err) {

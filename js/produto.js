@@ -14,6 +14,10 @@
         return 'R$ ' + parseFloat(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     function unitLabel(unit) {
         const u = (unit || '').trim();
         return u ? '/' + u.toLowerCase() : '';
@@ -51,24 +55,24 @@
             let videoSrc = product.video.trim();
             if (videoSrc.includes('watch?v=')) videoSrc = videoSrc.replace('watch?v=', 'embed/');
             else if (videoSrc.includes('youtu.be/')) videoSrc = videoSrc.replace('youtu.be/', 'www.youtube.com/embed/');
-            videoHtml = `<div class="pp-video-wrap"><iframe src="${videoSrc}" allowfullscreen></iframe></div>`;
+            videoHtml = `<div class="pp-video-wrap"><iframe src="${esc(videoSrc)}" allowfullscreen></iframe></div>`;
         }
 
         content.innerHTML = `
         <div class="product-page-inner">
             <div class="pp-gallery">
                 <a href="${backHref}" class="pp-back"><i class="fas fa-arrow-left"></i> Voltar aos produtos</a>
-                <img class="pp-main-img" id="ppMainImg" src="${images[0]}" alt="${product.nome}">
+                <img class="pp-main-img" id="ppMainImg" src="${esc(images[0])}" alt="${esc(product.nome)}">
                 <div class="pp-thumbs" id="ppThumbs">
-                    ${images.map((img, i) => `<img class="pp-thumb ${i === 0 ? 'active' : ''}" src="${img}" alt="${product.nome}" onclick="ppSwitchImg('${img}', this)">`).join('')}
+                    ${images.map((img, i) => `<img class="pp-thumb ${i === 0 ? 'active' : ''}" src="${esc(img)}" alt="${esc(product.nome)}" onclick="ppSwitchImg('${esc(img)}', this)">`).join('')}
                 </div>
                 ${videoHtml}
             </div>
             <div class="pp-info">
-                <span class="pp-category">${product.categoria || ''}</span>
-                <h1 class="pp-title">${product.nome}</h1>
-                <div class="pp-brand">${product.marca || ''}</div>
-                <div class="pp-code">${product.codigo ? 'CÓD ' + product.codigo : ''}</div>
+                <span class="pp-category">${esc(product.categoria || '')}</span>
+                <h1 class="pp-title">${esc(product.nome)}</h1>
+                <div class="pp-brand">${esc(product.marca || '')}</div>
+                <div class="pp-code">${product.codigo ? 'CÓD ' + esc(product.codigo) : ''}</div>
                 <div class="pp-desc">${product.descricao || product.descricaoCompleta || ''}</div>
                 <div class="pp-pricing">
                     ${hasPromo ? `<span class="pp-price-old">${formatPrice(product.preco)}</span>` : ''}
@@ -167,8 +171,8 @@
             const rPrice = rHasPromo ? rNorm.precoPromocional : rNorm.preco;
             return `
             <a href="produto.html?id=${rp.id}" class="pp-related-card">
-                ${img ? `<img src="${img}" alt="${rp.nome}" loading="lazy" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">` : '<div style="height:140px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);"><i class="fas fa-image"></i></div>'}
-                <div class="pp-related-name">${rp.nome}</div>
+                ${img ? `<img src="${esc(img)}" alt="${esc(rp.nome)}" loading="lazy" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">` : '<div style="height:140px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);"><i class="fas fa-image"></i></div>'}
+                <div class="pp-related-name">${esc(rp.nome)}</div>
                 <div class="pp-related-price">${formatPrice(rPrice)}<span class="pp-unit pp-unit-sm">${unitLabel(rNorm.unidade)}</span></div>
             </a>`;
         }).join('');

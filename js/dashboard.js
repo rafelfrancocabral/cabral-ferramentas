@@ -625,7 +625,7 @@ async function loadQuotes() {
     let all = [];
     let from = 0;
     while (true) {
-        const { data, error } = await db.from(SUPABASE_QUOTES_TABLE)
+        const { data, error } = await adminDb(SUPABASE_QUOTES_TABLE)
             .select('id, nome_cliente, telefone, codigo_cliente, itens, total, status, status_entrega, created_at, updated_at')
             .order('created_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
@@ -701,8 +701,8 @@ function renderQuotes(filter = 'all') {
                 <div class="quote-client">
                     <div class="client-avatar-sm"><i class="fas fa-user"></i></div>
                     <div>
-                        <span class="client-name">${q.nome_cliente}</span>
-                        <span class="client-contact"><i class="fab fa-whatsapp"></i> ${q.telefone}</span>
+                        <span class="client-name">${escapeHtml4(q.nome_cliente)}</span>
+                        <span class="client-contact"><i class="fab fa-whatsapp"></i> ${escapeHtml4(q.telefone)}</span>
                     </div>
                 </div>
                 <div class="quote-date"><i class="fas fa-calendar"></i> ${dateStr}</div>
@@ -778,7 +778,7 @@ document.addEventListener('click', (e) => {
     quoteCard.dataset.status = newStatus;
 
     // Save to Supabase
-    db.from(SUPABASE_QUOTES_TABLE)
+    adminDb(SUPABASE_QUOTES_TABLE)
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', quoteId)
         .then(({ error }) => {
@@ -809,7 +809,7 @@ document.addEventListener('click', (e) => {
     if (currentStatus === 'cancelado') {
         if (!confirm(`Reativar orçamento #${quoteId}?`)) return;
 
-        db.from(SUPABASE_QUOTES_TABLE)
+        adminDb(SUPABASE_QUOTES_TABLE)
             .update({ status: 'recebido', updated_at: new Date().toISOString() })
             .eq('id', quoteId)
             .then(({ error }) => {
@@ -831,7 +831,7 @@ document.addEventListener('click', (e) => {
 
     if (!confirm(`Cancelar orçamento #${quoteId}?`)) return;
 
-    db.from(SUPABASE_QUOTES_TABLE)
+    adminDb(SUPABASE_QUOTES_TABLE)
         .update({ status: 'cancelado', updated_at: new Date().toISOString() })
         .eq('id', quoteId)
         .then(({ error }) => {
@@ -879,17 +879,17 @@ document.addEventListener('click', (e) => {
     modalClient.innerHTML = `
         <div class="client-avatar-sm"><i class="fas fa-user"></i></div>
         <div>
-            <span class="client-name">${q.nome_cliente}</span>
-            <span class="client-contact"><i class="fab fa-whatsapp"></i> ${q.telefone}</span>
+            <span class="client-name">${escapeHtml4(q.nome_cliente)}</span>
+            <span class="client-contact"><i class="fab fa-whatsapp"></i> ${escapeHtml4(q.telefone)}</span>
         </div>
     `;
 
     modalProducts.innerHTML = items.map(p => {
-        const code = p.codigo ? `CÓD ${p.codigo}` : '';
+        const code = p.codigo ? `CÓD ${escapeHtml4(p.codigo)}` : '';
         return `
         <div class="product-row">
             <div class="product-details">
-                <span class="product-name">${code ? code + ' | ' : ''}${p.nome}</span>
+                <span class="product-name">${code ? code + ' | ' : ''}${escapeHtml4(p.nome)}</span>
                 <span class="product-qty">Qtd: ${p.quantidade}x ${formatPrice(p.preco)}</span>
             </div>
             <span class="product-price">${formatPrice(p.subtotal)}</span>
@@ -947,7 +947,7 @@ function renderEditQuoteItems() {
     const container = document.getElementById('editQuoteItems');
     container.innerHTML = editQuoteItems.map((item, i) => `
         <div class="edit-quote-item" data-idx="${i}">
-            <div class="edit-quote-item-name">${item.nome}</div>
+            <div class="edit-quote-item-name">${escapeHtml4(item.nome)}</div>
             <input type="number" value="${item.quantidade}" min="1" data-field="qty" data-idx="${i}">
             <input type="text" value="${formatEditPrice(item.preco)}" data-field="price" data-idx="${i}">
             <button class="btn-remove-item" data-idx="${i}" title="Remover"><i class="fas fa-trash"></i></button>
@@ -1171,7 +1171,7 @@ document.getElementById('mqSave').addEventListener('click', async () => {
 
     try {
         const code = generateClientCode(phone);
-        const { error } = await db.from(SUPABASE_QUOTES_TABLE).insert({
+        const { error } = await adminDb(SUPABASE_QUOTES_TABLE).insert({
             nome_cliente: name,
             telefone: phone,
             codigo_cliente: code,
@@ -1325,7 +1325,7 @@ async function saveProducts(products) {
 async function upsertProduct(productData) {
     const toSend = { ...productData };
     delete toSend.id;
-    const { data, error } = await db
+    const { data, error } = await adminDb
         .from(SUPABASE_PRODUCTS_TABLE)
         .upsert(toSend, { onConflict: 'codigo' })
         .select();
@@ -1334,7 +1334,7 @@ async function upsertProduct(productData) {
 }
 
 async function insertProduct(productData) {
-    const { data, error } = await db
+    const { data, error } = await adminDb
         .from(SUPABASE_PRODUCTS_TABLE)
         .insert(productData)
         .select();
@@ -1343,7 +1343,7 @@ async function insertProduct(productData) {
 }
 
 async function deleteProductDB(id) {
-    const { error } = await db
+    const { error } = await adminDb
         .from(SUPABASE_PRODUCTS_TABLE)
         .delete()
         .eq('id', id);
@@ -1351,7 +1351,7 @@ async function deleteProductDB(id) {
 }
 
 async function updateProductDB(id, updates) {
-    const { data, error } = await db
+    const { data, error } = await adminDb
         .from(SUPABASE_PRODUCTS_TABLE)
         .update(updates)
         .eq('id', id)
@@ -1361,7 +1361,7 @@ async function updateProductDB(id, updates) {
 }
 
 async function bulkUpsertProducts(rows) {
-    const { data, error } = await db
+    const { data, error } = await adminDb
         .from(SUPABASE_PRODUCTS_TABLE)
         .upsert(rows, { onConflict: 'codigo' })
         .select();
@@ -1461,11 +1461,11 @@ async function filterProducts(query) {
         <tr data-id="${p.id}" ${!isVisivel ? 'style="opacity:0.45;"' : ''}>
             <td class="col-check"><input type="checkbox" class="row-check" data-id="${p.id}" ${_productSelection.has(p.id) ? 'checked' : ''}></td>
             <td>${thumb}</td>
-            <td><span class="stock-badge" style="background:rgba(0,153,204,0.1);color:var(--accent);">${p.codigo}</span></td>
-            <td>${p.nome}</td>
-            <td>${p.unidade}</td>
-            <td>${p.marca}</td>
-            <td>${p.categoria}</td>
+            <td><span class="stock-badge" style="background:rgba(0,153,204,0.1);color:var(--accent);">${escapeHtml4(p.codigo)}</span></td>
+            <td>${escapeHtml4(p.nome)}</td>
+            <td>${escapeHtml4(p.unidade)}</td>
+            <td>${escapeHtml4(p.marca)}</td>
+            <td>${escapeHtml4(p.categoria)}</td>
             <td>R$ ${p.preco.toFixed(2).replace('.', ',')}</td>
             <td><span class="stock-badge ${estoqueClass}">${p.estoque}</span></td>
             <td>${kw.length > 0 ? kw.join(', ') : '<span style="color:var(--text-muted)">—</span>'}</td>
@@ -1923,7 +1923,8 @@ async function uploadImageToR2(base64Main, base64Thumb) {
     form.append('hash', hash);
 
     const headers = {};
-    if (R2_WORKER_SECRET) headers['Authorization'] = `Bearer ${R2_WORKER_SECRET}`;
+    const sToken = getAdminToken();
+    if (sToken) headers['Authorization'] = `Bearer ${sToken}`;
 
     const resp = await fetch(`${R2_WORKER_URL}/upload`, { method: 'POST', body: form, headers });
     if (!resp.ok) {
@@ -1993,7 +1994,8 @@ async function migrateSupabaseUrlsToR2(urls) {
     if (files.length === 0) return [];
 
     const headers = { 'Content-Type': 'application/json' };
-    if (R2_WORKER_SECRET) headers['Authorization'] = `Bearer ${R2_WORKER_SECRET}`;
+    const sToken2 = getAdminToken();
+    if (sToken2) headers['Authorization'] = `Bearer ${sToken2}`;
 
     const resp = await fetch(`${R2_WORKER_URL}/migrate`, {
         method: 'POST',
@@ -2934,12 +2936,12 @@ function showCSVPreview(fileName, errorCount) {
         return `
         <tr class="${rowClass}">
             <td>${row.line}</td>
-            <td>${row.codigo}</td>
-            <td>${row.nome}</td>
-            <td>${row.unidade}</td>
-            <td>${row.marca}</td>
-            <td>${row.categoria}${row.warnings.some(w => w.includes('não cadastrada') && w.includes('Categoria')) ? ' <span class="cat-badge-warn">nova</span>' : ''}</td>
-            <td>${row.subcategoria ? `${row.subcategoria}${row.warnings.some(w => w.includes('Sub-Categoria não cadastrada')) ? ' <span class="cat-badge-warn">nova</span>' : ''}` : '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td>${escapeHtml4(row.codigo)}</td>
+            <td>${escapeHtml4(row.nome)}</td>
+            <td>${escapeHtml4(row.unidade)}</td>
+            <td>${escapeHtml4(row.marca)}</td>
+            <td>${escapeHtml4(row.categoria)}${row.warnings.some(w => w.includes('não cadastrada') && w.includes('Categoria')) ? ' <span class="cat-badge-warn">nova</span>' : ''}</td>
+            <td>${row.subcategoria ? `${escapeHtml4(row.subcategoria)}${row.warnings.some(w => w.includes('Sub-Categoria não cadastrada')) ? ' <span class="cat-badge-warn">nova</span>' : ''}` : '<span style="color:var(--text-muted)">—</span>'}</td>
             <td>${row.preco}</td>
             <td>${row.estoque}</td>
             <td>${row.palavrasChave.length > 0 ? row.palavrasChave.join(', ') : '<span style="color:var(--text-muted)">—</span>'}</td>
@@ -2969,10 +2971,10 @@ document.getElementById('csvConfirmImport').addEventListener('click', async () =
         for (const name of csvMissingCategories) {
             if (!cats.some(c => c.nome.toLowerCase() === name.toLowerCase())) {
                 try {
-                    const { data } = await db
-                        .from(SUPABASE_CATEGORIES_TABLE)
-                        .insert({ nome: name })
-                        .select();
+const { data } = await adminDb
+                .from(SUPABASE_CATEGORIES_TABLE)
+                .insert({ nome: name })
+                .select();
                     if (data && data[0]) cats.push(data[0]);
                 } catch(e) { console.error('Erro ao criar categoria:', e); }
             }
@@ -3068,7 +3070,7 @@ document.getElementById('csvConfirmImport').addEventListener('click', async () =
         const BATCH_SIZE = 50;
         for (let i = 0; i < rowsToInsert.length; i += BATCH_SIZE) {
             const batch = rowsToInsert.slice(i, i + BATCH_SIZE);
-            const { error } = await db.from(SUPABASE_PRODUCTS_TABLE).insert(batch);
+            const { error } = await adminDb(SUPABASE_PRODUCTS_TABLE).insert(batch);
             if (error) {
                 console.error('Erro ao importar lote:', error);
                 showToast(`Erro no lote ${Math.floor(i / BATCH_SIZE) + 1}: ${error.message}`);
@@ -3077,7 +3079,7 @@ document.getElementById('csvConfirmImport').addEventListener('click', async () =
         }
     }
     for (const row of rowsToUpdate) {
-        await db.from(SUPABASE_PRODUCTS_TABLE).update(row.data).eq('id', row.id);
+        await adminDb(SUPABASE_PRODUCTS_TABLE).update(row.data).eq('id', row.id);
     }
 
     await loadProducts();
@@ -3094,7 +3096,7 @@ document.getElementById('csvConfirmImport').addEventListener('click', async () =
 
         if (changeSummary.length > 0) {
             setTimeout(() => {
-                const detailMsg = changeSummary.map(c => `<strong>${c.codigo}</strong> — ${c.fields.join(', ')}`).join('<br>');
+                const detailMsg = changeSummary.map(c => `<strong>${escapeHtml4(c.codigo)}</strong> — ${escapeHtml4(c.fields.join(', '))}`).join('<br>');
                 showToast(`Alterações:<br>${detailMsg}`, 6000);
             }, 500);
         }
@@ -3229,7 +3231,7 @@ function renderCategories() {
         return `
         <tr data-id="${c.id}">
             <td style="color: var(--text-muted); font-size: 0.8rem;">${i + 1}</td>
-            <td><span style="font-weight:500;">${c.nome}</span></td>
+            <td><span style="font-weight:500;">${escapeHtml4(c.nome)}</span></td>
             <td style="color: var(--text-muted); font-size: 0.85rem;">${count} produto${count !== 1 ? 's' : ''}</td>
             <td>
                 <div style="display:flex; gap:6px;">
@@ -3267,7 +3269,7 @@ categoryForm.addEventListener('submit', async (e) => {
         const oldName = oldCat ? oldCat.nome : '';
 
         try {
-            await db
+            await adminDb
                 .from(SUPABASE_CATEGORIES_TABLE)
                 .update({ nome: name })
                 .eq('id', parseInt(existingId));
@@ -3281,7 +3283,7 @@ categoryForm.addEventListener('submit', async (e) => {
             }
             await loadProducts();
             try {
-                await db.from(SUPABASE_SUBCATEGORIES_TABLE).update({ categoria: name }).eq('categoria', oldName);
+                await adminDb(SUPABASE_SUBCATEGORIES_TABLE).update({ categoria: name }).eq('categoria', oldName);
             } catch(e) { console.error(e); }
             await loadSubcategories();
             renderSubcategories();
@@ -3351,11 +3353,11 @@ window.deleteCategory = async function(id) {
     }
 
     try {
-        await db.from(SUPABASE_CATEGORIES_TABLE).delete().eq('id', id);
+        await adminDb(SUPABASE_CATEGORIES_TABLE).delete().eq('id', id);
     } catch(e) { console.error(e); }
 
     try {
-        await db.from(SUPABASE_SUBCATEGORIES_TABLE).delete().eq('categoria', cat.nome);
+        await adminDb(SUPABASE_SUBCATEGORIES_TABLE).delete().eq('categoria', cat.nome);
     } catch(e) { console.error(e); }
 
     await loadCategories();
@@ -3447,7 +3449,7 @@ function renderSubcategories() {
         <tr data-id="${s.id}">
             <td style="color: var(--text-muted); font-size: 0.8rem;">${i + 1}</td>
             <td><span style="font-weight:500;">${s.categoria || ''}</span></td>
-            <td><span style="font-weight:500;">${s.nome}</span></td>
+            <td><span style="font-weight:500;">${escapeHtml4(s.nome)}</span></td>
             <td style="color: var(--text-muted); font-size: 0.85rem;">${count} produto${count !== 1 ? 's' : ''}</td>
             <td>
                 <div style="display:flex; gap:6px;">
@@ -3510,7 +3512,7 @@ subcategoryForm.addEventListener('submit', async (e) => {
         }
 
         try {
-            const { data } = await db
+            const { data } = await adminDb
                 .from(SUPABASE_SUBCATEGORIES_TABLE)
                 .insert({ nome: name, categoria: catName })
                 .select();
@@ -3566,7 +3568,7 @@ window.deleteSubcategory = async function(id) {
     }
 
     try {
-        await db.from(SUPABASE_SUBCATEGORIES_TABLE).delete().eq('id', id);
+        await adminDb(SUPABASE_SUBCATEGORIES_TABLE).delete().eq('id', id);
     } catch(e) { console.error(e); }
 
     await loadSubcategories();
@@ -3581,7 +3583,7 @@ function updateSubcategorySelects() {
     const subcatCatSel = document.getElementById('subcatCategoria');
     if (subcatCatSel) {
         const current = subcatCatSel.value;
-        subcatCatSel.innerHTML = '<option value="">Selecione a categoria</option>' + cats.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+        subcatCatSel.innerHTML = '<option value="">Selecione a categoria</option>' + cats.map(c => `<option value="${escapeHtml4(c.nome)}">${escapeHtml4(c.nome)}</option>`).join('');
         subcatCatSel.value = current;
     }
 
@@ -3593,7 +3595,7 @@ function updateSubcategorySelects() {
         const subs = getSubcategories()
             .filter(s => !parentCat || s.categoria === parentCat)
             .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
-        prodSub.innerHTML = '<option value="">Nenhuma</option>' + subs.map(s => `<option value="${s.nome}">${s.nome}</option>`).join('');
+        prodSub.innerHTML = '<option value="">Nenhuma</option>' + subs.map(s => `<option value="${escapeHtml4(s.nome)}">${escapeHtml4(s.nome)}</option>`).join('');
         if (current && subs.some(s => s.nome === current)) {
             prodSub.value = current;
         }
@@ -3837,7 +3839,7 @@ function fromDbCoupon(r) {
 
 async function loadCoupons() {
     try {
-        const { data, error } = await db
+        const { data, error } = await adminDb
             .from(SUPABASE_COUPONS_TABLE)
             .select('*')
             .order('id', { ascending: true });
@@ -3855,7 +3857,7 @@ async function saveCoupons(coupons) {
     writeCouponsLocal(coupons);
     try {
         const rows = coupons.map(toDbCoupon);
-        const { error } = await db.from(SUPABASE_COUPONS_TABLE).upsert(rows, { onConflict: 'id' });
+        const { error } = await adminDb.from(SUPABASE_COUPONS_TABLE).upsert(rows, { onConflict: 'id' });
         if (error) throw error;
         return true;
     } catch (e) {
@@ -3865,7 +3867,7 @@ async function saveCoupons(coupons) {
 }
 
 async function deleteCouponDB(id) {
-    const { error } = await db.from(SUPABASE_COUPONS_TABLE).delete().eq('id', id);
+    const { error } = await adminDb.from(SUPABASE_COUPONS_TABLE).delete().eq('id', id);
     if (error) throw error;
 }
 
@@ -4385,9 +4387,9 @@ function renderClients(filter = 'all', search = '') {
         const phoneDigits = (c.telefone || '').replace(/\D/g, '');
         return `
         <tr>
-            <td><span class="client-code" onclick="openClientQuotes('${c.nome.replace(/'/g, "\\'")}', '${c.telefone}')">${c.sequentialCode}</span></td>
-            <td><strong style="cursor:pointer;color:var(--accent);" onclick="openClientQuotes('${c.nome.replace(/'/g, "\\'")}', '${c.telefone}')">${c.nome}</strong></td>
-            <td><i class="fab fa-whatsapp" style="color:#25d366;margin-right:4px;"></i>${c.telefone}</td>
+            <td><span class="client-code" onclick="openClientQuotes('${encodeURIComponent(c.nome)}', '${encodeURIComponent(c.telefone)}')">${escapeHtml4(c.sequentialCode)}</span></td>
+            <td><strong style="cursor:pointer;color:var(--accent);" onclick="openClientQuotes('${encodeURIComponent(c.nome)}', '${encodeURIComponent(c.telefone)}')">${escapeHtml4(c.nome)}</strong></td>
+            <td><i class="fab fa-whatsapp" style="color:#25d366;margin-right:4px;"></i>${escapeHtml4(c.telefone)}</td>
             <td>${c.lastPurchase}</td>
             <td><strong>${formatPrice(c.totalSpent)}</strong></td>
             <td>${c.quoteCount}</td>
@@ -4422,7 +4424,7 @@ async function loadAiSearchLog() {
     let all = [];
     let from = 0;
     while (true) {
-        const { data, error } = await db.from(SUPABASE_AI_SEARCHES_TABLE)
+        const { data, error } = await adminDb.from(SUPABASE_AI_SEARCHES_TABLE)
             .select('id, termo, categoria, resultado, created_at')
             .order('created_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
@@ -4480,7 +4482,7 @@ const btnClearAiSearchLog = document.getElementById('btnClearAiSearchLog');
 if (btnClearAiSearchLog) btnClearAiSearchLog.addEventListener('click', async () => {
     if (!confirm('Limpar todo o log de buscas IA? Esta ação não pode ser desfeita.')) return;
     try {
-        await db.from(SUPABASE_AI_SEARCHES_TABLE).delete().gte('id', 0);
+        await adminDb.from(SUPABASE_AI_SEARCHES_TABLE).delete().gte('id', 0);
         _aiSearchLog = [];
         renderAiSearchLog();
         showToast('Log de buscas IA limpo');
@@ -4567,6 +4569,8 @@ function generateAiSearchPdf() {
 
 // Open client quotes modal
 window.openClientQuotes = function(nome, telefone) {
+    nome = decodeURIComponent(nome || '');
+    telefone = decodeURIComponent(telefone || '');
     const quotes = getQuotes().filter(q => q.nome_cliente === nome && q.telefone === telefone);
     const modal = document.getElementById('clientQuotesModal');
     const body = document.getElementById('clientQuotesBody');
@@ -4630,11 +4634,11 @@ window.openClientQuotes = function(nome, telefone) {
                         <span class="cq-card-total">${formatPrice(q.total)}</span>
                     </div>
                 </div>
-                ${q.cupom ? `<div class="cq-card-cupom"><i class="fas fa-tag"></i> Cupom: ${q.cupom} (-${formatPrice(q.desconto || 0)})</div>` : ''}
+                ${q.cupom ? `<div class="cq-card-cupom"><i class="fas fa-tag"></i> Cupom: ${escapeHtml4(q.cupom)} (-${formatPrice(q.desconto || 0)})</div>` : ''}
                 <div class="cq-card-items">
                     ${items.map(item => `
                         <div class="cq-item">
-                            <span class="cq-item-name">${item.codigo ? '<code>' + item.codigo + '</code> ' : ''}${item.nome}</span>
+                            <span class="cq-item-name">${item.codigo ? '<code>' + escapeHtml4(item.codigo) + '</code> ' : ''}${escapeHtml4(item.nome)}</span>
                             <span class="cq-item-qty">${item.quantidade}x ${formatPrice(item.preco)}</span>
                             <span class="cq-item-sub">${formatPrice(item.subtotal)}</span>
                         </div>
@@ -4708,7 +4712,7 @@ function renderMetrics() {
                 <div class="product-rank">
                     <div class="rank-pos">${i + 1}</div>
                     <div class="rank-info">
-                        <span class="rank-name">${p.codigo ? 'CÓD ' + p.codigo + ' | ' : ''}${p.nome}</span>
+                        <span class="rank-name">${p.codigo ? 'CÓD ' + escapeHtml4(p.codigo) + ' | ' : ''}${escapeHtml4(p.nome)}</span>
                         <span class="rank-sales">${p.count} vendas</span>
                     </div>
                     <div class="rank-bar"><div class="rank-bar-fill" style="width:${Math.round((p.count / maxSold) * 100)}%"></div></div>
@@ -4726,9 +4730,9 @@ function renderMetrics() {
         } else {
             recentEl.innerHTML = clients.map(c => `
                 <div class="product-rank" style="gap:10px;">
-                    <div class="client-avatar-sm" style="width:36px;height:36px;border-radius:50%;background:${c.classification.bg};color:${c.classification.color};display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">${c.nome.charAt(0).toUpperCase()}</div>
+                    <div class="client-avatar-sm" style="width:36px;height:36px;border-radius:50%;background:${c.classification.bg};color:${c.classification.color};display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">${escapeHtml4((c.nome.charAt(0) || '').toUpperCase())}</div>
                     <div class="rank-info" style="flex:1;min-width:0;">
-                        <span class="rank-name" style="display:flex;align-items:center;gap:6px;">${c.nome} <span style="color:${c.classification.color};background:${c.classification.bg};padding:1px 6px;border-radius:4px;font-size:0.6rem;font-weight:600;">${c.classification.label}</span></span>
+                        <span class="rank-name" style="display:flex;align-items:center;gap:6px;">${escapeHtml4(c.nome)} <span style="color:${c.classification.color};background:${c.classification.bg};padding:1px 6px;border-radius:4px;font-size:0.6rem;font-weight:600;">${escapeHtml4(c.classification.label)}</span></span>
                         <span class="rank-sales">${c.quoteCount} orçamento${c.quoteCount > 1 ? 's' : ''} · ${formatPrice(c.totalSpent)}</span>
                     </div>
                 </div>
@@ -4782,9 +4786,9 @@ function renderPopups() {
 
         let detail = '';
         if (p.tipo === 'promocao') {
-            detail = `<span class="popup-detail-text">${p.produto_codigo || '—'}</span>`;
+            detail = `<span class="popup-detail-text">${escapeHtml4(p.produto_codigo || '—')}</span>`;
         } else {
-            detail = `<span class="popup-detail-text">${(p.mensagem || '').substring(0, 40)}${(p.mensagem || '').length > 40 ? '...' : ''}</span>`;
+            detail = `<span class="popup-detail-text">${escapeHtml4((p.mensagem || '').substring(0, 40))}${(p.mensagem || '').length > 40 ? '...' : ''}</span>`;
         }
         const formatDateShort = (v) => {
             if (!v) return '';
@@ -4802,7 +4806,7 @@ function renderPopups() {
         return `<tr data-id="${p.id}">
             <td style="color:var(--text-muted);font-size:0.8rem;">${i + 1}</td>
             <td>${tipoBadge}</td>
-            <td style="font-weight:500;">${p.titulo || ''}</td>
+            <td style="font-weight:500;">${escapeHtml4(p.titulo || '')}</td>
             <td>${detail}</td>
             <td>
                 <label class="toggle-switch small">
@@ -4821,7 +4825,7 @@ function renderPopups() {
 }
 
 window.togglePopupAtivo = async function(id, ativo) {
-    await db.from(SUPABASE_POPUPS_TABLE).update({ ativo }).eq('id', id);
+    await adminDb(SUPABASE_POPUPS_TABLE).update({ ativo }).eq('id', id);
     const p = _popupsCache.find(x => x.id === id);
     if (p) p.ativo = ativo;
     showToast(ativo ? 'Popup ativado' : 'Popup desativado');
@@ -4871,7 +4875,7 @@ window.editPopup = function(id) {
 
 window.deletePopup = async function(id) {
     if (!confirm('Excluir este popup?')) return;
-    await db.from(SUPABASE_POPUPS_TABLE).delete().eq('id', id);
+    await adminDb(SUPABASE_POPUPS_TABLE).delete().eq('id', id);
     await loadPopups();
     renderPopups();
     showToast('Popup excluído!');
@@ -4977,9 +4981,9 @@ function initPopupModal() {
         try {
             let result;
             if (id) {
-                result = await db.from(SUPABASE_POPUPS_TABLE).update(data).eq('id', parseInt(id));
+                result = await adminDb(SUPABASE_POPUPS_TABLE).update(data).eq('id', parseInt(id));
             } else {
-                result = await db.from(SUPABASE_POPUPS_TABLE).insert(data);
+                result = await adminDb(SUPABASE_POPUPS_TABLE).insert(data);
             }
             if (result.error) {
                 console.error('Erro Supabase popup:', result.error);
@@ -5083,10 +5087,9 @@ function updateQuoteBadges() {
 let _lastQuoteCount = 0;
 setInterval(async () => {
     try {
-        const { count } = await db
-            .from(SUPABASE_QUOTES_TABLE)
+        const { count } = await adminDb(SUPABASE_QUOTES_TABLE)
             .select('id', { count: 'exact', head: true })
-            .not('status', 'in', '("entregue","cancelado")');
+            .not('status', 'in', ['entregue', 'cancelado']);
         const pending = count || 0;
         const sidebarBadge = document.getElementById('sidebarQuoteBadge');
         if (sidebarBadge) {
@@ -5171,8 +5174,7 @@ document.head.appendChild(_styleEl);
 
 async function pollAiSearchCount() {
     try {
-        const { count } = await db
-            .from(SUPABASE_AI_SEARCHES_TABLE)
+        const { count } = await adminDb(SUPABASE_AI_SEARCHES_TABLE)
             .select('id', { count: 'exact', head: true });
         const current = count || 0;
         const lastSeen = parseInt(localStorage.getItem('cabral_ai_last_seen') || '0', 10) || 0;

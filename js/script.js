@@ -532,7 +532,7 @@ async function aiProgressiveSearch(query, category, limit) {
 }
 
 function escapeHtml(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function appendAiCatalogButton(msg, html, onClick) {
@@ -903,7 +903,7 @@ async function renderCatalog(filter = 'all') {
     dropdownList.innerHTML = `<div class="catalog-dropdown-item${filter === 'all' ? ' active' : ''}" data-cat="all"><i class="fas fa-th-large"></i> Todas as Categorias<span class="cat-count">${totalProducts}</span></div>`;
     cats.forEach(cat => {
         const count = catCounts[cat] || 0;
-        dropdownList.innerHTML += `<div class="catalog-dropdown-item${filter === cat ? ' active' : ''}" data-cat="${cat}"><i class="fas fa-tag"></i> ${cat}<span class="cat-count">${count}</span></div>`;
+        dropdownList.innerHTML += `<div class="catalog-dropdown-item${filter === cat ? ' active' : ''}" data-cat="${escapeHtml(cat)}"><i class="fas fa-tag"></i> ${escapeHtml(cat)}<span class="cat-count">${count}</span></div>`;
     });
 
     if (filter === 'all') {
@@ -1000,16 +1000,16 @@ function renderProductGrid(products, container, append = false) {
 
         const card = document.createElement('div');
         card.className = 'catalog-card';
-        card.innerHTML = `
+card.innerHTML = `
             <div class="catalog-card-img" onclick="openProductModal(${product.id})">
-                ${img ? `<img src="${img}" alt="${product.nome}" loading="lazy" onerror="this.onerror=null;this.src='${product.imagens[0]}'">` : '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:0.85rem;"><i class="fas fa-image" style="font-size:2rem;opacity:0.3;display:block;margin-bottom:8px;"></i> Sem imagem</div>'}
+                ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(product.nome)}" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(product.imagens[0])}'">` : '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:0.85rem;"><i class="fas fa-image" style="font-size:2rem;opacity:0.3;display:block;margin-bottom:8px;"></i> Sem imagem</div>'}
                 ${badges.length ? `<div class="catalog-card-badges">${badges.join('')}</div>` : ''}
             </div>
             <div class="catalog-card-body">
-                <span class="catalog-card-cat">${product.categoria || ''}</span>
-                <span class="catalog-card-code">${product.codigo ? 'CÓD ' + product.codigo : ''}</span>
-                <h4 class="catalog-card-name" onclick="openProductModal(${product.id})" style="cursor:pointer;">${product.nome}</h4>
-                <span class="catalog-card-brand">${product.marca || ''}</span>
+                <span class="catalog-card-cat">${escapeHtml(product.categoria || '')}</span>
+                <span class="catalog-card-code">${product.codigo ? 'C�"D ' + escapeHtml(product.codigo) : ''}</span>
+                <h4 class="catalog-card-name" onclick="openProductModal(${product.id})" style="cursor:pointer;">${escapeHtml(product.nome)}</h4>
+                <span class="catalog-card-brand">${escapeHtml(product.marca || '')}</span>
                 <div class="catalog-card-pricing">
                     ${hasPromo ? `<span class="catalog-card-price-old">${formatPrice(product.preco)}</span>` : ''}
                     <span class="catalog-card-price ${hasPromo ? '' : 'no-promo'}">${formatPrice(price)}</span>
@@ -1104,13 +1104,13 @@ function renderCartSidebar() {
         const subtotal = item.preco * item.qty;
         total += subtotal;
         return `
-        <div class="cart-item">
+<div class="cart-item">
             <div class="cart-item-img">
-                ${item.imagem ? `<img src="${item.imagem}" alt="${item.nome}" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">` : '<i class="fas fa-box" style="color:var(--text-muted);"></i>'}
+                ${item.imagem ? `<img src="${escapeHtml(item.imagem)}" alt="${escapeHtml(item.nome)}" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">` : '<i class="fas fa-box" style="color:var(--text-muted);"></i>'}
             </div>
             <div class="cart-item-info">
-                <div class="cart-item-code">${item.codigo ? 'CÓD ' + item.codigo : ''}</div>
-                <div class="cart-item-name">${item.nome}</div>
+                <div class="cart-item-code">${item.codigo ? 'C�"D ' + escapeHtml(item.codigo) : ''}</div>
+                <div class="cart-item-name">${escapeHtml(item.nome)}</div>
                 <div class="cart-item-price">${formatPrice(item.preco)}</div>
                 <div class="cart-item-controls">
                     <div class="catalog-qty">
@@ -1246,8 +1246,8 @@ if (cartCheckout) {
                 return `
                 <div class="checkout-item">
                     <span class="checkout-item-num">${i + 1}</span>
-                    <span class="checkout-item-name">${item.nome}</span>
-                    <span class="checkout-item-code">${item.codigo ? 'CÓD ' + item.codigo : '—'}</span>
+                    <span class="checkout-item-name">${escapeHtml(item.nome)}</span>
+                    <span class="checkout-item-code">${item.codigo ? 'CÓD ' + escapeHtml(item.codigo) : '—'}</span>
                     <span class="checkout-item-qty">${item.qty}x</span>
                     <span class="checkout-item-price">${formatPrice(subtotal)}</span>
                 </div>`;
@@ -1324,7 +1324,7 @@ document.getElementById('checkoutCouponApply')?.addEventListener('click', () => 
 
     document.getElementById('checkoutTotalRow').style.display = '';
     document.getElementById('checkoutTotal').textContent = formatPrice(finalTotal);
-    msgEl.innerHTML = `<i class="fas fa-check-circle"></i> Cupom "${code}" aplicado! Desconto: -${formatPrice(checkoutDiscount)}`;
+    msgEl.innerHTML = `<i class="fas fa-check-circle"></i> Cupom "${escapeHtml(code)}" aplicado! Desconto: -${formatPrice(checkoutDiscount)}`;
     msgEl.className = 'checkout-coupon-msg success';
 });
 
@@ -1364,9 +1364,9 @@ async function checkPhoneRegistered(phone) {
             checkoutKnownName = registeredName;
             const typedName = nameInput.value.trim();
             if (typedName && normalize(typedName) !== normalize(registeredName)) {
-                phoneMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> Este telefone esta cadastrado para <strong>${registeredName}</strong>. Utilize o nome correto.`;
+                phoneMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> Este telefone esta cadastrado para <strong>${escapeHtml(registeredName)}</strong>. Utilize o nome correto.`;
             } else {
-                phoneMsg.innerHTML = `<i class="fas fa-info-circle"></i> Cliente encontrado: <strong>${registeredName}</strong>`;
+                phoneMsg.innerHTML = `<i class="fas fa-info-circle"></i> Cliente encontrado: <strong>${escapeHtml(registeredName)}</strong>`;
                 phoneMsg.style.color = 'var(--accent)';
             }
         } else {
@@ -1389,7 +1389,7 @@ document.getElementById('checkoutName')?.addEventListener('input', () => {
     if (phone.length >= 10 && checkoutKnownName) {
         const typedName = document.getElementById('checkoutName').value.trim();
         if (typedName && normalize(typedName) !== normalize(checkoutKnownName)) {
-            phoneMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> Este telefone esta cadastrado para <strong>${checkoutKnownName}</strong>. Utilize o nome correto.`;
+            phoneMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> Este telefone esta cadastrado para <strong>${escapeHtml(checkoutKnownName)}</strong>. Utilize o nome correto.`;
             phoneMsg.style.color = '#ff6b6b';
         } else if (typedName && normalize(typedName) === normalize(checkoutKnownName)) {
             phoneMsg.innerHTML = `<i class="fas fa-check-circle"></i> Nome confirmado!`;
@@ -1407,7 +1407,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async (e) =>
 
     if (checkoutKnownName && normalize(name) !== normalize(checkoutKnownName)) {
         const phoneMsg = document.getElementById('checkoutPhoneMsg');
-        phoneMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> O nome informado nao corresponde ao cadastrado para este telefone. Utilize <strong>${checkoutKnownName}</strong>.`;
+        phoneMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> O nome informado nao corresponde ao cadastrado para este telefone. Utilize <strong>${escapeHtml(checkoutKnownName)}</strong>.`;
         phoneMsg.style.color = '#ff6b6b';
         document.getElementById('checkoutName').focus();
         return;
@@ -1681,7 +1681,7 @@ function renderFooterCategories() {
     if (!container || !_catalogCategories.length) return;
     const max = 8;
     const visible = _catalogCategories.slice(0, max);
-    let html = visible.map(c => `<a href="#produtos">${c.nome}</a>`).join('');
+    let html = visible.map(c => `<a href="#produtos">${escapeHtml(c.nome)}</a>`).join('');
     if (_catalogCategories.length > max) {
         html += `<a href="#produtos" class="footer-more">Outras →</a>`;
     }
