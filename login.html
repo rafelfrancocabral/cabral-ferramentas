@@ -388,14 +388,25 @@
 
         // Auth
         const AUTH_KEY = 'cabral_auth';
-        const USERS = [
-            { user: 'admin@admin', pass: 'admincabral123' },
-            { user: 'cabraladmin', pass: 'cabral@sabauna66' },
-            { user: 'olavinho@admin', pass: 'kobe2424' }
-        ];
+        // URL do Worker Cloudflare que valida o login (NAO guarde senhas aqui)
+        const AUTH_WORKER_URL = 'https://cabral-r2-uploader.rafaelfrancocabral.workers.dev';
 
-        function checkCredentials(user, pass) {
-            return USERS.some(u => u.user === user && u.pass === pass);
+        async function checkCredentials(user, pass) {
+            try {
+                const resp = await fetch(AUTH_WORKER_URL + '/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user, pass })
+                });
+                if (resp.status === 200) {
+                    const data = await resp.json();
+                    return !!(data && data.ok);
+                }
+                return false;
+            } catch (err) {
+                console.error('Erro ao validar login:', err);
+                return null; // erro de rede / servidor indisponivel
+            }
         }
 
         // CAPTCHA
@@ -410,9 +421,40 @@
         }
         generateCaptcha();
 
-        // Lockout
+        // Lockout (persistente em localStorage para nao resetar ao recarregar)
+        const LOGIN_ATTEMPTS_KEY = 'cabral_login_attempts';
+        const LOGIN_LOCKOUT_KEY = 'cabral_login_lockout';
+        const MAX_ATTEMPTS = 3;
+        const LOCKOUT_MS = 30000;
+
         let failedAttempts = 0;
         let lockoutUntil = 0;
+
+        function loadAuthState() {
+            try {
+                failedAttempts = parseInt(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '0', 10) || 0;
+                lockoutUntil = parseInt(localStorage.getItem(LOGIN_LOCKOUT_KEY) || '0', 10) || 0;
+            } catch (e) {}
+            // Se o lockout ja expirou, reseta
+            if (lockoutUntil > 0 && Date.now() >= lockoutUntil) {
+                lockoutUntil = 0;
+                failedAttempts = 0;
+            }
+        }
+        loadAuthState();
+
+        function saveAuthState() {
+            try {
+                localStorage.setItem(LOGIN_ATTEMPTS_KEY, String(failedAttempts));
+                localStorage.setItem(LOGIN_LOCKOUT_KEY, String(lockoutUntil));
+            } catch (e) {}
+        }
+
+        function resetFailedAttempts() {
+            failedAttempts = 0;
+            lockoutUntil = 0;
+            saveAuthState();
+        }
 
         function isLockedOut() {
             return Date.now() < lockoutUntil;
@@ -423,7 +465,8 @@
         }
 
         function activateLockout() {
-            lockoutUntil = Date.now() + 30000;
+            lockoutUntil = Date.now() + LOCKOUT_MS;
+            saveAuthState();
             document.getElementById('loginLockout').style.display = '';
             document.getElementById('loginBtn').disabled = true;
             document.getElementById('loginBtn').style.opacity = '0.5';
@@ -441,6 +484,7 @@
                     document.getElementById('loginBtn').style.opacity = '';
                     document.getElementById('loginBtn').style.pointerEvents = '';
                     failedAttempts = 0;
+                    saveAuthState();
                     generateCaptcha();
                 } else {
                     document.getElementById('lockoutText').textContent = 'Muitas tentativas. Aguarde ' + remaining + ' segundos.';
@@ -453,7 +497,7 @@
         const errorText = document.getElementById('loginErrorText');
         const btn = document.getElementById('loginBtn');
 
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             if (isLockedOut()) {
@@ -469,32 +513,43 @@
             btn.classList.add('loading');
             errorEl.style.display = 'none';
 
-            setTimeout(() => {
-                if (captchaVal !== captchaResult) {
-                    btn.classList.remove('loading');
-                    errorText.textContent = 'Resultado do captcha incorreto.';
-                    errorEl.style.display = '';
-                    generateCaptcha();
-                    failedAttempts++;
-                    if (failedAttempts >= 3) activateLockout();
-                    return;
-                }
+            // pequena pausa para naturalizar a experiencia
+            await new Promise(r => setTimeout(r, 400));
 
-                if (checkCredentials(user, pass)) {
-                    localStorage.setItem(AUTH_KEY, 'true');
-                    localStorage.setItem('cabral_last_activity', Date.now().toString());
-                    window.location.href = 'dashboard.html';
-                } else {
-                    btn.classList.remove('loading');
-                    errorText.textContent = 'Usuário ou senha inválidos.';
-                    errorEl.style.display = '';
-                    document.getElementById('loginPass').value = '';
-                    document.getElementById('loginPass').focus();
-                    generateCaptcha();
-                    failedAttempts++;
-                    if (failedAttempts >= 3) activateLockout();
-                }
-            }, 800);
+            if (captchaVal !== captchaResult) {
+                btn.classList.remove('loading');
+                errorText.textContent = 'Resultado do captcha incorreto.';
+                errorEl.style.display = '';
+                generateCaptcha();
+                failedAttempts++;
+                saveAuthState();
+                if (failedAttempts >= MAX_ATTEMPTS) activateLockout();
+                return;
+            }
+
+            const ok = await checkCredentials(user, pass);
+
+            if (ok === true) {
+                localStorage.setItem(AUTH_KEY, 'true');
+                localStorage.setItem('cabral_last_activity', Date.now().toString());
+                resetFailedAttempts();
+                window.location.href = 'dashboard.html';
+            } else if (ok === null) {
+                btn.classList.remove('loading');
+                errorText.textContent = 'Falha ao conectar com o servidor de autenticação. Tente novamente em instantes.';
+                errorEl.style.display = '';
+                generateCaptcha();
+            } else {
+                btn.classList.remove('loading');
+                errorText.textContent = 'Usuário ou senha inválidos.';
+                errorEl.style.display = '';
+                document.getElementById('loginPass').value = '';
+                document.getElementById('loginPass').focus();
+                generateCaptcha();
+                failedAttempts++;
+                saveAuthState();
+                if (failedAttempts >= MAX_ATTEMPTS) activateLockout();
+            }
         });
 
         // Eye toggle

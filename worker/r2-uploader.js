@@ -1,18 +1,24 @@
 // ============================================================
-// Cloudflare Worker - Uploader de imagens para R2 (Cabral)
+// Cloudflare Worker - API Cabral (Upload R2 + Login autenticado)
 // ============================================================
 // Como instalar no painel da Cloudflare:
 //  1. Dashboard Cloudflare -> Workers & Pages -> Create Worker.
 //  2. Substitua o codigo pelo conteudo deste arquivo e clique em Deploy.
-//  3. Em Settings > Variables and Secrets, crie um Binding R2:
-//       - Variable name: IMAGES
-//       - R2 Bucket:      produtos   (crie o bucket R2 "produtos" antes)
-//  4. (Opcional, recomendado) Em Variables, crie UPLOAD_SECRET com uma
-//     senha qualquer. Se criar, cole a mesma senha em js/r2-config.js.
-//  5. No bucket R2 "produtos": Settings > Public Access > enable
+//  3. Em Settings > Variables and Secrets:
+//     a) R2 Binding:
+//        - Variable name: IMAGES
+//        - R2 Bucket:      produtos   (crie o bucket R2 "produtos" antes)
+//     b) (Opcional, recomendado) UPLOAD_SECRET: senha para /upload e /migrate.
+//        Se criar, cole a mesma senha em js/r2-config.js.
+//     c) (OBRIGATORIO para o login) AUTH_USERS: JSON com os usuarios e senhas
+//        do dashboard. Cole como SECRET (nao como plain text). Exemplo:
+//        [{"user":"admin@admin","pass":"SENHA_NOVA_1"},{"user":"olavinho@admin","pass":"SENHA_NOVA_2"}]
+//  4. No bucket R2 "produtos": Settings > Public Access > enable
 //     "r2.dev subdomain" (copia o endereco pub-xxxx.r2.dev) OU aponte um
 //     dominio proprio (ex: imagens.cabralferramentas.com.br).
-//  6. Cole a URL do Worker e a URL publica em js/r2-config.js.
+//  5. Cole a URL do Worker e a URL publica em js/r2-config.js.
+//  6. O endpoint /login e PUBLICO (sem UPLOAD_SECRET) e valida apenas contra
+//     o secret AUTH_USERS. As credenciais NAO ficam no HTML do site.
 // ============================================================
 
 const CORS_HEADERS = {
@@ -28,20 +34,71 @@ function json(data, status = 200) {
     });
 }
 
+// Valida credenciais do dashboard contra o secret AUTH_USERS.
+// O endpoint /login e publico, porem so informa ok quando a dupla
+// user/pass bate. Nenhuma credencial vaza para o cliente.
+async function handleLogin(request, env) {
+    if (!env.AUTH_USERS) {
+        return json({ ok: false, error: 'not_configured' }, 503);
+    }
+
+    let body;
+    try {
+        body = await request.json();
+    } catch (e) {
+        return json({ ok: false, error: 'bad_request' }, 400);
+    }
+
+    const user = typeof body.user === 'string' ? body.user.trim().toLowerCase() : '';
+    const pass = typeof body.pass === 'string' ? body.pass : '';
+    if (!user || !pass) {
+        return json({ ok: false, error: 'missing_fields' }, 400);
+    }
+
+    let users = [];
+    try {
+        users = JSON.parse(env.AUTH_USERS);
+    } catch (e) {
+        return json({ ok: false, error: 'server_config' }, 500);
+    }
+    if (!Array.isArray(users)) {
+        return json({ ok: false, error: 'server_config' }, 500);
+    }
+
+    const valid = users.some(u =>
+        String(u.user || '').trim().toLowerCase() === user &&
+        String(u.pass || '') === pass
+    );
+
+    // Pequeno atraso para reduzir velocidade de brute force.
+    await new Promise(r => setTimeout(r, 300));
+
+    if (!valid) {
+        return json({ ok: false, error: 'invalid_credentials' }, 401);
+    }
+    return json({ ok: true });
+}
+
 export default {
     async fetch(request, env) {
         if (request.method === 'OPTIONS') {
             return new Response(null, { status: 204, headers: CORS_HEADERS });
         }
 
+        const url = new URL(request.url);
+
+        // Login endpoint is PUBLIC: validates credentials against AUTH_USERS secret.
+        if (url.pathname === '/login' && request.method === 'POST') {
+            return await handleLogin(request, env);
+        }
+
+        // Everything else requires the upload secret (if configured).
         if (env.UPLOAD_SECRET) {
             const auth = request.headers.get('Authorization') || '';
             if (auth !== `Bearer ${env.UPLOAD_SECRET}`) {
                 return json({ error: 'unauthorized' }, 401);
             }
         }
-
-        const url = new URL(request.url);
 
         try {
             if (url.pathname === '/health') {
