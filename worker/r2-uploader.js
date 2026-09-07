@@ -105,11 +105,33 @@ async function authorize(request, env) {
 }
 
 // ------------------------------------------------------------
+// Rate limiting (binding "LOGIN_RL" do Cloudflare, opcional)
+// limit() atira RateLimitError quando o IP estoura a janela.
+// Retorna true se deixou passar, false/falha se bloqueado.
+// ------------------------------------------------------------
+async function checkRateLimit(env, key) {
+    if (!env || !env.LOGIN_RL) return { ok: true };
+    try {
+        env.LOGIN_RL.limit({ key });
+        return { ok: true };
+    } catch (e) {
+        return { ok: false, error: 'rate_limited', retryAfter: (e && e.retryAfter) || 60 };
+    }
+}
+
+// ------------------------------------------------------------
 // Login (publico): valida AUTH_USERS e emite token de sessao
 // ------------------------------------------------------------
 async function handleLogin(request, env) {
     if (!env.AUTH_USERS) return json({ ok: false, error: 'not_configured' }, 503);
     if (!env.SESSION_SECRET) return json({ ok: false, error: 'session_not_configured' }, 503);
+
+    // Rate limit por IP para conter brute-force.
+    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('x-real-ip') || 'unknown';
+    const rl = await checkRateLimit(env, `login:${ip}`);
+    if (!rl.ok) {
+        return json({ ok: false, error: 'rate_limited' }, 429);
+    }
 
     let body;
     try {
@@ -159,6 +181,13 @@ function validColumnsList(cols) {
 }
 
 async function handleAdmin(request, env) {
+    // Rate limit por IP no endpoint admin (ajuda a conter varredura/abuso).
+    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('x-real-ip') || 'unknown';
+    const rl = await checkRateLimit(env, `admin:${ip}`);
+    if (!rl.ok) {
+        return json({ error: 'rate_limited' }, 429);
+    }
+
     const auth = await authorize(request, env);
     if (!auth || auth.mode !== 'session') return json({ error: 'unauthorized' }, 401);
     if (!env.SUPABASE_SERVICE_KEY) return json({ error: 'service_key_not_configured' }, 503);
