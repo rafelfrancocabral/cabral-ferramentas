@@ -1325,8 +1325,7 @@ async function saveProducts(products) {
 async function upsertProduct(productData) {
     const toSend = { ...productData };
     delete toSend.id;
-    const { data, error } = await adminDb
-        .from(SUPABASE_PRODUCTS_TABLE)
+    const { data, error } = await adminDb(SUPABASE_PRODUCTS_TABLE)
         .upsert(toSend, { onConflict: 'codigo' })
         .select();
     if (error) throw error;
@@ -1334,8 +1333,7 @@ async function upsertProduct(productData) {
 }
 
 async function insertProduct(productData) {
-    const { data, error } = await adminDb
-        .from(SUPABASE_PRODUCTS_TABLE)
+    const { data, error } = await adminDb(SUPABASE_PRODUCTS_TABLE)
         .insert(productData)
         .select();
     if (error) throw error;
@@ -1343,16 +1341,14 @@ async function insertProduct(productData) {
 }
 
 async function deleteProductDB(id) {
-    const { error } = await adminDb
-        .from(SUPABASE_PRODUCTS_TABLE)
+    const { error } = await adminDb(SUPABASE_PRODUCTS_TABLE)
         .delete()
         .eq('id', id);
     if (error) throw error;
 }
 
 async function updateProductDB(id, updates) {
-    const { data, error } = await adminDb
-        .from(SUPABASE_PRODUCTS_TABLE)
+    const { data, error } = await adminDb(SUPABASE_PRODUCTS_TABLE)
         .update(updates)
         .eq('id', id)
         .select();
@@ -3857,7 +3853,7 @@ async function saveCoupons(coupons) {
     writeCouponsLocal(coupons);
     try {
         const rows = coupons.map(toDbCoupon);
-        const { error } = await adminDb.from(SUPABASE_COUPONS_TABLE).upsert(rows, { onConflict: 'id' });
+        const { error } = await adminDb(SUPABASE_COUPONS_TABLE).upsert(rows, { onConflict: 'id' });
         if (error) throw error;
         return true;
     } catch (e) {
@@ -3867,7 +3863,7 @@ async function saveCoupons(coupons) {
 }
 
 async function deleteCouponDB(id) {
-    const { error } = await adminDb.from(SUPABASE_COUPONS_TABLE).delete().eq('id', id);
+    const { error } = await adminDb(SUPABASE_COUPONS_TABLE).delete().eq('id', id);
     if (error) throw error;
 }
 
@@ -4424,7 +4420,7 @@ async function loadAiSearchLog() {
     let all = [];
     let from = 0;
     while (true) {
-        const { data, error } = await adminDb.from(SUPABASE_AI_SEARCHES_TABLE)
+        const { data, error } = await adminDb(SUPABASE_AI_SEARCHES_TABLE)
             .select('id, termo, categoria, resultado, created_at')
             .order('created_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
@@ -4482,7 +4478,7 @@ const btnClearAiSearchLog = document.getElementById('btnClearAiSearchLog');
 if (btnClearAiSearchLog) btnClearAiSearchLog.addEventListener('click', async () => {
     if (!confirm('Limpar todo o log de buscas IA? Esta ação não pode ser desfeita.')) return;
     try {
-        await adminDb.from(SUPABASE_AI_SEARCHES_TABLE).delete().gte('id', 0);
+        await adminDb(SUPABASE_AI_SEARCHES_TABLE).delete().gte('id', 0);
         _aiSearchLog = [];
         renderAiSearchLog();
         showToast('Log de buscas IA limpo');
