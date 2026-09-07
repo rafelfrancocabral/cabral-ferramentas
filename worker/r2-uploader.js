@@ -117,9 +117,10 @@ const RL_LOCKOUT    = 300_000;     // 5min de bloqueio
 function rlCheck(ip, max) {
     const now = Date.now();
     const entry = _rl.get(ip);
-    if (entry && now > entry.unlockAt) _rl.delete(ip);
-    if (entry && now <= entry.unlockAt) return { ok: false, retryAfter: Math.ceil((entry.unlockAt - now) / 1000) };
-    if (entry && entry.count >= max && now <= entry.resetAt) return { ok: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
+    if (!entry) return { ok: true };
+    if (now > entry.unlockAt && now > entry.resetAt) { _rl.delete(ip); return { ok: true }; }
+    if (now <= entry.unlockAt) return { ok: false, retryAfter: Math.ceil((entry.unlockAt - now) / 1000) };
+    if (entry.count >= max) return { ok: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
     return { ok: true };
 }
 function rlHit(ip, max, lockout) {
