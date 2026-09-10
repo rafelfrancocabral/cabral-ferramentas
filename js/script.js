@@ -1007,7 +1007,7 @@ card.innerHTML = `
             </div>
             <div class="catalog-card-body">
                 <span class="catalog-card-cat">${escapeHtml(product.categoria || '')}</span>
-                <span class="catalog-card-code">${product.codigo ? 'C�"D ' + escapeHtml(product.codigo) : ''}</span>
+                <span class="catalog-card-code">${product.codigo ? 'CÓD ' + escapeHtml(product.codigo) : ''}</span>
                 <h4 class="catalog-card-name" onclick="openProductModal(${product.id})" style="cursor:pointer;">${escapeHtml(product.nome)}</h4>
                 <span class="catalog-card-brand">${escapeHtml(product.marca || '')}</span>
                 <div class="catalog-card-pricing">
@@ -1109,7 +1109,7 @@ function renderCartSidebar() {
                 ${item.imagem ? `<img src="${escapeHtml(item.imagem)}" alt="${escapeHtml(item.nome)}" onerror="this.onerror=null;this.src=this.src.replace('_thumb.webp','.webp')">` : '<i class="fas fa-box" style="color:var(--text-muted);"></i>'}
             </div>
             <div class="cart-item-info">
-                <div class="cart-item-code">${item.codigo ? 'C�"D ' + escapeHtml(item.codigo) : ''}</div>
+                <div class="cart-item-code">${item.codigo ? 'CÓD ' + escapeHtml(item.codigo) : ''}</div>
                 <div class="cart-item-name">${escapeHtml(item.nome)}</div>
                 <div class="cart-item-price">${formatPrice(item.preco)}</div>
                 <div class="cart-item-controls">
