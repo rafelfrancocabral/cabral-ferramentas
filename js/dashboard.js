@@ -369,13 +369,16 @@ async function updateCharts(period) {
     else if (period === '12m') cutoff = new Date(now - 365 * 86400000);
     else cutoff = new Date(now - 30 * 86400000);
 
-    const quotes = getQuotes().filter(q => new Date(q.created_at) >= cutoff);
-    const totalQuotes = quotes.length;
-    const delivered = quotes.filter(q => q.status === 'entregue');
+    const allQuotes = getQuotes();
+    // Orcamentos RECEBIDOS no periodo (para total/conversao)
+    const received = allQuotes.filter(q => new Date(q.created_at) >= cutoff);
+    // Vendas CONCLUIDAS no periodo (data da venda = data em que ficou 'entregue')
+    const delivered = allQuotes.filter(q => q.status === 'entregue' && saleDate(q) >= cutoff);
+    const totalQuotes = received.length;
     const deliveredCount = delivered.length;
     const totalRevenue = delivered.reduce((s, q) => s + (Number(q.total) || 0), 0);
-    const deliveryPct = totalQuotes > 0 ? Math.round((deliveredCount / totalQuotes) * 100) : 0;
-    const converted = quotes.filter(q => q.status === 'aprovado' || q.status === 'entregue');
+    const deliveryPct = totalQuotes > 0 ? Math.min(100, Math.round((deliveredCount / totalQuotes) * 100)) : 0;
+    const converted = received.filter(q => q.status === 'aprovado' || q.status === 'entregue');
     const conversionPct = totalQuotes > 0 ? Math.round((converted.length / totalQuotes) * 100) : 0;
 
     // KPI cards
@@ -431,8 +434,8 @@ async function updateCharts(period) {
             const hs = new Date(now);
             hs.setHours(h, 0, 0, 0);
             labels.push(String(h).padStart(2, '0') + 'h');
-            const hq = quotes.filter(q => {
-                const qd = new Date(q.created_at);
+            const hq = allQuotes.filter(q => {
+                const qd = saleDate(q);
                 return qd.getFullYear() === hs.getFullYear() && qd.getMonth() === hs.getMonth() && qd.getDate() === hs.getDate() && qd.getHours() === h;
             });
             const hqd = hq.filter(q => q.status === 'entregue');
@@ -444,7 +447,7 @@ async function updateCharts(period) {
             const d = new Date(now - i * 86400000);
             labels.push(dayNames[d.getDay()]);
             const dayStr = d.toISOString().slice(0, 10);
-            const dayQ = quotes.filter(q => q.created_at.slice(0, 10) === dayStr);
+            const dayQ = allQuotes.filter(q => saleDate(q).toISOString().slice(0, 10) === dayStr);
             const dayQd = dayQ.filter(q => q.status === 'entregue');
             salesData.push(dayQd.reduce((s, q) => s + (Number(q.total) || 0), 0));
         }
@@ -452,8 +455,8 @@ async function updateCharts(period) {
         for (let i = 2; i >= 0; i--) {
             const d = new Date(now - i * 30 * 86400000);
             labels.push((d.getMonth() + 1) + '/' + d.getFullYear());
-            const mq = quotes.filter(q => {
-                const qd = new Date(q.created_at);
+            const mq = allQuotes.filter(q => {
+                const qd = saleDate(q);
                 return qd.getMonth() === d.getMonth() && qd.getFullYear() === d.getFullYear();
             });
             const mqd = mq.filter(q => q.status === 'entregue');
@@ -464,8 +467,8 @@ async function updateCharts(period) {
         for (let i = 11; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             labels.push(mn[d.getMonth()]);
-            const mq = quotes.filter(q => {
-                const qd = new Date(q.created_at);
+            const mq = allQuotes.filter(q => {
+                const qd = saleDate(q);
                 return qd.getMonth() === d.getMonth() && qd.getFullYear() === d.getFullYear();
             });
             const mqd = mq.filter(q => q.status === 'entregue');
@@ -476,8 +479,8 @@ async function updateCharts(period) {
             const ws = new Date(now - (i + 1) * 7 * 86400000);
             const we = new Date(now - i * 7 * 86400000);
             labels.push('Sem ' + (4 - i));
-            const wq = quotes.filter(q => {
-                const qd = new Date(q.created_at);
+            const wq = allQuotes.filter(q => {
+                const qd = saleDate(q);
                 return qd >= ws && qd < we;
             });
             const wqd = wq.filter(q => q.status === 'entregue');
@@ -492,8 +495,7 @@ async function updateCharts(period) {
     // Category chart: top 10 categorias com mais vendas (orçamentos entregues)
     const catMap = await getProductCategoryMap();
     const catCounts = {};
-    quotes.forEach(q => {
-        if (q.status !== 'entregue') return;
+    delivered.forEach(q => {
         if (!Array.isArray(q.itens)) return;
         q.itens.forEach(item => {
             const cat = item.categoria || catMap.get(String(item.codigo)) || 'Geral';
@@ -626,7 +628,7 @@ async function loadQuotes() {
     let from = 0;
     while (true) {
         const { data, error } = await adminDb(SUPABASE_QUOTES_TABLE)
-            .select('id, nome_cliente, telefone, codigo_cliente, itens, total, status, status_entrega, created_at, updated_at')
+            .select('id, nome_cliente, telefone, codigo_cliente, itens, total, status, status_entrega, created_at, updated_at, concluido_em')
             .order('created_at', { ascending: false })
             .range(from, from + PAGE_SIZE - 1);
         if (error) { console.error('Erro ao carregar orçamentos:', error); break; }
@@ -642,6 +644,10 @@ async function loadQuotes() {
 function getQuotes() {
     return _quotesCache;
 }
+
+// Data de referencia da VENDA = quando o status virou 'entregue' (concluido_em).
+// Quando nao ha carimbo (status antigo), usa a data de criacao.
+function saleDate(q) { if (q && q.concluido_em) { const d = new Date(q.concluido_em); if (!isNaN(d.getTime())) return d; } return new Date(q.created_at); }
 
 function renderQuotes(filter = 'all') {
     const list = document.getElementById('quotesList');
@@ -777,9 +783,11 @@ document.addEventListener('click', (e) => {
 
     quoteCard.dataset.status = newStatus;
 
+    const nowIso = new Date().toISOString();
+
     // Save to Supabase
     adminDb(SUPABASE_QUOTES_TABLE)
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update({ status: newStatus, updated_at: nowIso, concluido_em: newStatus === 'entregue' ? nowIso : null })
         .eq('id', quoteId)
         .then(({ error }) => {
             if (error) console.error('Erro ao atualizar orçamento:', error);
@@ -787,7 +795,7 @@ document.addEventListener('click', (e) => {
 
     // Refresh local cache
     const q = getQuotes().find(o => o.id == quoteId);
-    if (q) q.status = newStatus;
+    if (q) { q.status = newStatus; q.concluido_em = newStatus === 'entregue' ? nowIso : null; }
 
     renderMetrics();
     updateCharts(document.querySelector('.filter-btn.active')?.dataset.period || '30d');
@@ -810,14 +818,14 @@ document.addEventListener('click', (e) => {
         if (!confirm(`Reativar orçamento #${quoteId}?`)) return;
 
         adminDb(SUPABASE_QUOTES_TABLE)
-            .update({ status: 'recebido', updated_at: new Date().toISOString() })
+            .update({ status: 'recebido', updated_at: new Date().toISOString(), concluido_em: null })
             .eq('id', quoteId)
             .then(({ error }) => {
                 if (error) console.error('Erro ao reativar orçamento:', error);
             });
 
         const q = getQuotes().find(o => o.id == quoteId);
-        if (q) q.status = 'recebido';
+        if (q) { q.status = 'recebido'; q.concluido_em = null; }
 
         const statusFilter = document.getElementById('statusFilter');
         renderQuotes(statusFilter?.value || 'all');
@@ -832,14 +840,14 @@ document.addEventListener('click', (e) => {
     if (!confirm(`Cancelar orçamento #${quoteId}?`)) return;
 
     adminDb(SUPABASE_QUOTES_TABLE)
-        .update({ status: 'cancelado', updated_at: new Date().toISOString() })
+        .update({ status: 'cancelado', updated_at: new Date().toISOString(), concluido_em: null })
         .eq('id', quoteId)
         .then(({ error }) => {
             if (error) console.error('Erro ao cancelar orçamento:', error);
         });
 
     const q = getQuotes().find(o => o.id == quoteId);
-    if (q) q.status = 'cancelado';
+    if (q) { q.status = 'cancelado'; q.concluido_em = null; }
 
     const statusFilter = document.getElementById('statusFilter');
     renderQuotes(statusFilter?.value || 'all');
@@ -4306,11 +4314,11 @@ document.getElementById('btnMigrateImages').addEventListener('click', async () =
 function classifyClient(quotes) {
     const now = new Date();
     const totalQuotes = quotes.length;
-    const lastQuote = quotes.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
-    const lastDate = new Date(lastQuote.created_at);
+    const lastQuote = quotes.reduce((a, b) => saleDate(a) > saleDate(b) ? a : b);
+    const lastDate = saleDate(lastQuote);
     const daysSinceLast = Math.floor((now - lastDate) / 86400000);
     const thisMonth = quotes.filter(q => {
-        const d = new Date(q.created_at);
+        const d = saleDate(q);
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
 
@@ -4342,16 +4350,16 @@ function getClients() {
     });
     return Object.values(clientMap).map(c => {
         const cls = classifyClient(c.quotes);
-        const lastQuote = c.quotes.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
-        const lastDate = new Date(lastQuote.created_at);
-        const firstQuote = c.quotes.reduce((a, b) => new Date(a.created_at) < new Date(b.created_at) ? a : b);
+        const lastQuote = c.quotes.reduce((a, b) => saleDate(a) > saleDate(b) ? a : b);
+        const lastDate = saleDate(lastQuote);
+        const firstQuote = c.quotes.reduce((a, b) => saleDate(a) < saleDate(b) ? a : b);
         return {
             ...c,
             code: generateClientCode(c.telefone),
             classification: cls,
             lastPurchase: lastDate.toLocaleDateString('pt-BR'),
             quoteCount: c.quotes.length,
-            firstQuoteDate: new Date(firstQuote.created_at)
+            firstQuoteDate: saleDate(firstQuote)
         };
     }).sort((a, b) => a.firstQuoteDate - b.firstQuoteDate)
       .map((c, i) => ({ ...c, sequentialCode: 'C-' + String(i + 1).padStart(4, '0') }))
