@@ -4099,17 +4099,18 @@ ul { list-style: none; }
    =========================== */
 .hero-bn2 {
     position: relative;
-    max-width: 1280px;
-    margin: 24px auto 0;
-    padding: 136px 40px 64px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 150px max(24px, calc((100vw - 1200px) / 2)) 70px;
     min-height: auto;
-    border-radius: 28px;
+    border-radius: 0;
     overflow: hidden;
     isolation: isolate;
     color: #ffffff;
     background: radial-gradient(circle at 82% 18%, rgba(245, 179, 1, 0.14), transparent 36%),
                 linear-gradient(145deg, #000000 0%, #0a0a0c 45%, #131316 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
 }
 
@@ -4427,7 +4428,7 @@ ul { list-style: none; }
 }
 
 @media (max-width: 560px) {
-    .hero-bn2 { padding: 104px 16px 36px; border-radius: 18px; }
+    .hero-bn2 { padding: 104px 16px 36px; }
     .hero-bn2 .bn2-title-main { font-size: 1.9rem; }
     .hero-bn2 .bn2-ticket { transform: none; padding: 20px; }
     .hero-bn2 .bn2-info { grid-template-columns: 1fr; }
