@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css?v=34">
 </head>
-<body>
+<body class="bn2-page">
     <!-- Particles Background -->
     <div class="particles" id="particles"></div>
     <div class="grid-overlay"></div>
@@ -45,8 +45,8 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
+    <!-- Hero Original (volta automaticamente a partir de 01/12) -->
+    <section class="hero hero-original" id="hero-original" style="display:none;">
         <div class="hero-content">
             <div class="hero-badge">
                 <i class="fas fa-bolt"></i> Faça um orçamento em menos de 1 minuto
@@ -86,6 +86,73 @@
             </div>
         </div>
     </section>
+
+    <!-- Hero Campanha - Black November 28.11 (ate 30/11) -->
+    <section class="hero hero-bn2" id="hero-campaign">
+        <div class="bn2-glow bn2-glow-a"></div>
+        <div class="bn2-glow bn2-glow-b"></div>
+        <div class="hero-content">
+            <div class="bn2-kicker"><i class="fas fa-calendar-day"></i> Black November - Mega oferta 28/11 - Cabral Ferramentas</div>
+            <h1 class="bn2-title">
+                <span class="bn2-title-small">O dia mais esperado do ano!</span>
+                <span class="bn2-title-main">Black Total<br><span class="bn2-gold">Promoção Real</span></span>
+            </h1>
+            <p class="bn2-sub">Super promoções em todo o catálogo, prêmios e condições especiais na nossa loja física. Empresas, Profissionais e Hobby: todo mundo tem motivo para passar aqui. É muito prêmio e preços especiais</p>
+            <div class="hero-buttons bn2-buttons">
+                <a href="https://share.google/0wWsT4fQBlWQYkJhG" target="_blank" class="bn2-btn bn2-btn-primary"><i class="fas fa-map-marker-alt"></i> Quero ir à loja</a>
+                <a href="#produtos" class="bn2-btn bn2-btn-ghost"><i class="fas fa-layer-group"></i> Ver catálogo</a>
+            </div>
+            <div class="bn2-audiences">
+                <span><i class="fas fa-building"></i> Empresas</span>
+                <span><i class="fas fa-hard-hat"></i> Profissionais</span>
+                <span><i class="fas fa-lightbulb"></i> Hobby</span>
+            </div>
+            <div class="bn2-info">
+                <div class="bn2-info-item"><i class="fas fa-calendar-day"></i><div><strong>Quando</strong><span>Sábado dia 28 de Novembro das 8h00 a 13h00</span></div></div>
+                <div class="bn2-info-item"><i class="fas fa-store"></i><div><strong>Onde</strong><span>Avenida Elzira Tavares de Mattos, 155. Jd Continental. Taubaté</span></div></div>
+                <div class="bn2-info-item"><i class="fas fa-gift"></i><div><strong>Tem</strong><span>Super promoções + prêmios</span></div></div>
+            </div>
+        </div>
+        <div class="hero-visual bn2-visual">
+            <div class="bn2-ticket">
+                <div class="bn2-ticket-head">
+                    <span>CABRAL FERRAMENTAS</span>
+                    <span>MELHOR PREÇO</span>
+                </div>
+                <div class="bn2-ticket-date">28<span>.11</span></div>
+                <div class="bn2-ticket-event">MEGA OFERTA</div>
+                <div class="bn2-ticket-perf"></div>
+                <div class="bn2-ticket-rows">
+                    <div><i class="fas fa-store"></i> 28.11 • 08H00 ÀS 13H00</div>
+                    <div><i class="fas fa-tags"></i> SUPER PROMOÇÕES</div>
+                    <div><i class="fas fa-gift"></i> PRÊMIOS E BRINDES</div>
+                </div>
+                <div class="bn2-ticket-stamp">
+                    <i class="fas fa-star"></i>
+                    <span>OFERTA IMPERDÍVEL</span>
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        (function () {
+            var agora = new Date();
+            var fimDaCampanha = new Date(2026, 11, 1); // 01/12/2026, hora local
+            var campanha = document.getElementById('hero-campaign');
+            var original = document.getElementById('hero-original');
+            if (agora >= fimDaCampanha) {
+                campanha.style.display = 'none';
+                original.style.display = 'flex';
+                original.id = 'home';
+                campanha.removeAttribute('id');
+                document.body.classList.remove('bn2-page');
+            } else {
+                campanha.id = 'home';
+            }
+        })();
+    </script>
 
     <!-- Como Fazer Orçamento -->
     <section class="section" id="como-orcamento">
